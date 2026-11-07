@@ -94,6 +94,10 @@ button.b:disabled{opacity:.4;cursor:default}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 /* Title pinned to the top (like Water Sort); the game sits centred in the space below */
 main{justify-content:flex-start}#t1{flex:1 1 auto;max-height:calc(3em - 8px)}main::after{content:"";flex:1 1 0}
+/* One centred block: title, game, bar. Gaps under the title and above the bar are at most 2x the title height */
+main{padding-bottom:16px}.short main{padding-bottom:10px}#pad{margin-bottom:0}main::before{content:"";flex:1 1 0}
+.bar{position:relative;left:auto;right:auto;bottom:auto;width:100%;max-width:none;margin:0;padding:0 0 env(safe-area-inset-bottom,0px);flex:1 1 auto;max-height:calc(76px + env(safe-area-inset-bottom,0px));align-items:flex-end;align-content:end}
+.short .bar{max-height:calc(64px + env(safe-area-inset-bottom,0px))}
 </style>
 </head>
 <body>
@@ -336,6 +340,14 @@ if(screen.orientation)screen.orientation.addEventListener('change',function(){se
 try{document.fonts.ready.then(function(){render()})}catch(e){}
 
 if(load())render(started?'Welcome back':'Pick a cell, then a number');else start();orient();
+</script>
+<script>
+// The bar sits in the layout: keep the Rules/Settings panel opening right above it
+(function(){var b=document.getElementById('bar'),p=document.getElementById('panel'),a=document.getElementById('app');if(!b||!p)return;
+ function place(){if(document.documentElement.classList.contains('rot')){var y=0,e=b;while(e&&e!==a){y+=e.offsetTop;e=e.offsetParent}p.style.bottom=Math.max(0,a.clientHeight-y)+'px'}
+  else p.style.bottom=Math.max(0,innerHeight-b.getBoundingClientRect().top)+'px'}
+ place();addEventListener('resize',function(){setTimeout(place,0)});
+ try{new MutationObserver(place).observe(p,{attributes:true,attributeFilter:['hidden']});new ResizeObserver(place).observe(document.querySelector('main'))}catch(e){}})();
 </script>
 </body>
 </html>

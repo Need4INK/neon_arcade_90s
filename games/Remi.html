@@ -126,7 +126,11 @@ button.b.cy:active{background:var(--cy);color:#07030f}
 .pile .pf{left:8px;display:flex;align-items:center;justify-content:center;font:400 calc(var(--pw) * .62)/1 var(--vt);color:#fff;text-shadow:0 0 6px rgba(255,255,255,.6)}
 .slot.go .pf{border-color:var(--yel);box-shadow:0 0 12px var(--yel);animation:pulse 1.2s ease-in-out infinite}
 /* Gap under the title at most 2x its height; spare space goes below the game */
-#game{justify-content:flex-start}#game::before{content:"";flex:1 1 0;max-height:24px}.short #game::before{max-height:14px}#game::after{content:"";flex:1 1 0}#table{flex-grow:1000}
+main{justify-content:flex-start}main>h1{flex:1 1 auto;max-height:calc(3em - 8px)}main::after{content:"";flex:1 1 0}#game{flex:none}#table{flex:none}
+/* One centred block: title, game, bar. Gaps under the title and above the bar are at most 2x the title height */
+main{padding-bottom:16px}.short main{padding-bottom:10px}main::before{content:"";flex:1 1 0}
+.bar{position:relative;left:auto;right:auto;bottom:auto;width:100%;max-width:none;margin:0;padding:0 0 env(safe-area-inset-bottom,0px);flex:1 1 auto;max-height:calc(76px + env(safe-area-inset-bottom,0px));align-items:flex-end;align-content:end}
+.short .bar{max-height:calc(64px + env(safe-area-inset-bottom,0px))}
 </style>
 </head>
 <body>
@@ -443,7 +447,11 @@ function renderRes(tb){const r=G.res,box=document.createElement('div');box.class
  G.pl.forEach((P,i)=>{h+='<tr'+(i===(G.over?lead:r.closer)?' class="win"':'')+'><td style="color:'+OWN[i]+'">'+NAMES[i]+'</td><td>'+(r.pen[i]>0?'+':'')+r.pen[i]+'</td><td>'+P.score+'</td></tr>'});
  h+='</table><p>First to '+LIMIT+' wins</p>';box.innerHTML=h;tb.appendChild(box)}
 // Fixed tile sizes; the table grows into the free space but never taller than it is wide
-function layout(){const t=$('table');if(t.clientWidth)t.style.maxHeight=t.clientWidth+'px';
+function layout(){const t=$('table'),g=$('game');if(t.clientWidth){const m=document.querySelector('main'),h=m.querySelector('h1'),bar=$('bar'),cs=getComputedStyle(m),hs=getComputedStyle(h),bs=getComputedStyle(bar),gs=getComputedStyle(g);
+  const ht=hs.display==='none'?0:parseFloat(hs.fontSize)+parseFloat(hs.marginTop)+parseFloat(hs.marginBottom);
+  const room=m.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)-ht-bar.firstElementChild.offsetHeight-parseFloat(bs.paddingBottom);
+  let rest=parseFloat(gs.paddingTop)+parseFloat(gs.paddingBottom),n=0;[...g.children].forEach(e=>{if(e===t||getComputedStyle(e).display==='none')return;rest+=e.offsetHeight;n++});rest+=n*parseFloat(gs.rowGap||6);
+  t.style.maxHeight='';t.style.height=Math.max(150,Math.min(t.clientWidth,Math.floor(room-rest-16)))+'px'}
  const c=document.querySelector('.chip');if(c&&c.offsetWidth)document.documentElement.style.setProperty('--pw',Math.floor((c.offsetWidth-12)/2)+'px')}
 
 // ---- panel
@@ -481,6 +489,14 @@ if(G){if(G.phase==='over'){say(G.res?G.res.why:'');render()}else if(G.phase==='d
 try{if(!localStorage.getItem('remi-rules-seen')){showPanel('rules');localStorage.setItem('remi-rules-seen','1')}}catch(e){}
 window.__remi={get G(){return G},get T(){return T},analyze,findBest,openFor,trySwap,hLay,hDraw,hTake,hDiscard,hAdd,sel,set lvl(v){lvl=v},set spd(v){spd=v}};
 })();
+</script>
+<script>
+// The bar sits in the layout: keep the Rules/Settings panel opening right above it
+(function(){var b=document.getElementById('bar'),p=document.getElementById('panel'),a=document.getElementById('app');if(!b||!p)return;
+ function place(){if(document.documentElement.classList.contains('rot')){var y=0,e=b;while(e&&e!==a){y+=e.offsetTop;e=e.offsetParent}p.style.bottom=Math.max(0,a.clientHeight-y)+'px'}
+  else p.style.bottom=Math.max(0,innerHeight-b.getBoundingClientRect().top)+'px'}
+ place();addEventListener('resize',function(){setTimeout(place,0)});
+ try{new MutationObserver(place).observe(p,{attributes:true,attributeFilter:['hidden']});new ResizeObserver(place).observe(document.querySelector('main'))}catch(e){}})();
 </script>
 </body>
 </html>
