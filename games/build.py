@@ -116,7 +116,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .sbox .qr svg{width:100%;height:auto}
 .sbox p{margin:6px 0 0;color:var(--mut);font-size:19px;line-height:20px}
 .sbox p b{font-weight:400;color:var(--ink)}
-.sbox .sp{margin-top:12px;color:var(--ink)}.sbox .sq{margin-top:8px}.sbox .sq b{color:var(--cy)}
+.sbox .sp{margin-top:12px;color:var(--ink)}.sbox .sq{margin-top:6px;white-space:nowrap}.sbox .sq b{color:var(--cy)}
 .sbtn{display:flex;justify-content:center;gap:10px;margin-top:14px}
 .sbtn button{background:transparent;color:var(--cy);border:2px solid var(--cy);border-radius:4px;padding:6px 10px;font:400 10px/1.2 var(--px);cursor:pointer;text-shadow:0 0 8px var(--cy);box-shadow:0 0 10px rgba(25,243,255,.4)}
 .sbtn button.y{color:var(--yel);border-color:var(--yel);text-shadow:0 0 8px var(--yel);box-shadow:0 0 10px rgba(255,233,77,.5)}
@@ -186,9 +186,9 @@ iframe{position:fixed;top:env(safe-area-inset-top,0px);bottom:env(safe-area-inse
   <b class="st" id="shT">Scan to play</b>
   <div class="qr">__QR__</div>
   <p class="sp">Save it to your home screen:</p>
-  <p class="sq"><b>iPhone (Safari)</b><br>Share › Add to Home Screen</p>
-  <p class="sq"><b>Android (Chrome)</b><br>Menu › Install app</p>
-  <div class="sbtn"><button type="button" id="shShare">Share link</button><button type="button" class="y" id="shClose">Close</button></div>
+  <p class="sq"><b>iPhone</b>: Share › Add to Home Screen</p>
+  <p class="sq"><b>Android</b>: Menu › Install app</p>
+  <div class="sbtn"><button type="button" id="shShare">Copy link</button><button type="button" class="y" id="shClose">Close</button></div>
  </div></div>
  <div class="cards">
   <button type="button" class="card kb" data-g="kb">
@@ -280,13 +280,14 @@ function showCover(){
 // Called by the Menu button inside each game. Games stay loaded, so a match in progress is kept.
 // Share pop-up on the title
 (function(){var sh=document.getElementById('share'),t=document.getElementById('logoT'),sb=document.getElementById('shShare'),URL='https://need4ink.github.io/neon_arcade_90s/',tm=null;
- function open(){sh.hidden=false;sb.textContent=navigator.share?'Share link':'Copy link';setTimeout(function(){document.getElementById('shClose').focus()},0)}
+ function open(){sh.hidden=false;sb.textContent='Copy link';fitLines();setTimeout(function(){document.getElementById('shClose').focus()},0)}
+ // keep each home-screen line on one line: shrink the text a little on narrow phones
+ function fitLines(){sh.querySelectorAll('.sq').forEach(function(p){p.style.fontSize='';var f=19;while(p.scrollWidth>p.clientWidth&&f>14){f-=.5;p.style.fontSize=f+'px'}})}
  function close(){sh.hidden=true;t.focus()}
  t.onclick=open;t.onkeydown=function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}};
  document.getElementById('shClose').onclick=close;sh.onclick=function(e){if(e.target===sh)close()};
  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!sh.hidden)close()});
- sb.onclick=function(){var d={title:'Neon Arcade',text:'Five neon arcade games. Add it to your home screen to play offline.',url:URL};
-  if(navigator.share){navigator.share(d).catch(function(){});return}
+ sb.onclick=function(){
   function done(ok){sb.textContent=ok?'Copied!':URL;clearTimeout(tm);tm=setTimeout(function(){sb.textContent='Copy link'},2500)}
   try{navigator.clipboard.writeText(URL).then(function(){done(true)},function(){done(false)})}catch(e){done(false)}}})();
 window.kbShowCover=function(){if(history.state&&history.state.g){try{history.back();return}catch(e){}}showCover()};
