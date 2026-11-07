@@ -23,7 +23,7 @@ A phone-first pack of neon arcade games (Knucklebones, Othello, Water Sort, Sudo
 - Same button sizes in every game: settings buttons 64px (54px on narrow phones), double-width 134px; action buttons like Undo 6px 10px padding.
 - Confirmations use "Tap again".
 - Games and the cover stay upright in portrait when a phone is turned sideways (touch screens, short side under 600px).
-- Cover cards, top to bottom: Knucklebones green, Othello magenta, Water Sort cyan, Sudoku red (`#ff3b5c`), Remi orange (`#ff9e2c`). Two-line descriptions, a square icon as tall as the text (62px), a player-count flag tab top-right ("1–2P" / "1P").
+- Cover cards, top to bottom: Knucklebones green, Othello magenta, Water Sort cyan, Sudoku soft red (`#e8566a`), Remi orange (`#ff9e2c`). Two-line descriptions, a square icon as tall as the text (62px), a player-count flag tab top-right ("1–2P" / "1P").
 - The URL never changes (no `#game`), so bookmarks and the home-screen app always open on the cover.
 
 ## Testing

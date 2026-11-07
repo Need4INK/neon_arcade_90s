@@ -53,7 +53,7 @@ page = r'''<!DOCTYPE html>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#07030f;--panel:#10072a;--line:#2e1d66;--ink:#eaf6ff;--mut:#9a8bd6;--mag:#ff2bd6;--cy:#19f3ff;--yel:#ffe94d;--die:#0b0720;--or:#ff9e2c;--rd:#ff3b5c;
+:root{--bg:#07030f;--panel:#10072a;--line:#2e1d66;--ink:#eaf6ff;--mut:#9a8bd6;--mag:#ff2bd6;--cy:#19f3ff;--yel:#ffe94d;--die:#0b0720;--or:#ff9e2c;--rd:#e8566a;
 --px:"Press Start 2P","Courier New",monospace;--vt:"VT323","Courier New",monospace;color-scheme:dark}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--vt);font-size:18px}
@@ -77,7 +77,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .card.kb{border-color:#39ff7a;box-shadow:0 0 10px rgba(57,255,122,.5),inset 0 0 14px rgba(57,255,122,.14)}
 .card.oth{border-color:var(--mag);box-shadow:0 0 10px rgba(255,43,214,.5),inset 0 0 14px rgba(255,43,214,.14)}
 .card.ws{border-color:var(--cy);box-shadow:0 0 10px rgba(25,243,255,.5),inset 0 0 14px rgba(25,243,255,.14)}
-.card.sdk{border-color:var(--rd);box-shadow:0 0 10px rgba(255,59,92,.5),inset 0 0 14px rgba(255,59,92,.14)}
+.card.sdk{border-color:var(--rd);box-shadow:0 0 10px rgba(232,86,106,.45),inset 0 0 14px rgba(232,86,106,.12)}
 .card.rem{border-color:var(--or);box-shadow:0 0 10px rgba(255,158,44,.5),inset 0 0 14px rgba(255,158,44,.14)}
 .card:active{transform:scale(.98);filter:brightness(1.3)}
 .card:focus-visible{outline:3px solid var(--mag);outline-offset:3px}
@@ -147,8 +147,8 @@ iframe{position:fixed;top:env(safe-area-inset-top,0px);bottom:env(safe-area-inse
   </button>
   <button type="button" class="card sdk" data-g="sdk">
    <i class="flag" role="img" aria-label="1 player">1P</i>
-   <svg class="ic" viewBox="0 0 64 64" aria-hidden="true"><rect x="1.5" y="1.5" width="61" height="61" rx="8" fill="#0b0720" stroke="#ff3b5c" stroke-width="3"/>
-    <path d="M23.5 8v48M40.5 8v48M8 23.5h48M8 40.5h48" stroke="#ff3b5c" stroke-width="2" opacity=".7"/>
+   <svg class="ic" viewBox="0 0 64 64" aria-hidden="true"><rect x="1.5" y="1.5" width="61" height="61" rx="8" fill="#0b0720" stroke="#e8566a" stroke-width="3"/>
+    <path d="M23.5 8v48M40.5 8v48M8 23.5h48M8 40.5h48" stroke="#e8566a" stroke-width="2" opacity=".7"/>
     <g font-family="'Press Start 2P',monospace" font-size="10" text-anchor="middle"><text x="15.5" y="20.5" fill="#eaf6ff">5</text><text x="48.5" y="20.5" fill="#19f3ff">3</text><text x="32" y="37.5" fill="#ffe94d">9</text><text x="15.5" y="54.5" fill="#39ff7a">1</text><text x="48.5" y="54.5" fill="#ff2bd6">7</text></g></svg>
    <span><b>Sudoku</b><small>Fill every row, column and box with 1 to 9.</small></span>
   </button>
