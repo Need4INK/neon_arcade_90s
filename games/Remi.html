@@ -11,7 +11,7 @@
 <style>
 :root{--bg:#07030f;--panel:#10072a;--line:#2e1d66;--ink:#eaf6ff;--mut:#9a8bd6;--mag:#ff2bd6;--cy:#19f3ff;--yel:#ffe94d;--grn:#39ff7a;--or:#ff9e2c;
 --px:"Press Start 2P","Courier New",monospace;--vt:"VT323","Courier New",monospace;
---sw:64px;--sg:6px;--tw:32px;--mw:21px;
+--sw:64px;--sg:6px;--tw:32px;--mw:21px;--pw:30px;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{height:100vh;height:100dvh;overflow:hidden;background:var(--bg)}
@@ -114,6 +114,17 @@ button.b.cy:active{background:var(--cy);color:#07030f}
 #sir .tl.go{border-color:var(--yel);box-shadow:0 0 6px var(--yel)}
 .chip b u{text-decoration:none;color:var(--yel);text-shadow:0 0 6px var(--yel)}
 .chip span.lo{color:var(--mag)}
+/* Pile + atu sit under your card; the discard row spans the three CPU cards */
+.mid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;align-items:end;justify-content:stretch}
+.pa{display:flex;justify-content:space-between;align-items:flex-end;gap:4px}
+.sirw{grid-column:2/5;width:100%}
+#sir{height:calc(var(--pw) * 1.32);align-items:center;padding:0 4px}
+#atu{--tw:var(--pw)}
+.pile{position:relative;width:calc(var(--pw) + 8px);height:calc(var(--pw) * 1.32)}
+.pile span,.pile .pf{position:absolute;top:0;width:var(--pw);height:100%;border:2px solid #eaf6ff;border-radius:4px;background:#120a2e}
+.pile span:nth-child(1){left:0;opacity:.45}.pile span:nth-child(2){left:4px;opacity:.7}
+.pile .pf{left:8px;display:flex;align-items:center;justify-content:center;font:400 calc(var(--pw) * .62)/1 var(--vt);color:#fff;text-shadow:0 0 6px rgba(255,255,255,.6)}
+.slot.go .pf{border-color:var(--yel);box-shadow:0 0 12px var(--yel);animation:pulse 1.2s ease-in-out infinite}
 </style>
 </head>
 <body>
@@ -124,8 +135,10 @@ button.b.cy:active{background:var(--cy);color:#07030f}
 <div id="game">
 <div class="chips" id="chips"></div>
 <div class="mid">
- <button type="button" class="slot" id="sPile" aria-label="Draw from the pile"><div class="back" id="pileN">0</div><i>Pile</i></button>
- <div class="slot" aria-label="Atu tile"><div id="atu"></div><i id="atuL">Atu</i></div>
+ <div class="pa">
+  <button type="button" class="slot" id="sPile" aria-label="Draw from the pile"><div class="pile"><span></span><span></span><div class="pf" id="pileN">0</div></div><i>Pile</i></button>
+  <div class="slot" aria-label="Atu tile"><div id="atu"></div><i id="atuL">Atu</i></div>
+ </div>
  <div class="slot sirw"><div id="sir" aria-label="Discard row"></div><i>Discards · tap to take</i></div>
 </div>
 <div class="msg" id="msg" role="status" aria-live="polite"></div>
@@ -428,7 +441,8 @@ function renderRes(tb){const r=G.res,box=document.createElement('div');box.class
  G.pl.forEach((P,i)=>{h+='<tr'+(i===(G.over?lead:r.closer)?' class="win"':'')+'><td style="color:'+OWN[i]+'">'+NAMES[i]+'</td><td>'+(r.pen[i]>0?'+':'')+r.pen[i]+'</td><td>'+P.score+'</td></tr>'});
  h+='</table><p>First to '+LIMIT+' wins</p>';box.innerHTML=h;tb.appendChild(box)}
 // Fixed tile sizes; the table grows into the free space but never taller than it is wide
-function layout(){const t=$('table');if(t.clientWidth)t.style.maxHeight=t.clientWidth+'px'}
+function layout(){const t=$('table');if(t.clientWidth)t.style.maxHeight=t.clientWidth+'px';
+ const c=document.querySelector('.chip');if(c&&c.offsetWidth)document.documentElement.style.setProperty('--pw',Math.floor((c.offsetWidth-12)/2)+'px')}
 
 // ---- panel
 const panel=$('panel'),bar=$('bar'),pR=$('pRules'),pS=$('pSet'),bR=$('bRules'),bS=$('bSet');let armT=null;
