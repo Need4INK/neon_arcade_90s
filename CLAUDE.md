@@ -15,6 +15,7 @@ A phone-first pack of neon arcade games (Knucklebones, Othello, Water Sort, Sudo
 - The build only adds the yellow Menu button to each game's bar and wraps the games in the cover. Each game runs in its own iframe, so games never clash.
 - After changing `sw.js`, bump `CACHE` (e.g. `neon-arcade-v2`).
 - Changes go on a branch with a pull request; `main` is the live site.
+- Work and test locally; push nothing to GitHub until the user says "deploy". On "deploy": push the branch, open the pull request and merge it (the user doesn't need to confirm it on GitHub).
 
 ## Style rules
 - Shared neon look: dark `#07030f` background, magenta `#ff2bd6`, cyan `#19f3ff`, yellow `#ffe94d`, green `#39ff7a`; "Press Start 2P" for labels, "VT323" for text; scanlines.
