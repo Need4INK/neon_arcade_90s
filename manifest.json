@@ -1,7 +1,7 @@
 {
   "name": "Neon Arcade",
   "short_name": "Neon Arcade",
-  "description": "Three neon arcade games: Knucklebones, Othello and Water Sort.",
+  "description": "Four neon arcade games: Knucklebones, Othello, Water Sort and Sudoku.",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#07030f",
