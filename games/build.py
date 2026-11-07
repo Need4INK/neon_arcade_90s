@@ -77,8 +77,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .card.kb{border-color:#39ff7a;box-shadow:0 0 10px rgba(57,255,122,.5),inset 0 0 14px rgba(57,255,122,.14)}
 .card.oth{border-color:var(--mag);box-shadow:0 0 10px rgba(255,43,214,.5),inset 0 0 14px rgba(255,43,214,.14)}
 .card.ws{border-color:var(--cy);box-shadow:0 0 10px rgba(25,243,255,.5),inset 0 0 14px rgba(25,243,255,.14)}
-.card.sdk{border-color:var(--rd);box-shadow:0 0 10px rgba(232,86,106,.45),inset 0 0 14px rgba(232,86,106,.12)}
-.card.rem{border-color:var(--or);box-shadow:0 0 10px rgba(255,158,44,.5),inset 0 0 14px rgba(255,158,44,.14)}
+.card.sdk{border-color:var(--or);box-shadow:0 0 10px rgba(255,158,44,.5),inset 0 0 14px rgba(255,158,44,.14)}
+.card.rem{border-color:var(--rd);box-shadow:0 0 10px rgba(232,86,106,.45),inset 0 0 14px rgba(232,86,106,.12)}
 .card:active{transform:scale(.98);filter:brightness(1.3)}
 .card:focus-visible{outline:3px solid var(--mag);outline-offset:3px}
 /* Icon is exactly as tall as the text block: title 16px + 6px gap + two 20px lines = 62px */
@@ -87,12 +87,12 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 /* Player-count flag: a fixed-size tab in the card's top-right corner */
 .card{position:relative}
 .flag{position:absolute;top:0;right:0;width:44px;height:16px;font:400 8px/16px var(--px);font-style:normal;text-align:center;color:#07030f;border-radius:0 5px 0 6px}
-.card.kb .flag{background:#39ff7a}.card.oth .flag{background:var(--mag)}.card.ws .flag{background:var(--cy)}.card.sdk .flag{background:var(--rd)}.card.rem .flag{background:var(--or)}
+.card.kb .flag{background:#39ff7a}.card.oth .flag{background:var(--mag)}.card.ws .flag{background:var(--cy)}.card.sdk .flag{background:var(--or)}.card.rem .flag{background:var(--rd)}
 .card.kb b{color:#39ff7a;text-shadow:0 0 8px #39ff7a}
 .card.oth b{color:var(--mag);text-shadow:0 0 8px var(--mag)}
 .card.ws b{color:var(--cy);text-shadow:0 0 8px var(--cy)}
-.card.sdk b{color:var(--rd);text-shadow:0 0 8px var(--rd)}
-.card.rem b{color:var(--or);text-shadow:0 0 8px var(--or)}
+.card.sdk b{color:var(--or);text-shadow:0 0 8px var(--or)}
+.card.rem b{color:var(--rd);text-shadow:0 0 8px var(--rd)}
 .card small{color:var(--mut);font-size:19px;line-height:20px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
 .card>span{min-width:0}
 .blink{font:400 10px/1 var(--px);color:var(--yel);text-shadow:0 0 8px var(--yel);animation:blink 1.2s steps(1) infinite}
@@ -147,14 +147,14 @@ iframe{position:fixed;top:env(safe-area-inset-top,0px);bottom:env(safe-area-inse
   </button>
   <button type="button" class="card sdk" data-g="sdk">
    <i class="flag" role="img" aria-label="1 player">1P</i>
-   <svg class="ic" viewBox="0 0 64 64" aria-hidden="true"><rect x="1.5" y="1.5" width="61" height="61" rx="8" fill="#0b0720" stroke="#e8566a" stroke-width="3"/>
-    <path d="M23.5 8v48M40.5 8v48M8 23.5h48M8 40.5h48" stroke="#e8566a" stroke-width="2" opacity=".7"/>
+   <svg class="ic" viewBox="0 0 64 64" aria-hidden="true"><rect x="1.5" y="1.5" width="61" height="61" rx="8" fill="#0b0720" stroke="#ff9e2c" stroke-width="3"/>
+    <path d="M23.5 8v48M40.5 8v48M8 23.5h48M8 40.5h48" stroke="#ff9e2c" stroke-width="2" opacity=".7"/>
     <g font-family="'Press Start 2P',monospace" font-size="10" text-anchor="middle"><text x="15.5" y="20.5" fill="#eaf6ff">5</text><text x="48.5" y="20.5" fill="#19f3ff">3</text><text x="32" y="37.5" fill="#ffe94d">9</text><text x="15.5" y="54.5" fill="#39ff7a">1</text><text x="48.5" y="54.5" fill="#ff2bd6">7</text></g></svg>
    <span><b>Sudoku</b><small>Fill every row, column and box with 1 to 9.</small></span>
   </button>
   <button type="button" class="card rem" data-g="rem">
    <i class="flag" role="img" aria-label="1 player against 3 CPU">1P</i>
-   <svg class="ic" viewBox="0 0 64 64" aria-hidden="true"><rect x="1.5" y="1.5" width="61" height="61" rx="8" fill="#0b0720" stroke="#ff9e2c" stroke-width="3"/>
+   <svg class="ic" viewBox="0 0 64 64" aria-hidden="true"><rect x="1.5" y="1.5" width="61" height="61" rx="8" fill="#0b0720" stroke="#e8566a" stroke-width="3"/>
     <g fill="#120a2e" stroke="#eaf6ff" stroke-width="2"><rect x="11" y="10" width="30" height="44" rx="4" opacity=".45"/><rect x="17" y="10" width="30" height="44" rx="4" opacity=".7"/><rect x="23" y="10" width="30" height="44" rx="4"/></g>
     <g fill="none" stroke-linecap="round" transform="translate(6 0)">
      <ellipse cx="32" cy="25" rx="9" ry="10.5" stroke="#eaf6ff" stroke-width="1.6"/>
