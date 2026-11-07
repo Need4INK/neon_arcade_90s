@@ -8,6 +8,6 @@ python3 icon_template.py              # all presets
 python3 icon_template.py othello      # one preset
 ```
 
-Presets: `neon_arcade`, `othello`, `knucklebones`. For a new icon, copy a preset at the top of the script and change the text, size and height.
+Presets: `neon_arcade`, `othello`, `knucklebones`, `water_sort`. For a new icon, copy a preset at the top of the script and change the text, size and height.
 
 Font: Poppins Bold Italic (free, [Google Fonts](https://fonts.google.com/specimen/Poppins)). Put `Poppins-BoldItalic.ttf` next to the script.
