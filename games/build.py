@@ -47,7 +47,7 @@ def font_face(name, family):
             from fontTools import subset
             from fontTools.ttLib import TTFont
             ft = TTFont(io.BytesIO(data))
-            o = subset.Options(); o.flavor = 'woff'; o.ignore_missing_unicodes = True
+            o = subset.Options(); o.flavor = 'woff'; o.ignore_missing_unicodes = True; o.name_IDs = ['*']  # keeps the OFL licence text in the font
             sub = subset.Subsetter(o)
             sub.populate(unicodes=list(range(0x20, 0x7f)) + list(range(0xa0, 0x180)) + list(range(0x2010, 0x2050)) + [0x2190, 0x2192, 0x2605, 0x25ae, 0x2713, 0xd7])
             sub.subset(ft); buf = io.BytesIO(); ft.flavor = 'woff'; ft.save(buf)
