@@ -43,7 +43,7 @@ h1{font:400 20px/1 var(--px);text-transform:uppercase;letter-spacing:2px;margin:
 @keyframes pulse{50%{box-shadow:0 0 3px var(--yel)}}
 .msg{text-align:center;color:var(--yel);font-size:19px;line-height:20px;height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:none;text-shadow:0 0 6px rgba(255,233,77,.5)}
 .msg.bad{color:var(--mag);text-shadow:0 0 6px rgba(255,43,214,.6)}
-#table{flex:none;height:196px;overflow:auto;background:var(--panel);border:2px solid var(--line);border-radius:6px;padding:6px;
+#table{flex:none;height:261px;overflow:auto;background:var(--panel);border:2px solid var(--line);border-radius:6px;padding:6px;
  display:flex;flex-wrap:wrap;align-content:flex-start;gap:6px;box-shadow:0 0 14px rgba(46,29,102,.8)}
 #table .hint{margin:auto;color:var(--mut);text-align:center}
 .meld{--tw:var(--mw);display:flex;gap:2px;padding:3px;border:1px solid var(--oc);border-radius:4px;background:rgba(0,0,0,.3);cursor:pointer;font:inherit;color:inherit;margin:0;
@@ -99,6 +99,9 @@ button.b.cy:active{background:var(--cy);color:#07030f}
 .note{color:var(--yel);margin:6px 0 0}
 [hidden]{display:none!important}
 .short h1{font-size:14px;margin:6px 0}
+/* Short phones: as tall as fits */
+@media (max-height:700px){#table{height:calc(100dvh - 380px);min-height:150px;max-height:261px}}
+.rot #table{height:calc(100vw - 380px);min-height:150px;max-height:261px}
 .tiny h1{display:none}
 .rot #app{position:fixed;top:50%;left:50%;width:100vh;width:100dvh;height:100vw;transform:translate(-50%,-50%) rotate(-90deg);
  background:radial-gradient(120% 55% at 50% 0%,rgba(255,43,214,.18),transparent 60%),radial-gradient(120% 45% at 50% 100%,rgba(25,243,255,.13),transparent 60%),#07030f}
