@@ -72,8 +72,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .pi{height:.62em;height:1cap;width:auto;vertical-align:baseline;fill:currentColor;shape-rendering:crispEdges;filter:drop-shadow(0 0 3px currentColor)}
 .pi.cy{color:var(--cy)}.pi.mg{color:var(--mag)}
 @keyframes powerOn{0%{opacity:0}8%{opacity:1}12%{opacity:.2}18%{opacity:1}24%{opacity:.4}30%,100%{opacity:1}}
-.cards{display:flex;flex-direction:column;gap:16px;width:100%;max-width:360px}
-.card{display:flex;align-items:center;gap:16px;width:100%;padding:16px;border-radius:8px;background:var(--panel);cursor:pointer;text-align:left;font:inherit;color:inherit;border:2px solid}
+.cards{display:flex;flex-direction:column;gap:12px;width:100%;max-width:360px}
+.card{display:flex;align-items:center;gap:14px;width:100%;padding:10px;border-radius:8px;background:var(--panel);cursor:pointer;text-align:left;font:inherit;color:inherit;border:2px solid}
 .card.kb{border-color:#39ff7a;box-shadow:0 0 10px rgba(57,255,122,.5),inset 0 0 14px rgba(57,255,122,.14)}
 .card.oth{border-color:var(--mag);box-shadow:0 0 10px rgba(255,43,214,.5),inset 0 0 14px rgba(255,43,214,.14)}
 .card.ws{border-color:var(--cy);box-shadow:0 0 10px rgba(25,243,255,.5),inset 0 0 14px rgba(25,243,255,.14)}
@@ -98,13 +98,13 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .blink{font:400 10px/1 var(--px);color:var(--yel);text-shadow:0 0 8px var(--yel);animation:blink 1.2s steps(1) infinite}
 @keyframes blink{50%{opacity:0}}
 /* Five cards: tighten spacing on shorter phones (and on phones held sideways, where the cover height is the screen width) */
-@media (max-height:740px){html:not(.rot) #cover{gap:14px}html:not(.rot) .cards{gap:10px}html:not(.rot) .card{padding:11px 16px}html:not(.rot) .logo p{margin-top:8px}}
-@media (orientation:landscape) and (max-width:740px){.rot #cover{gap:14px}.rot .cards{gap:10px}.rot .card{padding:11px 16px}.rot .logo p{margin-top:8px}}
-@media (max-height:600px){html:not(.rot) #cover{gap:10px}html:not(.rot) .card{padding:9px 16px}}
-@media (orientation:landscape) and (max-width:600px){.rot #cover{gap:10px}.rot .card{padding:9px 16px}}
-/* Five cards on short phones: drop the tagline and the blinking prompt to make room */
-@media (max-height:680px){html:not(.rot) .logo p{display:none}html:not(.rot) .cards{gap:9px}html:not(.rot) .card{padding:8px 14px}}
-@media (orientation:landscape) and (max-width:680px){.rot .logo p{display:none}.rot .cards{gap:9px}.rot .card{padding:8px 14px}}
+@media (max-height:740px){html:not(.rot) #cover{gap:14px}html:not(.rot) .cards{gap:10px}html:not(.rot) .card{padding:9px}html:not(.rot) .logo p{margin-top:8px}}
+@media (orientation:landscape) and (max-width:740px){.rot #cover{gap:14px}.rot .cards{gap:10px}.rot .card{padding:9px}.rot .logo p{margin-top:8px}}
+@media (max-height:600px){html:not(.rot) #cover{gap:10px}html:not(.rot) .card{padding:8px}}
+@media (orientation:landscape) and (max-width:600px){.rot #cover{gap:10px}.rot .card{padding:8px}}
+/* Five cards on the shortest phones: drop the tagline and the blinking prompt to make room */
+@media (max-height:650px){html:not(.rot) .logo p{display:none}html:not(.rot) .cards{gap:9px}}
+@media (orientation:landscape) and (max-width:650px){.rot .logo p{display:none}.rot .cards{gap:9px}}
 @media (max-height:600px){html:not(.rot) .blink{display:none}html:not(.rot) .logo h1{font-size:22px}}
 @media (orientation:landscape) and (max-width:600px){.rot .blink{display:none}.rot .logo h1{font-size:22px}}
 @media (max-height:520px){html:not(.rot) #cover{gap:12px}html:not(.rot) .logo h1{font-size:18px}html:not(.rot) .logo p{display:none}html:not(.rot) .cards{flex-direction:row;max-width:900px}html:not(.rot) .card{padding:10px}}
