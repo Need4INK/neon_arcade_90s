@@ -87,6 +87,8 @@ button.b:disabled{opacity:.4;cursor:default}
 .rot.r270 #app{transform:translate(-50%,-50%) rotate(90deg)}
 .rot body::after{background:repeating-linear-gradient(to right,transparent 0 2px,rgba(0,0,0,.16) 2px 3px)}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+/* Gap under the title at most 2x its height; spare space goes below the game */
+#game{justify-content:flex-start}#game::before{content:"";flex:1 1 0;max-height:16px}.short #game::before{max-height:6px}#game::after{content:"";flex:1 1 0}
 </style>
 </head>
 <body>

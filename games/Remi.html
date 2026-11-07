@@ -125,6 +125,8 @@ button.b.cy:active{background:var(--cy);color:#07030f}
 .pile span:nth-child(1){left:0;opacity:.45}.pile span:nth-child(2){left:4px;opacity:.7}
 .pile .pf{left:8px;display:flex;align-items:center;justify-content:center;font:400 calc(var(--pw) * .62)/1 var(--vt);color:#fff;text-shadow:0 0 6px rgba(255,255,255,.6)}
 .slot.go .pf{border-color:var(--yel);box-shadow:0 0 12px var(--yel);animation:pulse 1.2s ease-in-out infinite}
+/* Gap under the title at most 2x its height; spare space goes below the game */
+#game{justify-content:flex-start}#game::before{content:"";flex:1 1 0;max-height:24px}.short #game::before{max-height:14px}#game::after{content:"";flex:1 1 0}#table{flex-grow:1000}
 </style>
 </head>
 <body>
