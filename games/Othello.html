@@ -105,9 +105,15 @@ button.b:disabled{opacity:.4;cursor:default}
 /* Title pinned to the top (like Water Sort); the game sits centred in the space below */
 body:not(.flip) main{justify-content:flex-start}body:not(.flip) #t1{flex:1 1 auto;max-height:calc(3em - 8px)}body:not(.flip) main::after{content:"";flex:1 1 0}
 /* One centred block: title, game, bar. Gaps under the title and above the bar are at most 2x the title height */
-body:not(.flip) main{padding-bottom:16px}.short body:not(.flip) main{padding-bottom:10px}body:not(.flip) .mid:not(#msg2){margin-bottom:0}body:not(.flip) main::before{content:"";flex:1 1 0}
+body:not(.flip) main{padding-bottom:16px}body:not(.flip) .mid:not(#msg2){margin-bottom:0}body:not(.flip) main::before{content:"";flex:1 1 0}
 body:not(.flip) .bar{position:relative;left:auto;right:auto;bottom:auto;width:100%;max-width:none;margin:0;padding:0 0 env(safe-area-inset-bottom,0px);flex:1 1 auto;max-height:calc(76px + env(safe-area-inset-bottom,0px));align-items:flex-end;align-content:end}
 .short body:not(.flip) .bar{max-height:calc(64px + env(safe-area-inset-bottom,0px))}
+/* Same frame in every game: at most 720px tall and centred; title at its top, bar at its bottom, the game centred between */
+#app{display:flex;flex-direction:column}
+body:not(.flip) main{width:100%;max-height:720px;margin:auto}
+body:not(.flip) main::before,body:not(.flip) main::after{display:none}
+body:not(.flip) #t1{flex:1 1 auto;max-height:none}
+body:not(.flip) .bar{flex:1 1 auto;max-height:none}
 </style>
 </head>
 <body>

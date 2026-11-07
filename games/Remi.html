@@ -128,9 +128,15 @@ button.b.cy:active{background:var(--cy);color:#07030f}
 /* Gap under the title at most 2x its height; spare space goes below the game */
 main{justify-content:flex-start}main>h1{flex:1 1 auto;max-height:calc(3em - 8px)}main::after{content:"";flex:1 1 0}#game{flex:none}#table{flex:none}
 /* One centred block: title, game, bar. Gaps under the title and above the bar are at most 2x the title height */
-main{padding-bottom:16px}.short main{padding-bottom:10px}main::before{content:"";flex:1 1 0}
+main{padding-bottom:16px}main::before{content:"";flex:1 1 0}
 .bar{position:relative;left:auto;right:auto;bottom:auto;width:100%;max-width:none;margin:0;padding:0 0 env(safe-area-inset-bottom,0px);flex:1 1 auto;max-height:calc(76px + env(safe-area-inset-bottom,0px));align-items:flex-end;align-content:end}
 .short .bar{max-height:calc(64px + env(safe-area-inset-bottom,0px))}
+/* Same frame in every game: at most 720px tall and centred; title at its top, bar at its bottom, the game centred between */
+#app{display:flex;flex-direction:column}
+main{width:100%;max-height:720px;margin:auto}
+main::before,main::after{display:none}
+main>h1{flex:1 1 auto;max-height:none}
+.bar{flex:1 1 auto;max-height:none}
 </style>
 </head>
 <body>
@@ -451,7 +457,7 @@ function layout(){const t=$('table'),g=$('game');if(t.clientWidth){const m=docum
   const ht=hs.display==='none'?0:parseFloat(hs.fontSize)+parseFloat(hs.marginTop)+parseFloat(hs.marginBottom);
   const room=m.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)-ht-bar.firstElementChild.offsetHeight-parseFloat(bs.paddingBottom);
   let rest=parseFloat(gs.paddingTop)+parseFloat(gs.paddingBottom),n=0;[...g.children].forEach(e=>{if(e===t||getComputedStyle(e).display==='none')return;rest+=e.offsetHeight;n++});rest+=n*parseFloat(gs.rowGap||6);
-  t.style.maxHeight='';t.style.height=Math.max(150,Math.min(t.clientWidth,Math.floor(room-rest-16)))+'px'}
+  t.style.maxHeight='';t.style.height=Math.max(150,Math.min(t.clientWidth,Math.floor(room-rest-40)))+'px'}
  const c=document.querySelector('.chip');if(c&&c.offsetWidth)document.documentElement.style.setProperty('--pw',Math.floor((c.offsetWidth-12)/2)+'px')}
 
 // ---- panel

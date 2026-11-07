@@ -95,9 +95,15 @@ button.b:disabled{opacity:.4;cursor:default}
 /* Title pinned to the top (like Water Sort); the game sits centred in the space below */
 main{justify-content:flex-start}#t1{flex:1 1 auto;max-height:calc(3em - 8px)}main::after{content:"";flex:1 1 0}
 /* One centred block: title, game, bar. Gaps under the title and above the bar are at most 2x the title height */
-main{padding-bottom:16px}.short main{padding-bottom:10px}#pad{margin-bottom:0}main::before{content:"";flex:1 1 0}
+main{padding-bottom:16px}#pad{margin-bottom:0}main::before{content:"";flex:1 1 0}
 .bar{position:relative;left:auto;right:auto;bottom:auto;width:100%;max-width:none;margin:0;padding:0 0 env(safe-area-inset-bottom,0px);flex:1 1 auto;max-height:calc(76px + env(safe-area-inset-bottom,0px));align-items:flex-end;align-content:end}
 .short .bar{max-height:calc(64px + env(safe-area-inset-bottom,0px))}
+/* Same frame in every game: at most 720px tall and centred; title at its top, bar at its bottom, the game centred between */
+#app{display:flex;flex-direction:column}
+main{width:100%;max-height:720px;margin:auto}
+main::before,main::after{display:none}
+#t1{flex:1 1 auto;max-height:none}
+.bar{flex:1 1 auto;max-height:none}
 </style>
 </head>
 <body>
