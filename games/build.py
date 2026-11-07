@@ -155,9 +155,8 @@ iframe{position:fixed;top:env(safe-area-inset-top,0px);bottom:env(safe-area-inse
   <button type="button" class="card rem" data-g="rem">
    <i class="flag" role="img" aria-label="1 player against 3 CPU">1P</i>
    <svg class="ic" viewBox="0 0 64 64" aria-hidden="true"><rect x="1.5" y="1.5" width="61" height="61" rx="8" fill="#0b0720" stroke="#ff3b5c" stroke-width="3"/>
-    <g fill="#0b0720" stroke-width="2.5"><rect x="7" y="18" width="15" height="22" rx="2.5" stroke="#ff3b5c"/><rect x="24.5" y="18" width="15" height="22" rx="2.5" stroke="#ff3b5c"/><rect x="42" y="18" width="15" height="22" rx="2.5" stroke="#ff3b5c"/></g>
-    <g font-family="'Press Start 2P',monospace" font-size="8" text-anchor="middle" fill="#ff3b5c"><text x="14.5" y="33">12</text><text x="32" y="33">13</text><text x="49.5" y="33">1</text></g>
-    <rect x="12" y="45" width="40" height="4" rx="2" fill="#ffe94d" opacity=".85"/></svg>
+    <rect x="11" y="16" width="18" height="32" rx="3" fill="#0b0720" stroke="#ff3b5c" stroke-width="2.5"/><rect x="35" y="16" width="18" height="32" rx="3" fill="#0b0720" stroke="#ffe94d" stroke-width="2.5"/>
+    <g font-family="'Press Start 2P',monospace" font-size="15" text-anchor="middle"><text x="20.5" y="39.5" fill="#ff3b5c">1</text></g><path d="M44 23.5l2.4 5.6 6 .5-4.6 4 1.4 5.9-5.2-3.2-5.2 3.2 1.4-5.9-4.6-4 6-.5z" fill="#ffe94d"/></svg>
    <span><b>Remi</b><small>Romanian rummy: open with 45, close first.</small></span>
   </button>
  </div>
