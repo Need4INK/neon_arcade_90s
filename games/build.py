@@ -81,6 +81,13 @@ page = r'''<!DOCTYPE html>
 <meta name="application-name" content="Neon Arcade">
 <meta property="og:title" content="Neon Arcade">
 <meta property="og:description" content="Five neon arcade games: Knucklebones, Othello, Water Sort, Sudoku and Remi. Play solo, against the CPU or a friend on one phone.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://need4ink.github.io/neon_arcade_90s/">
+<meta property="og:image" content="https://need4ink.github.io/neon_arcade_90s/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Neon Arcade: Knucklebones, Othello, Water Sort, Sudoku and Remi">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%95%B9%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="manifest" href="manifest.json">
