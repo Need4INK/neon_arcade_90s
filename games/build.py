@@ -105,6 +105,23 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
  background:radial-gradient(120% 55% at 50% 0%,rgba(255,43,214,.2),transparent 60%),radial-gradient(120% 45% at 50% 100%,rgba(25,243,255,.15),transparent 60%),var(--bg)}
 #cover::after{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(to bottom,transparent 0 2px,rgba(0,0,0,.16) 2px 3px)}
 .logo{text-align:center}
+.logo h1{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.logo h1:focus-visible{outline:3px solid var(--yel);outline-offset:6px}
+/* Share pop-up: tap the title for the QR code, home-screen steps and a share button */
+.share{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(7,3,15,.86);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.sbox{width:100%;max-width:300px;background:var(--panel);border:2px solid var(--cy);border-radius:10px;padding:16px 16px 14px;text-align:center;box-shadow:0 0 18px rgba(25,243,255,.45),inset 0 0 12px rgba(25,243,255,.08)}
+.sbox .st{display:block;font:400 12px/1.4 var(--px);color:var(--yel);text-shadow:0 0 8px var(--yel);margin-bottom:12px}
+.sbox .qr{width:min(200px,38vh);margin:0 auto;padding:10px;background:#fff;border-radius:8px;line-height:0}
+.rot .sbox .qr{width:min(200px,38vw)}
+.sbox .qr svg{width:100%;height:auto}
+.sbox p{margin:6px 0 0;color:var(--mut);font-size:19px;line-height:20px}
+.sbox p b{font-weight:400;color:var(--ink)}
+.sbox .sp{margin-top:12px;color:var(--ink)}.sbox .sq{margin-top:8px}.sbox .sq b{color:var(--cy)}
+.sbtn{display:flex;justify-content:center;gap:10px;margin-top:14px}
+.sbtn button{background:transparent;color:var(--cy);border:2px solid var(--cy);border-radius:4px;padding:6px 10px;font:400 10px/1.2 var(--px);cursor:pointer;text-shadow:0 0 8px var(--cy);box-shadow:0 0 10px rgba(25,243,255,.4)}
+.sbtn button.y{color:var(--yel);border-color:var(--yel);text-shadow:0 0 8px var(--yel);box-shadow:0 0 10px rgba(255,233,77,.5)}
+.sbtn button:active{background:currentColor}
+.sbtn button:focus-visible{outline:3px solid var(--yel);outline-offset:2px}
 .logo h1{font:400 26px/1.25 var(--px);letter-spacing:3px;margin:0;color:#fff;text-transform:uppercase;
  text-shadow:0 0 4px #fff,0 0 10px var(--mag),0 0 22px var(--mag),0 0 42px var(--mag);animation:powerOn 1.1s steps(1) 1}
 .logo h1 .w1{display:block}
@@ -164,7 +181,15 @@ iframe{position:fixed;top:env(safe-area-inset-top,0px);bottom:env(safe-area-inse
 </head>
 <body>
 <div id="cover">
- <div class="logo"><h1><span class="w1">Neon</span><span class="w2">Arcade</span></h1><p><span class="md">Two modes</span> · <span class="md"><svg class="pi cy" viewBox="0 0 12 12" role="img" aria-label="P1"><path d="M4 0h4v1h-4zM3 1h6v1h-6zM3 2h6v1h-6zM3 3h6v1h-6zM4 4h4v1h-4zM2 6h8v1h-8zM1 7h10v1h-10zM1 8h10v1h-10zM1 9h10v1h-10zM1 10h10v1h-10zM1 11h10v1h-10z"/></svg> vs <svg class="pi mg" viewBox="0 0 12 10" role="img" aria-label="CPU"><path d="M3 0h1v1h-1zM8 0h1v1h-1zM4 1h1v1h-1zM7 1h1v1h-1zM1 2h10v1h-10zM1 3h10v1h-10zM0 4h12v1h-12zM0 5h12v1h-12zM0 6h12v1h-12zM1 7h10v1h-10zM1 8h10v1h-10zM1 9h10v1h-10z"/><path fill="#000" d="M3 4h2v1h-2zM7 4h2v1h-2zM3 5h2v1h-2zM7 5h2v1h-2zM3 7h1v1h-1zM8 7h1v1h-1zM4 8h4v1h-4z"/></svg></span> / <span class="md"><svg class="pi cy" viewBox="0 0 12 12" role="img" aria-label="P1"><path d="M4 0h4v1h-4zM3 1h6v1h-6zM3 2h6v1h-6zM3 3h6v1h-6zM4 4h4v1h-4zM2 6h8v1h-8zM1 7h10v1h-10zM1 8h10v1h-10zM1 9h10v1h-10zM1 10h10v1h-10zM1 11h10v1h-10z"/></svg> vs <svg class="pi mg" viewBox="0 0 12 12" role="img" aria-label="P2"><path d="M4 0h4v1h-4zM3 1h6v1h-6zM3 2h6v1h-6zM3 3h6v1h-6zM4 4h4v1h-4zM2 6h8v1h-8zM1 7h10v1h-10zM1 8h10v1h-10zM1 9h10v1h-10zM1 10h10v1h-10zM1 11h10v1h-10z"/></svg></span></p></div>
+ <div class="logo"><h1 id="logoT" role="button" tabindex="0" aria-label="Neon Arcade: share and add to home screen"><span class="w1">Neon</span><span class="w2">Arcade</span></h1><p><span class="md">Two modes</span> · <span class="md"><svg class="pi cy" viewBox="0 0 12 12" role="img" aria-label="P1"><path d="M4 0h4v1h-4zM3 1h6v1h-6zM3 2h6v1h-6zM3 3h6v1h-6zM4 4h4v1h-4zM2 6h8v1h-8zM1 7h10v1h-10zM1 8h10v1h-10zM1 9h10v1h-10zM1 10h10v1h-10zM1 11h10v1h-10z"/></svg> vs <svg class="pi mg" viewBox="0 0 12 10" role="img" aria-label="CPU"><path d="M3 0h1v1h-1zM8 0h1v1h-1zM4 1h1v1h-1zM7 1h1v1h-1zM1 2h10v1h-10zM1 3h10v1h-10zM0 4h12v1h-12zM0 5h12v1h-12zM0 6h12v1h-12zM1 7h10v1h-10zM1 8h10v1h-10zM1 9h10v1h-10z"/><path fill="#000" d="M3 4h2v1h-2zM7 4h2v1h-2zM3 5h2v1h-2zM7 5h2v1h-2zM3 7h1v1h-1zM8 7h1v1h-1zM4 8h4v1h-4z"/></svg></span> / <span class="md"><svg class="pi cy" viewBox="0 0 12 12" role="img" aria-label="P1"><path d="M4 0h4v1h-4zM3 1h6v1h-6zM3 2h6v1h-6zM3 3h6v1h-6zM4 4h4v1h-4zM2 6h8v1h-8zM1 7h10v1h-10zM1 8h10v1h-10zM1 9h10v1h-10zM1 10h10v1h-10zM1 11h10v1h-10z"/></svg> vs <svg class="pi mg" viewBox="0 0 12 12" role="img" aria-label="P2"><path d="M4 0h4v1h-4zM3 1h6v1h-6zM3 2h6v1h-6zM3 3h6v1h-6zM4 4h4v1h-4zM2 6h8v1h-8zM1 7h10v1h-10zM1 8h10v1h-10zM1 9h10v1h-10zM1 10h10v1h-10zM1 11h10v1h-10z"/></svg></span></p></div>
+ <div class="share" id="share" role="dialog" aria-modal="true" aria-labelledby="shT" hidden><div class="sbox">
+  <b class="st" id="shT">Scan to play</b>
+  <div class="qr">__QR__</div>
+  <p class="sp">Save it to your home screen:</p>
+  <p class="sq"><b>iPhone (Safari)</b><br>Share › Add to Home Screen</p>
+  <p class="sq"><b>Android (Chrome)</b><br>Menu › Install app</p>
+  <div class="sbtn"><button type="button" id="shShare">Share link</button><button type="button" class="y" id="shClose">Close</button></div>
+ </div></div>
  <div class="cards">
   <button type="button" class="card kb" data-g="kb">
    <i class="flag" role="img" aria-label="1 or 2 players">1–2P</i>
@@ -253,6 +278,17 @@ function showCover(){
  Object.keys(frames).forEach(function(k){frames[k].hidden=true});
  cover.hidden=false;current=null}
 // Called by the Menu button inside each game. Games stay loaded, so a match in progress is kept.
+// Share pop-up on the title
+(function(){var sh=document.getElementById('share'),t=document.getElementById('logoT'),sb=document.getElementById('shShare'),URL='https://need4ink.github.io/neon_arcade_90s/',tm=null;
+ function open(){sh.hidden=false;sb.textContent=navigator.share?'Share link':'Copy link';setTimeout(function(){document.getElementById('shClose').focus()},0)}
+ function close(){sh.hidden=true;t.focus()}
+ t.onclick=open;t.onkeydown=function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}};
+ document.getElementById('shClose').onclick=close;sh.onclick=function(e){if(e.target===sh)close()};
+ document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!sh.hidden)close()});
+ sb.onclick=function(){var d={title:'Neon Arcade',text:'Five neon arcade games. Add it to your home screen to play offline.',url:URL};
+  if(navigator.share){navigator.share(d).catch(function(){});return}
+  function done(ok){sb.textContent=ok?'Copied!':URL;clearTimeout(tm);tm=setTimeout(function(){sb.textContent='Copy link'},2500)}
+  try{navigator.clipboard.writeText(URL).then(function(){done(true)},function(){done(false)})}catch(e){done(false)}}})();
 window.kbShowCover=function(){if(history.state&&history.state.g){try{history.back();return}catch(e){}}showCover()};
 window.addEventListener('popstate',function(e){var g=e.state&&e.state.g;g&&GAMES[g]?openGame(g,false):showCover()});
 document.querySelectorAll('.card').forEach(function(b){b.onclick=function(){openGame(b.dataset.g,true)}});
@@ -268,6 +304,8 @@ if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostnam
 </html>
 '''
 page = page.replace('__GAMES__', games)
+QR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'icons', 'qr.svg')
+page = page.replace('__QR__', open(QR, encoding='utf-8').read() if os.path.exists(QR) else '')
 if PACK_FONTS:
     assert page.count(GLINK) == 1
     page = page.replace(GLINK, '<style id="nafonts">' + ''.join(FONTS) + '</style>')

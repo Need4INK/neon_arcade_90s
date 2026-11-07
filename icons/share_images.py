@@ -62,3 +62,15 @@ out=R+'icons/neon_arcade_qr.png';im.convert('RGB').save(out,optimize=True)
 # verify the code scans
 img=cv2.imread(out);val,_,_=cv2.QRCodeDetector().detectAndDecode(img);print('decoded:',val)
 small=cv2.resize(img,(360,450));print('decoded small:',cv2.QRCodeDetector().detectAndDecode(small)[0])
+# ---- QR as a small SVG for the cover's share pop-up (dark modules as one path; build.py embeds icons/qr.svg)
+qm=(q<128);n=qm.shape[0];d=[]
+for y in range(n):
+    x=0
+    while x<n:
+        if qm[y,x]:
+            s0=x
+            while x<n and qm[y,x]:x+=1
+            d.append('M%d %dh%dv1h-%dz'%(s0,y,x-s0,x-s0))
+        else:x+=1
+open(R+'icons/qr.svg','w').write('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" shape-rendering="crispEdges" role="img" aria-label="QR code to %s"><rect width="%d" height="%d" fill="#fff"/><path fill="#07030f" d="%s"/></svg>'%(n,n,URL,n,n,''.join(d)))
+print('qr.svg', len(''.join(d)))
