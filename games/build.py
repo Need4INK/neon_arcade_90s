@@ -1,9 +1,9 @@
 """Packs the Neon Arcade games and the cover page into one HTML file.
 
-Usage:  python3 build.py Knucklebones.html Othello.html Water_Sort.html Neon-Arcade.html
+Usage:  python3 build.py Knucklebones.html Othello.html Water_Sort.html Sudoku.html Neon-Arcade.html
 
 Each game stays a normal standalone page. This script only adds the yellow Menu button
-to each game's bottom bar and wraps all three in the cover page (cards, flicker title,
+to each game's bottom bar and wraps all four in the cover page (cards, flicker title,
 portrait lock, offline service-worker registration). Publish the output next to
 sw.js, manifest.json and icon.png.
 """
@@ -11,7 +11,8 @@ import json, sys
 kb = open(sys.argv[1], encoding='utf-8').read()
 oth = open(sys.argv[2], encoding='utf-8').read()
 ws = open(sys.argv[3], encoding='utf-8').read()
-out = sys.argv[4]
+sdk = open(sys.argv[4], encoding='utf-8').read()
+out = sys.argv[5]
 
 MENU_CSS = '.bar .mnu{color:var(--yel);text-shadow:0 0 6px var(--yel)}'
 # Menu button in each game's bottom bar: closes any open panel (games close it on Escape), then shows the cover.
@@ -21,15 +22,15 @@ CENTRE = '.bar{display:grid;grid-template-columns:1fr auto 1fr;align-items:cente
 # Knucklebones: bar is already a 3-column grid, middle column is free
 kb = kb.replace('</style>', '#bar .mnu{grid-column:2;justify-self:center}' + MENU_CSS + '</style>', 1)
 kb = kb.replace('aria-controls="panel">Rules</button>', 'aria-controls="panel">Rules</button>' + MENU_BTN, 1)
-# Othello and Water Sort: turn the two-button bar into three columns so Menu sits exactly in the middle
-for name in ('oth', 'ws'):
+# Othello, Water Sort and Sudoku: turn the two-button bar into three columns so Menu sits exactly in the middle
+for name in ('oth', 'ws', 'sdk'):
     g = globals()[name]
     g = g.replace('</style>', CENTRE + MENU_CSS + '</style>', 1)
     g = g.replace('id="bRules" aria-expanded="false">Rules</button>', 'id="bRules" aria-expanded="false">Rules</button>' + MENU_BTN, 1)
     globals()[name] = g
-assert kb.count('class="mnu"') == 1 and oth.count('class="mnu"') == 1 and ws.count('class="mnu"') == 1
+assert all(g.count('class="mnu"') == 1 for g in (kb, oth, ws, sdk))
 
-games = json.dumps({'kb': kb, 'oth': oth, 'ws': ws}).replace('</', '<\\/')
+games = json.dumps({'kb': kb, 'oth': oth, 'ws': ws, 'sdk': sdk}).replace('</', '<\\/')
 
 page = r'''<!DOCTYPE html>
 <html lang="en">
@@ -37,12 +38,12 @@ page = r'''<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Neon Arcade</title>
-<meta name="description" content="Neon Arcade: Knucklebones, Othello and Water Sort. Play solo, against the CPU or a friend on one phone.">
+<meta name="description" content="Neon Arcade: Knucklebones, Othello, Water Sort and Sudoku. Play solo, against the CPU or a friend on one phone.">
 <meta name="theme-color" content="#07030f">
 <meta name="apple-mobile-web-app-title" content="Neon Arcade">
 <meta name="application-name" content="Neon Arcade">
 <meta property="og:title" content="Neon Arcade">
-<meta property="og:description" content="Three neon arcade games: Knucklebones, Othello and Water Sort. Play solo, against the CPU or a friend on one phone.">
+<meta property="og:description" content="Four neon arcade games: Knucklebones, Othello, Water Sort and Sudoku. Play solo, against the CPU or a friend on one phone.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%95%B9%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="manifest" href="manifest.json">
@@ -51,11 +52,11 @@ page = r'''<!DOCTYPE html>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#07030f;--panel:#10072a;--line:#2e1d66;--ink:#eaf6ff;--mut:#9a8bd6;--mag:#ff2bd6;--cy:#19f3ff;--yel:#ffe94d;--die:#0b0720;
+:root{--bg:#07030f;--panel:#10072a;--line:#2e1d66;--ink:#eaf6ff;--mut:#9a8bd6;--mag:#ff2bd6;--cy:#19f3ff;--yel:#ffe94d;--die:#0b0720;--or:#ff9e2c;
 --px:"Press Start 2P","Courier New",monospace;--vt:"VT323","Courier New",monospace;color-scheme:dark}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--vt);font-size:18px}
-#cover{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;
+#cover{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;justify-content:safe center;gap:22px;
  padding:calc(20px + env(safe-area-inset-top,0px)) 18px calc(20px + env(safe-area-inset-bottom,0px));overflow:auto;
  background:radial-gradient(120% 55% at 50% 0%,rgba(255,43,214,.2),transparent 60%),radial-gradient(120% 45% at 50% 100%,rgba(25,243,255,.15),transparent 60%),var(--bg)}
 #cover::after{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(to bottom,transparent 0 2px,rgba(0,0,0,.16) 2px 3px)}
@@ -75,6 +76,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .card.kb{border-color:#39ff7a;box-shadow:0 0 10px rgba(57,255,122,.5),inset 0 0 14px rgba(57,255,122,.14)}
 .card.oth{border-color:var(--mag);box-shadow:0 0 10px rgba(255,43,214,.5),inset 0 0 14px rgba(255,43,214,.14)}
 .card.ws{border-color:var(--cy);box-shadow:0 0 10px rgba(25,243,255,.5),inset 0 0 14px rgba(25,243,255,.14)}
+.card.sdk{border-color:var(--or);box-shadow:0 0 10px rgba(255,158,44,.5),inset 0 0 14px rgba(255,158,44,.14)}
 .card:active{transform:scale(.98);filter:brightness(1.3)}
 .card:focus-visible{outline:3px solid var(--mag);outline-offset:3px}
 /* Icon is exactly as tall as the text block: title 16px + 6px gap + two 20px lines = 62px */
@@ -83,14 +85,20 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 /* Player-count flag: a fixed-size tab in the card's top-right corner */
 .card{position:relative}
 .flag{position:absolute;top:0;right:0;width:44px;height:16px;font:400 8px/16px var(--px);font-style:normal;text-align:center;color:#07030f;border-radius:0 5px 0 6px}
-.card.kb .flag{background:#39ff7a}.card.oth .flag{background:var(--mag)}.card.ws .flag{background:var(--cy)}
+.card.kb .flag{background:#39ff7a}.card.oth .flag{background:var(--mag)}.card.ws .flag{background:var(--cy)}.card.sdk .flag{background:var(--or)}
 .card.kb b{color:#39ff7a;text-shadow:0 0 8px #39ff7a}
 .card.oth b{color:var(--mag);text-shadow:0 0 8px var(--mag)}
 .card.ws b{color:var(--cy);text-shadow:0 0 8px var(--cy)}
+.card.sdk b{color:var(--or);text-shadow:0 0 8px var(--or)}
 .card small{color:var(--mut);font-size:19px;line-height:20px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
 .card>span{min-width:0}
 .blink{font:400 10px/1 var(--px);color:var(--yel);text-shadow:0 0 8px var(--yel);animation:blink 1.2s steps(1) infinite}
 @keyframes blink{50%{opacity:0}}
+/* Four cards: tighten spacing on shorter phones (and on phones held sideways, where the cover height is the screen width) */
+@media (max-height:740px){html:not(.rot) #cover{gap:14px}html:not(.rot) .cards{gap:10px}html:not(.rot) .card{padding:11px 16px}html:not(.rot) .logo p{margin-top:8px}}
+@media (orientation:landscape) and (max-width:740px){.rot #cover{gap:14px}.rot .cards{gap:10px}.rot .card{padding:11px 16px}.rot .logo p{margin-top:8px}}
+@media (max-height:600px){html:not(.rot) #cover{gap:10px}html:not(.rot) .card{padding:9px 16px}}
+@media (orientation:landscape) and (max-width:600px){.rot #cover{gap:10px}.rot .card{padding:9px 16px}}
 @media (max-height:520px){html:not(.rot) #cover{gap:12px}html:not(.rot) .logo h1{font-size:18px}html:not(.rot) .logo p{display:none}html:not(.rot) .cards{flex-direction:row;max-width:900px}html:not(.rot) .card{padding:10px}}
 /* Phone held sideways: turn the cover back to portrait, like the games */
 .rot #cover{inset:auto;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-90deg);padding:calc(20px + env(safe-area-inset-right,0px)) 18px calc(20px + env(safe-area-inset-left,0px))}
@@ -129,6 +137,13 @@ iframe{position:fixed;top:env(safe-area-inset-top,0px);bottom:env(safe-area-inse
     <path d="M14 10v34a7 7 0 0 0 14 0V10M36 10v34a7 7 0 0 0 14 0V10" fill="none" stroke="#c7fcff" stroke-width="2"/></svg>
    <span><b>Water Sort</b><small>Pour colours until each tube holds just one.</small></span>
   </button>
+  <button type="button" class="card sdk" data-g="sdk">
+   <i class="flag" role="img" aria-label="1 player">1P</i>
+   <svg class="ic" viewBox="0 0 64 64" aria-hidden="true"><rect x="1.5" y="1.5" width="61" height="61" rx="8" fill="#0b0720" stroke="#ff9e2c" stroke-width="3"/>
+    <path d="M23.5 8v48M40.5 8v48M8 23.5h48M8 40.5h48" stroke="#ff9e2c" stroke-width="2" opacity=".7"/>
+    <g font-family="'Press Start 2P',monospace" font-size="10" text-anchor="middle"><text x="15.5" y="20.5" fill="#eaf6ff">5</text><text x="48.5" y="20.5" fill="#19f3ff">3</text><text x="32" y="37.5" fill="#ffe94d">9</text><text x="15.5" y="54.5" fill="#39ff7a">1</text><text x="48.5" y="54.5" fill="#ff2bd6">7</text></g></svg>
+   <span><b>Sudoku</b><small>Fill every row, column and box with 1 to 9.</small></span>
+  </button>
  </div>
  <div class="blink">Select a game</div>
 </div>
@@ -164,7 +179,7 @@ var frames={},cover=document.getElementById('cover'),current=null;
 function openGame(g,push){
  cover.hidden=true;
  Object.keys(frames).forEach(function(k){frames[k].hidden=k!==g});
- if(!frames[g]){var f=document.createElement('iframe');f.title={kb:'Knucklebones',oth:'Othello',ws:'Water Sort'}[g];f.setAttribute('allow','autoplay');
+ if(!frames[g]){var f=document.createElement('iframe');f.title={kb:'Knucklebones',oth:'Othello',ws:'Water Sort',sdk:'Sudoku'}[g];f.setAttribute('allow','autoplay');
   f.srcdoc=GAMES[g];document.body.appendChild(f);frames[g]=f}
  current=g;
  if(push){try{history.pushState({g:g},'',location.pathname+location.search)}catch(e){}}
