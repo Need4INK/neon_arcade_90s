@@ -118,7 +118,7 @@ main>h1{flex:1 1 auto;max-height:none}
 <p><b>Pouring:</b> the top colour moves only onto the same colour or into an empty tube, and only while there is room. Each tube holds four layers.</p>
 <p><b>Goal:</b> sort the liquid so every tube holds a single colour. Full one-colour tubes glow magenta.</p>
 <p><b>Levels:</b> every puzzle is checked to be solvable. Easy, Normal and Hard get more mixed; Expert adds a ninth colour and leaves only one empty tube.</p>
-<p><b>Undo</b> takes back moves one at a time. Difficulty, <b>Restart</b> and <b>Shuffle</b> (a new puzzle at the same level) are in Settings.</p></div>
+<p><b>Undo</b> takes back moves one at a time. Difficulty, <b>Restart</b> and <b>Shuffle</b> (a new puzzle at the same level) are in Settings. <b>Reset</b> goes back to level 1 and keeps your best level.</p></div>
 <div id="pSet" hidden>
 <div class="row wrap"><span class="lab">Difficulty</span><div class="seg" id="diff" role="group" aria-label="Difficulty"></div></div>
 <div class="row"><span class="lab">Restart puzzle</span><button type="button" class="tg big" id="btnRestart">Restart</button></div>
@@ -137,10 +137,10 @@ var COLORS=['#ff2bd6','#19f3ff','#ffe94d','#ff7a3d','#39ff7a','#9b5cff','#ff3b5c
 var TIERS=[{id:'easy',name:'Easy',from:1,colors:8,pick:'low'},{id:'normal',name:'Normal',from:4,colors:8,pick:'mid'},
            {id:'hard',name:'Hard',from:8,colors:8,pick:'high'},{id:'expert',name:'Expert',from:13,colors:9,pick:'high'}];
 var $=function(id){return document.getElementById(id)};
-var level=1,best=0,start=[],tubes=[],hist=[],sel=null,moves=0,won=false,hitIdx=-1;
+var level=1,best=0,solvedN=0,start=[],tubes=[],hist=[],sel=null,moves=0,won=false,hitIdx=-1;
 
-try{level=parseInt(localStorage.getItem('ws_level'))||1;best=parseInt(localStorage.getItem('ws_best'))||0}catch(e){}
-function save(){try{localStorage.setItem('ws_level',level);localStorage.setItem('ws_best',best)}catch(e){}}
+try{level=parseInt(localStorage.getItem('ws_level'))||1;best=parseInt(localStorage.getItem('ws_best'))||0;solvedN=parseInt(localStorage.getItem('ws_solved'))||0}catch(e){}
+function save(){try{localStorage.setItem('ws_level',level);localStorage.setItem('ws_best',best);localStorage.setItem('ws_solved',solvedN)}catch(e){}}
 
 // ---- sound (same chip-tune style as Knucklebones / Othello)
 var AC=null,sndOn=false;
@@ -183,14 +183,20 @@ function generate(t){var found=[],big=t.colors>8;
  return found[t.pick==='low'?0:t.pick==='mid'?Math.floor(found.length/2):found.length-1]}
 
 // ---- flow
-function newPuzzle(){start=generate(tierOf(level));restart()}
+// Puzzles are made ahead in a background worker (one per difficulty), so Next level and Shuffle don't pause.
+var pre={},asked={},WK=null;
+try{WK=new Worker(URL.createObjectURL(new Blob(['var CAP='+CAP+',TUBES='+TUBES+',TIERS='+JSON.stringify(TIERS)+';\n'+[last,isDone,solved,clone,canPour,pour,solvable,breaks,deal,generate].map(String).join('\n')+
+ '\nonmessage=function(e){var t=TIERS.filter(function(x){return x.id===e.data})[0];postMessage({id:e.data,ts:generate(t)})}'],{type:'text/javascript'})));
+ WK.onmessage=function(e){asked[e.data.id]=0;pre[e.data.id]=e.data.ts};WK.onerror=function(){WK=null}}catch(e){WK=null}
+function want(id){if(!WK||pre[id]||asked[id])return;asked[id]=1;try{WK.postMessage(id)}catch(e){asked[id]=0}}
+function newPuzzle(){var t=tierOf(level);start=pre[t.id]||generate(t);delete pre[t.id];restart();want(t.id);want(tierOf(level+1).id)}
 function restart(){tubes=clone(start);hist=[];sel=null;moves=0;won=false;hitIdx=-1;render(tierOf(level).name+' · tap a tube')}
 function tap(i){if(won)return;var t=tubes[i];
  if(sel===null){if(t.length&&!isDone(t)){sel=i;sfx('pick');render('Now tap where to pour')}return}
  if(sel===i){sel=null;render('Tap a tube');return}
  if(canPour(tubes,sel,i)){hist.push({ts:clone(tubes),moves:moves});var n=pour(tubes,sel,i);moves++;sel=null;hitIdx=i;sfx('pour',n);
   if(isDone(tubes[i]))sfx('full');
-  if(solved(tubes)){won=true;best=Math.max(best,level);save();sfx('win');render('Solved in '+moves+' moves!');return}
+  if(solved(tubes)){won=true;best=Math.max(best,level);solvedN++;save();sfx('win');render('Solved in '+moves+' moves!');return}
   render(isDone(tubes[i])?'Tube complete!':'Poured '+n+(n>1?' layers':' layer'));return}
  if(t.length&&!isDone(t)){sel=i;sfx('pick');render('Now tap where to pour');return}
  sfx('bad');var s=sel;sel=null;render("Can't pour there",i)}
@@ -238,14 +244,14 @@ function setSw(id,on){var b=$(id);b.setAttribute('aria-checked',on?'true':'false
 function sync(){setSw('tgSound',sndOn);setSw('tgCrt',!document.body.classList.contains('nocrt'));
  var r=$('btnReset');clearTimeout(armT);r.classList.remove('arm');r.textContent='Reset';r.disabled=false;
  $('btnRestart').disabled=!moves&&!won;
- $('note').textContent=(inGame()?'Difficulty is locked until this puzzle is solved, restarted or shuffled. ':'')+(best?'Best level reached: '+best+'.':'')}
+ $('note').textContent=(inGame()?'Difficulty is locked until this puzzle is solved, restarted or shuffled. ':'')+(best?'Best level reached: '+best+'. ':'')+(solvedN?'Puzzles solved: '+solvedN+'.':'')}
 $('btnRestart').onclick=function(){if(this.disabled)return;restart();showPanel('')};
 $('btnShuffle').onclick=function(){newPuzzle();showPanel('')};
 $('tgSound').onclick=function(){sndOn=!sndOn;if(sndOn){try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}audio();SFX.on()}sync()};
 $('tgCrt').onclick=function(){document.body.classList.toggle('nocrt');sync()};
 $('btnReset').onclick=function(){var b=this;
  if(!b.classList.contains('arm')){b.classList.add('arm');b.textContent='Tap again';clearTimeout(armT);armT=setTimeout(function(){b.classList.remove('arm');b.textContent='Reset'},3000);return}
- clearTimeout(armT);level=1;best=0;save();newPuzzle();showPanel('')};
+ clearTimeout(armT);level=1;save();newPuzzle();showPanel('')};
 bR.onclick=function(){showPanel('rules')};bS.onclick=function(){showPanel('settings')};
 try{if(!localStorage.getItem('ws-rules-seen')){showPanel('rules');localStorage.setItem('ws-rules-seen','1')}}catch(e){}
 document.addEventListener('click',function(e){if(!panel.hidden&&!panel.contains(e.target)&&!bar.contains(e.target)){e.stopPropagation();e.preventDefault();showPanel('')}},true);
