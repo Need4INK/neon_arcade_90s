@@ -102,6 +102,8 @@ button.b:disabled{opacity:.4;cursor:default}
 @media (max-height:600px){html:not(.rotated) h1{font-size:14px;margin:6px 0}html:not(.rotated) .hd{padding:5px 8px}html:not(.rotated) .msg{font-size:20px}}
 @media (max-height:440px){html:not(.rotated) h1{display:none}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+/* Title pinned to the top (like Water Sort); the game sits centred in the space below */
+body:not(.flip) main{justify-content:flex-start}body:not(.flip) .ctl{margin-top:auto}body:not(.flip) main::after{content:"";flex:none;margin-top:auto}
 </style>
 </head>
 <body>

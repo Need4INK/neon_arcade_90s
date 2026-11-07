@@ -28,6 +28,7 @@ PRESETS = {
     "knucklebones": {"title": [("KNUCKLE", 190, 300), ("BONES", 262, 520)], "tag": ("’90s", 262, 805)},
     "water_sort":   {"title": [("WATER", 230, 300), ("SORT", 262, 520)],    "tag": ("’90s", 262, 805)},
     "sudoku":       {"title": [("SUDOKU", 220, 450)],                     "tag": ("’90s", 262, 805)},
+    "remi":         {"title": [("REMI", 262, 450)],                       "tag": ("’90s", 262, 805)},
 }
 
 S = 1024

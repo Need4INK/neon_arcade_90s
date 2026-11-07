@@ -126,6 +126,8 @@ body.flip .ttl2{display:block;margin:8px 0 12px}
 .rot.r270 #app{transform:translate(-50%,-50%) rotate(90deg);padding:env(safe-area-inset-right,0px) 0 env(safe-area-inset-left,0px)}
 .rot body::after{background:repeating-linear-gradient(to right,transparent 0 2px,rgba(0,0,0,.16) 2px 3px)}
 .rot .bar{padding-bottom:0}
+/* Title pinned to the top (like Water Sort); the game sits centred in the space below */
+body:not(.flip) main{justify-content:flex-start}body:not(.flip) .ctl{margin-top:auto}body:not(.flip) main::after{content:"";flex:none;margin-top:auto}
 </style>
 </head>
 <body>
