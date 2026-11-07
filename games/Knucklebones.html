@@ -167,6 +167,7 @@ body:not(.flip) .side{flex-grow:8;max-height:360px}
 <div class="row"><span class="lab">Scanlines</span><button type="button" class="tg" id="tgCrt" role="switch" aria-checked="true">On</button></div>
 <div class="row"><span class="lab">Game</span><button type="button" class="tg dng big" id="btnCancel">Cancel game</button></div>
 <p class="note" id="lockNote"></p>
+<p class="note" id="recNote" style="color:var(--mut)"></p>
 </div></section>
 </main>
 </div>
@@ -202,7 +203,11 @@ function unlockAudio(){
   try{if(!keep){keep=new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQQAAAAAAAAA');keep.loop=true}keep.play().catch(function(){})}catch(e){}
   audio()}
 function sfx(n,delay){if(!sndOn)return;var go=function(){try{SFX[n]()}catch(e){}};delay?setTimeout(go,delay):go()}
-function record(a,b){S.best=Math.max(S.best,a);if(a>b)S.w++;else if(a<b)S.l++;else S.t++}
+function record(a,b){S.best=Math.max(S.best,a);if(a>b)S.w++;else if(a<b)S.l++;else S.t++;addRec(S.diff,a>b?0:a<b?1:2)}
+// Saved record vs the CPU per difficulty (wins, losses, ties)
+var REC={};try{REC=JSON.parse(localStorage.getItem('kb-rec'))||{}}catch(e){}
+function addRec(k,i){var r=REC[k]||(REC[k]=[0,0,0]);r[i]++;try{localStorage.setItem('kb-rec',JSON.stringify(REC))}catch(e){}}
+function recText(){return 'Won vs CPU: '+['easy','normal','hard'].map(function(d){var r=REC[d]||[0,0,0];return d[0].toUpperCase()+d.slice(1)+' '+r[0]+'/'+(r[0]+r[1]+r[2])}).join(' · ')}
 function renderDiff(){var el=document.getElementById('diff');el.innerHTML='';
 
   if(mode==='2p'){var tg=document.createElement('span');tg.className='tag';tg.textContent='Pass & Play';el.appendChild(tg);return}
@@ -327,7 +332,7 @@ function syncSettings(){var lock=inGame(),cl=document.body.classList;
   document.querySelectorAll('#modeSeg button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.m===mode?'true':'false');b.disabled=lock});
   document.querySelectorAll('#boardSeg button').forEach(function(b){b.setAttribute('aria-pressed',+b.dataset.n===NC?'true':'false');b.disabled=lock});
   document.getElementById('lockNote').textContent=lock?'Mode and board are locked until this game ends or is cancelled.':'';
-  document.getElementById('rowFlip').hidden=mode!=='2p';
+  document.getElementById('rowFlip').hidden=mode!=='2p';document.getElementById('recNote').textContent=recText();
   var cb=document.getElementById('btnCancel');cb.disabled=!lock;clearTimeout(cancelT);cb.classList.remove('arm');cb.textContent='Cancel game'
   setSw('tgSound',sndOn);setSw('tgCrt',!cl.contains('nocrt'));setSw('tgFlip',cl.contains('flip'))}
 document.querySelectorAll('#modeSeg button').forEach(function(b){b.onclick=function(){if(b.disabled||mode===b.dataset.m)return;mode=b.dataset.m;if(mode!=='2p')document.body.classList.remove('flip');start();syncSettings()}});

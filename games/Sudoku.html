@@ -135,6 +135,7 @@ main::before,main::after{display:none}
 <div class="row"><span class="lab">Scanlines</span><button type="button" class="tg" id="tgCrt" role="switch" aria-checked="true">On</button></div>
 <div class="row"><span class="lab">Game</span><button type="button" class="tg big dng" id="btnCancel">Cancel game</button></div>
 <p class="note" id="lockNote"></p>
+<p class="note" id="recNote" style="color:var(--mut)"></p>
 </div></section>
 </main>
 </div>
@@ -240,11 +241,15 @@ function hint(){if(!giv||over||!hintOn)return;var t=sel;
  snap();setVal(t,sol[t]);fix[t]=2;hints++;clockOn=true;sel=t;started=true;sfx('hint');after('Hint '+hints+' · that one’s locked in',t)}
 function undo(){if(!giv||over||!undoOn||!hist.length)return;var h=hist.pop();val=h.val;notes=h.notes;fix=h.fix;sfx('erase');after('Undone')}
 function after(m,pop){var done=val.every(function(v,i){return v===sol[i]});
- if(done){over=true;noteMode=false;var k=S.diff,nb=false;
+ if(done){over=true;noteMode=false;var k=S.diff,nb=false;addRec(k);
   if(!hints&&(!best[k]||time<best[k])){best[k]=time;nb=true}
   save();sfx('win');render((nb?'New best! ':'Solved in ')+fmt(time)+(hints?' · '+hints+' hint'+(hints>1?'s':''):''),-1,true);return}
  var full=val.every(function(v){return v});
  save();render(full?'Board full · fix the magenta clashes':m||'',pop)}
+// Saved count of puzzles solved per difficulty
+var REC={};try{REC=JSON.parse(localStorage.getItem('sdk-solved'))||{}}catch(e){}
+function addRec(k){REC[k]=(REC[k]||0)+1;try{localStorage.setItem('sdk-solved',JSON.stringify(REC))}catch(e){}}
+function recText(){return 'Solved: '+['easy','normal','hard','master'].map(function(d){return d[0].toUpperCase()+d.slice(1)+' '+(REC[d]||0)}).join(' · ')}
 // ---- render
 var cells=[],keys=[],ck=[];
 (function(){var bd=document.getElementById('board');for(var b=0;b<9;b++){var bx=document.createElement('div');bx.className='box';bx.setAttribute('role','presentation');bd.appendChild(bx)}
@@ -309,7 +314,7 @@ function showPanel(n){var cur=panel.hidden?'':panel.dataset.p,nx=n&&n!==cur?n:''
  bR.setAttribute('aria-expanded',nx==='rules');bS.setAttribute('aria-expanded',nx==='settings');if(nx==='settings')sync()}
 function setSw(id,on){var b=document.getElementById(id);b.setAttribute('aria-checked',on?'true':'false');b.textContent=on?'On':'Off'}
 function sync(){var lock=inGame();
- document.getElementById('lockNote').textContent=lock?'Difficulty is locked until this puzzle is solved or canceled.':'';
+ document.getElementById('lockNote').textContent=lock?'Difficulty is locked until this puzzle is solved or canceled.':'';document.getElementById('recNote').textContent=recText();
  var cb=document.getElementById('btnCancel');cb.disabled=!giv||over;clearTimeout(cancelT);cb.classList.remove('arm');cb.textContent='Cancel game';
  setSw('tgSound',sndOn);setSw('tgCrt',!document.body.classList.contains('nocrt'));setSw('tgHint',hintOn);setSw('tgUndo',undoOn)}
 document.getElementById('tgSound').onclick=function(){sndOn=!sndOn;if(sndOn){try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}audio();SFX.on()}sync()};

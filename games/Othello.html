@@ -144,6 +144,7 @@ body:not(.flip) .bar{flex:1 1 auto;max-height:none}
 <div class="row"><span class="lab">Scanlines</span><button type="button" class="tg" id="tgCrt" role="switch" aria-checked="true">On</button></div>
 <div class="row"><span class="lab">Game</span><button type="button" class="tg big dng" id="btnCancel">Cancel game</button></div>
 <p class="note" id="lockNote"></p>
+<p class="note" id="recNote" style="color:var(--mut)"></p>
 </div></section>
 </main>
 </div>
@@ -188,6 +189,10 @@ function cpuPick(){var ms=moves(bd,C);
  // Hard: depth 4 always; near the end, search deeper (up to 8) but stop after 700 ms and keep the deepest finished result.
  var pick=at(4);if(empt>10)return pick;
  DL=Date.now()+700;try{for(var d=6;d<=8;d+=2)pick=at(d)}catch(e){if(e!=='T')throw e}DL=0;return pick}
+// Saved record vs the CPU per difficulty (wins, losses, ties)
+var REC={};try{REC=JSON.parse(localStorage.getItem('oth-rec'))||{}}catch(e){}
+function addRec(k,i){var r=REC[k]||(REC[k]=[0,0,0]);r[i]++;try{localStorage.setItem('oth-rec',JSON.stringify(REC))}catch(e){}}
+function recText(){return 'Won vs CPU: '+['easy','normal','hard'].map(function(d){var r=REC[d]||[0,0,0];return d[0].toUpperCase()+d.slice(1)+' '+r[0]+'/'+(r[0]+r[1]+r[2])}).join(' · ')}
 // ---- flow
 function start(){gid++;bd=[];for(var i=0;i<N;i++)bd.push(Array(N).fill(0));bd[3][3]=bd[4][4]=C;bd[3][4]=bd[4][3]=P;
  turn=P;over=false;last=null;fresh=[];hist=[];floor=0;busy=false;render(mode==='2p'?'P1 to move':'Your move')}
@@ -200,7 +205,7 @@ function play(m){hist.push({bd:bd.map(function(x){return x.slice()}),turn:turn,l
 function next(note){
  if(!moves(bd,turn).length){
   if(!moves(bd,-turn).length){over=true;var k=count(bd),a=k[0],z=k[1];
-   if(mode==='cpu'){if(a>z)S.w++;else if(a<z)S.l++;else S.t++}else{if(a>z)S.p1++;else if(a<z)S.p2++;else S.pt++}
+   if(mode==='cpu'){if(a>z)S.w++;else if(a<z)S.l++;else S.t++;addRec(S.diff,a>z?0:a<z?1:2)}else{if(a>z)S.p1++;else if(a<z)S.p2++;else S.pt++}
    sfx(a===z?'tie':(mode==='2p'||a>z)?'win':'loss');
    render(a===z?'Tie at '+a:mode==='2p'?'P'+(a>z?1:2)+' wins '+Math.max(a,z)+'–'+Math.min(a,z)+'!':a>z?'You win '+a+'–'+z+'!':'You lose '+a+'–'+z);return}
   sfx('pass');note=sn(turn)+' must pass · ';turn=-turn}
@@ -259,7 +264,7 @@ function showPanel(n){var cur=panel.hidden?'':panel.dataset.p,nx=n&&n!==cur?n:''
 function setSw(id,on){var b=document.getElementById(id);b.setAttribute('aria-checked',on?'true':'false');b.textContent=on?'On':'Off'}
 function sync(){var lock=inGame();
  document.querySelectorAll('#modeSeg button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.m===mode?'true':'false');b.disabled=lock});
- document.getElementById('lockNote').textContent=lock?'Mode is locked until this game ends or is canceled.':'';
+ document.getElementById('lockNote').textContent=lock?'Mode is locked until this game ends or is canceled.':'';document.getElementById('recNote').textContent=recText();
  var cb=document.getElementById('btnCancel');cb.disabled=!lock;clearTimeout(cancelT);cb.classList.remove('arm');cb.textContent='Cancel game';
  setSw('tgSound',sndOn);setSw('tgCrt',!document.body.classList.contains('nocrt'));setSw('tgHint',hints);setSw('tgUndo',undoOn);setSw('tgFlip',document.body.classList.contains('flip'));document.getElementById('rowFlip').hidden=mode!=='2p'}
 document.querySelectorAll('#modeSeg button').forEach(function(b){b.onclick=function(){if(b.disabled||mode===b.dataset.m)return;mode=b.dataset.m;if(mode!=='2p')document.body.classList.remove('flip');start();sync()}});

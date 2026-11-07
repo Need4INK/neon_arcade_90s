@@ -31,6 +31,42 @@ for name in ('oth', 'ws', 'sdk', 'rem'):
     globals()[name] = g
 assert all(g.count('class="mnu"') == 1 for g in (kb, oth, ws, sdk, rem))
 
+# Fonts: if games/fonts/ holds PressStart2P-Regular and VT323-Regular (.woff2, .woff or .ttf), they are packed
+# into the page so the games never depend on Google Fonts (works offline even if the fonts were never saved).
+# The cover declares them once; each game copies that declaration from the cover when it loads.
+import base64, io, os
+GLINK = '<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">'
+FDIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fonts')
+def font_face(name, family):
+    for ext in ('woff2', 'woff', 'ttf'):
+        f = os.path.join(FDIR, name + '.' + ext)
+        if not os.path.exists(f):
+            continue
+        data, mime, fmt = open(f, 'rb').read(), ext, {'woff2': 'woff2', 'woff': 'woff', 'ttf': 'truetype'}[ext]
+        try:  # keep only the characters the games use, saved as compressed woff
+            from fontTools import subset
+            from fontTools.ttLib import TTFont
+            ft = TTFont(io.BytesIO(data))
+            o = subset.Options(); o.flavor = 'woff'; o.ignore_missing_unicodes = True; o.name_IDs = ['*']  # keeps the OFL licence text in the font
+            sub = subset.Subsetter(o)
+            sub.populate(unicodes=list(range(0x20, 0x7f)) + list(range(0xa0, 0x180)) + list(range(0x2010, 0x2050)) + [0x2190, 0x2192, 0x2605, 0x25ae, 0x2713, 0xd7])
+            sub.subset(ft); buf = io.BytesIO(); ft.flavor = 'woff'; ft.save(buf)
+            data, mime, fmt = buf.getvalue(), 'woff', 'woff'
+        except Exception:
+            pass
+        return "@font-face{font-family:'%s';font-style:normal;font-weight:400;font-display:swap;src:url(data:font/%s;base64,%s) format('%s')}" % (
+            family, mime, base64.b64encode(data).decode(), fmt)
+    return None
+FONTS = [font_face('PressStart2P-Regular', 'Press Start 2P'), font_face('VT323-Regular', 'VT323')]
+PACK_FONTS = all(FONTS)
+if PACK_FONTS:
+    COPY = '<script>try{var nf=parent.document.getElementById("nafonts");if(nf){var st=document.createElement("style");st.textContent=nf.textContent;document.head.appendChild(st)}}catch(e){}</script>'
+    for name in ('kb', 'oth', 'ws', 'sdk', 'rem'):
+        assert globals()[name].count(GLINK) == 1, name
+        globals()[name] = globals()[name].replace(GLINK, COPY)
+else:
+    print('Note: games/fonts/ not found or incomplete, using Google Fonts')
+
 games = json.dumps({'kb': kb, 'oth': oth, 'ws': ws, 'sdk': sdk, 'rem': rem}).replace('</', '<\\/')
 
 page = r'''<!DOCTYPE html>
@@ -127,14 +163,14 @@ iframe{position:fixed;top:env(safe-area-inset-top,0px);bottom:env(safe-area-inse
    <i class="flag" role="img" aria-label="1 or 2 players">1–2P</i>
    <svg class="ic" viewBox="0 0 64 64" aria-hidden="true"><rect x="1.5" y="1.5" width="61" height="61" rx="8" fill="#0b0720" stroke="#39ff7a" stroke-width="3"/>
     <g fill="#c9ffd9"><circle cx="17" cy="17" r="5.5"/><circle cx="47" cy="17" r="5.5"/><circle cx="32" cy="32" r="5.5"/><circle cx="17" cy="47" r="5.5"/><circle cx="47" cy="47" r="5.5"/></g></svg>
-   <span><b>Knucklebones</b><small>Stack dice, multiply matches, smash rival columns.</small></span>
+   <span><b>Knucklebones</b><small>Stack dice, multiply, smash rivals.</small></span>
   </button>
   <button type="button" class="card oth" data-g="oth">
    <i class="flag" role="img" aria-label="1 or 2 players">1–2P</i>
    <svg class="ic" viewBox="0 0 64 64" aria-hidden="true"><rect x="1.5" y="1.5" width="61" height="61" rx="8" fill="#0b0720" stroke="#ff2bd6" stroke-width="3"/>
     <circle cx="20.5" cy="20.5" r="10" fill="#0b5f70" stroke="#19f3ff" stroke-width="2.5"/><circle cx="43.5" cy="43.5" r="10" fill="#0b5f70" stroke="#19f3ff" stroke-width="2.5"/>
     <circle cx="43.5" cy="20.5" r="10" fill="#7a0d65" stroke="#ff2bd6" stroke-width="2.5"/><circle cx="20.5" cy="43.5" r="10" fill="#7a0d65" stroke="#ff2bd6" stroke-width="2.5"/></svg>
-   <span><b>Othello</b><small>Flip discs, own the board, grab the corners.</small></span>
+   <span><b>Othello</b><small>Flip discs and grab the corners.</small></span>
   </button>
   <button type="button" class="card ws" data-g="ws">
    <i class="flag" role="img" aria-label="1 player">1P</i>
@@ -143,14 +179,14 @@ iframe{position:fixed;top:env(safe-area-inset-top,0px);bottom:env(safe-area-inse
     <g clip-path="url(#tA)"><rect x="14" y="21" width="14" height="10" fill="#ff2bd6"/><rect x="14" y="31" width="14" height="10" fill="#19f3ff"/><rect x="14" y="41" width="14" height="11" fill="#ff2bd6"/></g>
     <g clip-path="url(#tB)"><rect x="36" y="31" width="14" height="10" fill="#ffe94d"/><rect x="36" y="41" width="14" height="11" fill="#ffe94d"/></g>
     <path d="M14 10v34a7 7 0 0 0 14 0V10M36 10v34a7 7 0 0 0 14 0V10" fill="none" stroke="#c7fcff" stroke-width="2"/></svg>
-   <span><b>Water Sort</b><small>Pour colours until each tube holds just one.</small></span>
+   <span><b>Water Sort</b><small>Pour until each tube is one colour.</small></span>
   </button>
   <button type="button" class="card sdk" data-g="sdk">
    <i class="flag" role="img" aria-label="1 player">1P</i>
    <svg class="ic" viewBox="0 0 64 64" aria-hidden="true"><rect x="1.5" y="1.5" width="61" height="61" rx="8" fill="#0b0720" stroke="#ff9e2c" stroke-width="3"/>
     <path d="M23.5 8v48M40.5 8v48M8 23.5h48M8 40.5h48" stroke="#ff9e2c" stroke-width="2" opacity=".7"/>
     <g font-family="'Press Start 2P',monospace" font-size="10" text-anchor="middle"><text x="15.5" y="20.5" fill="#eaf6ff">5</text><text x="48.5" y="20.5" fill="#19f3ff">3</text><text x="32" y="37.5" fill="#ffe94d">9</text><text x="15.5" y="54.5" fill="#39ff7a">1</text><text x="48.5" y="54.5" fill="#ff2bd6">7</text></g></svg>
-   <span><b>Sudoku</b><small>Fill every row, column and box with 1 to 9.</small></span>
+   <span><b>Sudoku</b><small>Fill rows, columns and boxes 1–9.</small></span>
   </button>
   <button type="button" class="card rem" data-g="rem">
    <i class="flag" role="img" aria-label="1 player against 3 CPU">1P</i>
@@ -164,7 +200,7 @@ iframe{position:fixed;top:env(safe-area-inset-top,0px);bottom:env(safe-area-inse
      <path d="M27 29.5q5 5.5 10 0" stroke="#ff3b5c" stroke-width="1.8"/>
      <ellipse cx="32" cy="45" rx="6" ry="4" stroke="#9a8bd6" stroke-width="1.2"/>
      <circle cx="32" cy="45" r="2" fill="#ffe94d" stroke="none"/></g></svg>
-   <span><b>Remi</b><small>Classic Rummy (RO variation): open with 45, close first.</small></span>
+   <span><b>Remi</b><small>Romanian rummy: open 45, close first.</small></span>
   </button>
  </div>
  <div class="blink">Select a game</div>
@@ -225,5 +261,8 @@ if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostnam
 </html>
 '''
 page = page.replace('__GAMES__', games)
+if PACK_FONTS:
+    assert page.count(GLINK) == 1
+    page = page.replace(GLINK, '<style id="nafonts">' + ''.join(FONTS) + '</style>')
 open(out, 'w', encoding='utf-8').write(page)
 print(len(page))
