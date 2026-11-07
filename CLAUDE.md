@@ -19,7 +19,7 @@ A phone-first pack of neon arcade games (Knucklebones, Othello, Water Sort, Sudo
 
 ## Style rules
 - Shared neon look: dark `#07030f` background, magenta `#ff2bd6`, cyan `#19f3ff`, yellow `#ffe94d`, green `#39ff7a`; "Press Start 2P" for labels, "VT323" for text; scanlines.
-- Each game has a Rules / Menu / Settings bar at the bottom; Menu is yellow and centred.
+- Each game uses the same centred frame (max 720px tall): title at its top, Rules / Menu / Settings bar at its bottom (Menu yellow and centred), the game centred between. The bar is part of the layout, and the Rules/Settings panel opens right above it.
 - Same button sizes in every game: settings buttons 64px (54px on narrow phones), double-width 134px; action buttons like Undo 6px 10px padding.
 - Confirmations use "Tap again".
 - Games and the cover stay upright in portrait when a phone is turned sideways (touch screens, short side under 600px).

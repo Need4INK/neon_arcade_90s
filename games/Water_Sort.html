@@ -87,6 +87,18 @@ button.b:disabled{opacity:.4;cursor:default}
 .rot.r270 #app{transform:translate(-50%,-50%) rotate(90deg)}
 .rot body::after{background:repeating-linear-gradient(to right,transparent 0 2px,rgba(0,0,0,.16) 2px 3px)}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+/* Gap under the title at most 2x its height; spare space goes below the game */
+main{justify-content:flex-start}main>h1{flex:1 1 auto;max-height:calc(3em - 8px)}main::after{content:"";flex:1 1 0}#game{flex:none}
+/* One centred block: title, game, bar. Gaps under the title and above the bar are at most 2x the title height */
+main{padding-bottom:16px}main::before{content:"";flex:1 1 0}
+.bar{position:relative;left:auto;right:auto;bottom:auto;width:100%;max-width:none;margin:0;padding:0 0 env(safe-area-inset-bottom,0px);flex:1 1 auto;max-height:calc(76px + env(safe-area-inset-bottom,0px));align-items:flex-end;align-content:end}
+.short .bar{max-height:calc(64px + env(safe-area-inset-bottom,0px))}
+/* Same frame in every game: at most 720px tall and centred; title at its top, bar at its bottom, the game centred between */
+#app{display:flex;flex-direction:column}
+main{width:100%;max-height:720px;margin:auto}
+main::before,main::after{display:none}
+main>h1{flex:1 1 auto;max-height:none}
+.bar{flex:1 1 auto;max-height:none}
 </style>
 </head>
 <body>
@@ -208,9 +220,13 @@ function render(m,badIdx){
  if(typeof panel!=='undefined'&&panel&&!panel.hidden&&panel.dataset.p==='settings')sync()
  layout()}
 // Size tubes so 2 rows of 5 fill the board without overflowing.
-function layout(){var g=$('game'),b=$('board');if(!g.clientHeight)return;
+// Space the game may use: the screen minus the title and the bar (both at their natural height)
+function gameRoom(){var m=document.querySelector('main'),h=m.querySelector('h1'),bar=$('bar'),cs=getComputedStyle(m),hs=getComputedStyle(h),bs=getComputedStyle(bar);
+ var ht=hs.display==='none'?0:parseFloat(hs.fontSize)+parseFloat(hs.marginTop)+parseFloat(hs.marginBottom);
+ return m.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)-ht-bar.firstElementChild.offsetHeight-parseFloat(bs.paddingBottom)}
+function layout(){var g=$('game'),b=$('board');if(!g.clientWidth)return;
  var W=g.clientWidth-16,
-  H=g.clientHeight-32-$('hd').offsetHeight-$('acts').offsetHeight-6-16-28-4;
+  H=gameRoom()-32-$('hd').offsetHeight-$('acts').offsetHeight-6-16-28-4;
  var gap=Math.max(8,Math.min(18,W*.05)),w=(W-gap*4)/5;w=Math.min(w,H/7.35,64);w=Math.max(24,Math.floor(w));
  b.style.setProperty('--w',w+'px');b.style.setProperty('--gap',gap+'px')}
 
@@ -246,6 +262,14 @@ try{screen.orientation.addEventListener('change',fit)}catch(e){}
 
 newPuzzle();
 })();
+</script>
+<script>
+// The bar sits in the layout: keep the Rules/Settings panel opening right above it
+(function(){var b=document.getElementById('bar'),p=document.getElementById('panel'),a=document.getElementById('app');if(!b||!p)return;
+ function place(){if(document.documentElement.classList.contains('rot')){var y=0,e=b;while(e&&e!==a){y+=e.offsetTop;e=e.offsetParent}p.style.bottom=Math.max(0,a.clientHeight-y)+'px'}
+  else p.style.bottom=Math.max(0,innerHeight-b.getBoundingClientRect().top)+'px'}
+ place();addEventListener('resize',function(){setTimeout(place,0)});
+ try{new MutationObserver(place).observe(p,{attributes:true,attributeFilter:['hidden']});new ResizeObserver(place).observe(document.querySelector('main'))}catch(e){}})();
 </script>
 </body>
 </html>

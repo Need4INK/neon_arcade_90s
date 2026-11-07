@@ -127,7 +127,18 @@ body.flip .ttl2{display:block;margin:8px 0 12px}
 .rot body::after{background:repeating-linear-gradient(to right,transparent 0 2px,rgba(0,0,0,.16) 2px 3px)}
 .rot .bar{padding-bottom:0}
 /* Title pinned to the top (like Water Sort); the game sits centred in the space below */
-body:not(.flip) main{justify-content:flex-start}body:not(.flip) .ctl{margin-top:auto}body:not(.flip) main::after{content:"";flex:none;margin-top:auto}
+body:not(.flip) main{justify-content:flex-start}body:not(.flip) .ttl1{flex:1 1 auto;max-height:calc(3em - 8px)}body:not(.flip) main::after{content:"";flex:1 1 0}
+/* One centred block: title, game, bar. Gaps under the title and above the bar are at most 2x the title height */
+body:not(.flip) main{padding-bottom:16px}body:not(.flip) main::before{content:"";flex:1 1 0}
+body:not(.flip) .bar{position:relative;left:auto;right:auto;bottom:auto;width:100%;max-width:none;margin:0;padding:0 0 env(safe-area-inset-bottom,0px);flex:1 1 auto;max-height:calc(76px + env(safe-area-inset-bottom,0px));align-items:flex-end;align-content:end}
+.short body:not(.flip) .bar{max-height:calc(64px + env(safe-area-inset-bottom,0px))}
+/* Same frame in every game: at most 720px tall and centred; title at its top, bar at its bottom, the game centred between */
+#app{display:flex;flex-direction:column}
+body:not(.flip) main{width:100%;max-height:720px;margin:auto}
+body:not(.flip) main::before,body:not(.flip) main::after{display:none}
+body:not(.flip) .ttl1{flex:1 1 auto;max-height:none}
+body:not(.flip) .bar{flex:1 1 auto;max-height:none}
+body:not(.flip) .side{flex-grow:8;max-height:360px}
 </style>
 </head>
 <body>
@@ -341,6 +352,14 @@ function fit(){var de=document.documentElement,W=innerWidth,H=innerHeight,
 fit();addEventListener('resize',fit);addEventListener('orientationchange',function(){setTimeout(fit,100)});
 try{screen.orientation.addEventListener('change',fit)}catch(e){}
 renderDiff();start();
+</script>
+<script>
+// The bar sits in the layout: keep the Rules/Settings panel opening right above it
+(function(){var b=document.getElementById('bar'),p=document.getElementById('panel'),a=document.getElementById('app');if(!b||!p)return;
+ function place(){if(document.documentElement.classList.contains('rot')){var y=0,e=b;while(e&&e!==a){y+=e.offsetTop;e=e.offsetParent}p.style.bottom=Math.max(0,a.clientHeight-y)+'px'}
+  else p.style.bottom=Math.max(0,innerHeight-b.getBoundingClientRect().top)+'px'}
+ place();addEventListener('resize',function(){setTimeout(place,0)});
+ try{new MutationObserver(place).observe(p,{attributes:true,attributeFilter:['hidden']});new ResizeObserver(place).observe(document.querySelector('main'))}catch(e){}})();
 </script>
 </body>
 </html>
