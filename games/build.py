@@ -208,6 +208,10 @@ html.stg #cover{inset:0!important;width:auto!important;height:auto!important;tra
 .sbox{transform:var(--sr)}
 iframe{top:0!important;left:0!important;right:0!important;bottom:auto!important;width:100%!important;height:var(--fullh,100%)!important}
 html.stg #cover{bottom:auto!important;height:var(--fullh,100%)!important}
+/* iOS see-through status bar: fixed elements are cut off 47pt above the bottom, so the page is made full height
+   and the cover and game frames sit in the page (absolute) instead */
+html.full,html.full body{height:var(--fullh)!important;overflow:hidden;overscroll-behavior:none}
+html.full #cover,html.full iframe{position:absolute!important}html.full #cover::after{position:absolute}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -281,7 +285,8 @@ __NACALC__
 // iOS home-screen apps with a see-through status bar draw the page from the top of the screen but report a
 // height that leaves out the status bar, so a strip at the bottom stays empty. Detect it (page height + top inset =
 // screen height) and use the full height. Not tied to navigator.standalone: newer iOS web apps don't set it.
-function naFullH(){var s=__safe(),H=innerHeight;return H}
+function naFullH(){var s=__safe(),H=innerHeight;try{if(s.t>0&&innerWidth<innerHeight&&H<screen.height-1&&Math.abs(H+s.t-screen.height)<2)H+=s.t}catch(e){}document.documentElement.classList.toggle('full',H>innerHeight);if(H>innerHeight)scrollTo(0,0);return H}
+document.addEventListener('touchmove',function(e){if(document.documentElement.classList.contains('full'))e.preventDefault()},{passive:false});
 function naCover(){var de=document.documentElement,H=naFullH();de.style.setProperty('--fullh',H+'px');var r=naCalc(__safe(),innerWidth,H,de.classList.contains('rot'),de.classList.contains('r270'));
  de.style.setProperty('--sh',r.sh+'px');de.style.setProperty('--st',r.st);de.style.setProperty('--sr','rotate('+r.a+'deg) scale('+r.k+')')}
 // Keep each card description to two lines: shrink the text a little if it would wrap to a third.
