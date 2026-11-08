@@ -131,6 +131,7 @@ page = r'''<!DOCTYPE html>
 <html lang="en" class="stg">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob:; worker-src 'self' blob:; child-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Neon Arcade</title>
 <meta name="description" content="Neon Arcade: Knucklebones, Othello, Water Sort, Sudoku and Remi. Play solo, against the CPU or a friend on one phone.">
