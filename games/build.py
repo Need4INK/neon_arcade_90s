@@ -31,6 +31,32 @@ for name in ('oth', 'ws', 'sdk', 'rem'):
     globals()[name] = g
 assert all(g.count('class="mnu"') == 1 for g in (kb, oth, ws, sdk, rem))
 
+# Stage: every screen is laid out at the iPhone 12 home-screen size (390 x 763 points inside the notch and
+# home bar) and scaled evenly to fit, using whichever side is tighter. On shorter screens the stage may get
+# shorter (down to 680) before it shrinks. The iframe fills the whole screen (no seams at the notch / home
+# bar); the cover tells each game the safe-area insets, which iOS doesn't pass into iframes.
+NACALC = ("var NA_W=390,NA_H=763,NA_MIN=680;function naCalc(s,W,H,rot,r270){var w=W-s.l-s.r,h=H-s.t-s.b,cw=rot?h:w,ch=rot?w:h,"
+          "k=Math.min(cw/NA_W,ch/NA_MIN),sh=Math.min(NA_H,ch/k),a=rot?(r270?90:-90):0;return {k:k,sh:sh,a:a,"
+          "st:'translate('+(s.l+w/2)+'px,'+(s.t+h/2)+'px) rotate('+a+'deg) scale('+k+') translate('+(-NA_W/2)+'px,'+(-sh/2)+'px)'}}")
+STAGE = ('<style>html.stg #app{position:fixed!important;left:0!important;top:0!important;right:auto!important;bottom:auto!important;'
+         'width:390px!important;height:var(--sh)!important;margin:0!important;transform-origin:0 0!important;transform:var(--st)!important}'
+         'html.stg main{max-height:none!important}</style>\n'
+         '<script>(function(){var de=document.documentElement;de.classList.add("stg");' + NACALC +
+         'function st(){var W=innerWidth,H=innerHeight,rot=W>H&&H<600&&matchMedia("(pointer:coarse)").matches,a=0;'
+         'if(rot){a=screen.orientation&&typeof screen.orientation.angle==="number"?screen.orientation.angle:(window.orientation===-90?270:90)}'
+         'var s={t:0,r:0,b:0,l:0};try{s=parent.__safe()}catch(e){}var r=naCalc(s,W,H,rot,a===270);'
+         'de.style.setProperty("--sh",r.sh+"px");de.style.setProperty("--st",r.st)}'
+         'st();addEventListener("resize",st);addEventListener("orientationchange",function(){setTimeout(st,90)});'
+         # the stage is never short, so drop the games' short-screen classes
+         'try{new MutationObserver(function(){if(de.classList.contains("short"))de.classList.remove("short");if(de.classList.contains("tiny"))de.classList.remove("tiny")}).observe(de,{attributes:true,attributeFilter:["class"]})}catch(e){}'
+         '})()</script>\n')
+PANEL_A = "function place(){if(document.documentElement.classList.contains('rot')){"
+PANEL_B = "function place(){if(document.documentElement.classList.contains('rot')||document.documentElement.classList.contains('stg')){"
+for name in ('kb', 'oth', 'ws', 'sdk', 'rem'):
+    g = globals()[name]
+    assert g.count('</head>') == 1 and g.count(PANEL_A) == 1, name
+    globals()[name] = g.replace('</head>', STAGE + '</head>', 1).replace(PANEL_A, PANEL_B, 1)
+
 # Fonts: if games/fonts/ holds PressStart2P-Regular and VT323-Regular (.woff2, .woff or .ttf), they are packed
 # into the page so the games never depend on Google Fonts (works offline even if the fonts were never saved).
 # The cover declares them once; each game copies that declaration from the cover when it loads.
@@ -70,7 +96,7 @@ else:
 games = json.dumps({'kb': kb, 'oth': oth, 'ws': ws, 'sdk': sdk, 'rem': rem}).replace('</', '<\\/')
 
 page = r'''<!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="stg">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -157,17 +183,6 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .card>span{min-width:0}
 .blink{font:400 10px/1 var(--px);color:var(--yel);text-shadow:0 0 8px var(--yel);animation:blink 1.2s steps(1) infinite}
 @keyframes blink{50%{opacity:0}}
-/* Five cards: tighten spacing on shorter phones (and on phones held sideways, where the cover height is the screen width) */
-@media (max-height:740px){html:not(.rot) #cover{gap:14px}html:not(.rot) .cards{gap:10px}html:not(.rot) .card{padding:9px}html:not(.rot) .logo p{margin-top:8px}}
-@media (orientation:landscape) and (max-width:740px){.rot #cover{gap:14px}.rot .cards{gap:10px}.rot .card{padding:9px}.rot .logo p{margin-top:8px}}
-@media (max-height:600px){html:not(.rot) #cover{gap:10px}html:not(.rot) .card{padding:8px}}
-@media (orientation:landscape) and (max-width:600px){.rot #cover{gap:10px}.rot .card{padding:8px}}
-/* Five cards on the shortest phones: drop the tagline and the blinking prompt to make room */
-@media (max-height:650px){html:not(.rot) .logo p{display:none}html:not(.rot) .cards{gap:9px}}
-@media (orientation:landscape) and (max-width:650px){.rot .logo p{display:none}.rot .cards{gap:9px}}
-@media (max-height:600px){html:not(.rot) .blink{display:none}html:not(.rot) .logo h1{font-size:22px}}
-@media (orientation:landscape) and (max-width:600px){.rot .blink{display:none}.rot .logo h1{font-size:22px}}
-@media (max-height:520px){html:not(.rot) #cover{gap:12px}html:not(.rot) .logo h1{font-size:18px}html:not(.rot) .logo p{display:none}html:not(.rot) .cards{flex-direction:row;max-width:900px}html:not(.rot) .card{padding:10px}}
 /* Phone held sideways: turn the cover back to portrait, like the games */
 .rot #cover{inset:auto;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-90deg);padding:calc(20px + env(safe-area-inset-right,0px)) 18px calc(20px + env(safe-area-inset-left,0px))}
 .rot.r270 #cover{transform:translate(-50%,-50%) rotate(90deg);padding:calc(20px + env(safe-area-inset-left,0px)) 18px calc(20px + env(safe-area-inset-right,0px))}
@@ -176,20 +191,18 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 /* iOS does not pass notch / home-bar insets into iframes, so keep the frame inside the safe area here. */
 html{background:var(--bg)}
 iframe{position:fixed;top:env(safe-area-inset-top,0px);bottom:env(safe-area-inset-bottom,0px);left:env(safe-area-inset-left,0px);right:env(safe-area-inset-right,0px);width:calc(100% - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px));height:calc(100% - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));border:0;background:var(--bg)}
+/* Stage (see build.py): the cover content is laid out at 390 x 763 and scaled to fit; iframes fill the screen */
+html.stg #cover{inset:0!important;width:auto!important;height:auto!important;transform:none!important;padding:0!important;display:block;overflow:hidden}
+#cstage{position:absolute;left:0;top:0;width:390px;height:var(--sh,763px);transform-origin:0 0;transform:var(--st);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:20px 15px}
+.sbox{transform:var(--sr)}
+iframe{top:0!important;left:0!important;right:0!important;bottom:0!important;width:100%!important;height:100%!important}
 [hidden]{display:none!important}
 </style>
 </head>
 <body>
 <div id="cover">
+ <div id="cstage">
  <div class="logo"><h1 id="logoT" role="button" tabindex="0" aria-label="Neon Arcade: share and add to home screen"><span class="w1">Neon</span><span class="w2">Arcade</span></h1><p><span class="md">Two modes</span> · <span class="md"><svg class="pi cy" viewBox="0 0 12 12" role="img" aria-label="P1"><path d="M4 0h4v1h-4zM3 1h6v1h-6zM3 2h6v1h-6zM3 3h6v1h-6zM4 4h4v1h-4zM2 6h8v1h-8zM1 7h10v1h-10zM1 8h10v1h-10zM1 9h10v1h-10zM1 10h10v1h-10zM1 11h10v1h-10z"/></svg> vs <svg class="pi mg" viewBox="0 0 12 10" role="img" aria-label="CPU"><path d="M3 0h1v1h-1zM8 0h1v1h-1zM4 1h1v1h-1zM7 1h1v1h-1zM1 2h10v1h-10zM1 3h10v1h-10zM0 4h12v1h-12zM0 5h12v1h-12zM0 6h12v1h-12zM1 7h10v1h-10zM1 8h10v1h-10zM1 9h10v1h-10z"/><path fill="#000" d="M3 4h2v1h-2zM7 4h2v1h-2zM3 5h2v1h-2zM7 5h2v1h-2zM3 7h1v1h-1zM8 7h1v1h-1zM4 8h4v1h-4z"/></svg></span> / <span class="md"><svg class="pi cy" viewBox="0 0 12 12" role="img" aria-label="P1"><path d="M4 0h4v1h-4zM3 1h6v1h-6zM3 2h6v1h-6zM3 3h6v1h-6zM4 4h4v1h-4zM2 6h8v1h-8zM1 7h10v1h-10zM1 8h10v1h-10zM1 9h10v1h-10zM1 10h10v1h-10zM1 11h10v1h-10z"/></svg> vs <svg class="pi mg" viewBox="0 0 12 12" role="img" aria-label="P2"><path d="M4 0h4v1h-4zM3 1h6v1h-6zM3 2h6v1h-6zM3 3h6v1h-6zM4 4h4v1h-4zM2 6h8v1h-8zM1 7h10v1h-10zM1 8h10v1h-10zM1 9h10v1h-10zM1 10h10v1h-10zM1 11h10v1h-10z"/></svg></span></p></div>
- <div class="share" id="share" role="dialog" aria-modal="true" aria-labelledby="shT" hidden><div class="sbox">
-  <b class="st" id="shT">Scan to play</b>
-  <div class="qr">__QR__</div>
-  <p class="sp">Save it to your home screen:</p>
-  <p class="sq"><b>iPhone</b>: Share › Add to Home Screen</p>
-  <p class="sq"><b>Android</b>: Menu › Install app</p>
-  <div class="sbtn"><button type="button" id="shShare">Copy link</button><button type="button" class="y" id="shClose">Close</button></div>
- </div></div>
  <div class="cards">
   <button type="button" class="card kb" data-g="kb">
    <i class="flag" role="img" aria-label="1 or 2 players">1–2P</i>
@@ -236,9 +249,24 @@ iframe{position:fixed;top:env(safe-area-inset-top,0px);bottom:env(safe-area-inse
   </button>
  </div>
  <div class="blink">Select a game</div>
+ </div>
+ <div class="share" id="share" role="dialog" aria-modal="true" aria-labelledby="shT" hidden><div class="sbox">
+  <b class="st" id="shT">Scan to play</b>
+  <div class="qr">__QR__</div>
+  <p class="sp">Save it to your home screen:</p>
+  <p class="sq"><b>iPhone</b>: Share › Add to Home Screen</p>
+  <p class="sq"><b>Android</b>: Menu › Install app</p>
+  <div class="sbtn"><button type="button" id="shShare">Copy link</button><button type="button" class="y" id="shClose">Close</button></div>
+ </div></div>
 </div>
 <script>
 var GAMES=__GAMES__;
+// Safe-area insets (notch / home bar), read here and shared with the games (window.__SAFE overrides, for testing)
+var naP=document.createElement('div');naP.style.cssText='position:fixed;left:0;top:0;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)';document.body.appendChild(naP);
+window.__safe=function(){if(window.__SAFE)return window.__SAFE;var c=getComputedStyle(naP);return {t:parseFloat(c.paddingTop)||0,r:parseFloat(c.paddingRight)||0,b:parseFloat(c.paddingBottom)||0,l:parseFloat(c.paddingLeft)||0}};
+__NACALC__
+function naCover(){var de=document.documentElement,r=naCalc(__safe(),innerWidth,innerHeight,de.classList.contains('rot'),de.classList.contains('r270'));
+ de.style.setProperty('--sh',r.sh+'px');de.style.setProperty('--st',r.st);de.style.setProperty('--sr','rotate('+r.a+'deg) scale('+r.k+')')}
 // Keep each card description to two lines: shrink the text a little if it would wrap to a third.
 function fitCards(){document.querySelectorAll('.card small').forEach(function(el){el.style.fontSize='';el.style.webkitLineClamp='unset';
  var f=19;while(el.scrollHeight>41&&f>14){f-=.5;el.style.fontSize=f+'px'}el.style.webkitLineClamp=''})}
@@ -247,7 +275,7 @@ function orientCover(){var de=document.documentElement,W=innerWidth,H=innerHeigh
  rot=W>H&&H<600&&matchMedia('(pointer:coarse)').matches,a=0;
  if(rot){a=screen.orientation&&typeof screen.orientation.angle==='number'?screen.orientation.angle:(window.orientation===-90?270:90)}
  de.classList.toggle('rot',rot);de.classList.toggle('r270',rot&&a===270);
- c.style.width=rot?H+'px':'';c.style.height=rot?W+'px':'';fitCards()}
+ c.style.width=rot?H+'px':'';c.style.height=rot?W+'px':'';naCover();fitCards()}
 orientCover();addEventListener('resize',orientCover);addEventListener('orientationchange',function(){setTimeout(orientCover,100)});
 try{screen.orientation.addEventListener('change',orientCover)}catch(e){}try{document.fonts.ready.then(fitCards)}catch(e){}
 (function(){if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
@@ -304,7 +332,7 @@ if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostnam
 </body>
 </html>
 '''
-page = page.replace('__GAMES__', games)
+page = page.replace('__GAMES__', games).replace('__NACALC__', NACALC)
 QR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'icons', 'qr.svg')
 page = page.replace('__QR__', open(QR, encoding='utf-8').read() if os.path.exists(QR) else '')
 if PACK_FONTS:
