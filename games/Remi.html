@@ -91,6 +91,7 @@ button.b.cy:active{background:var(--cy);color:#07030f}
 .seg{display:flex;gap:var(--sg);flex:none}
 .seg button{flex:none;width:var(--sw);font:400 9px/1 var(--px);text-align:center;white-space:nowrap;color:var(--cy);background:transparent;border:2px solid var(--cy);border-radius:4px;padding:10px 0;cursor:pointer;text-shadow:0 0 6px var(--cy)}
 .seg button[aria-pressed="true"]{background:var(--cy);color:#07030f;text-shadow:none;box-shadow:0 0 12px var(--cy)}
+.seg button:disabled{opacity:.45;cursor:default}
 .tg{flex:none;width:var(--sw);overflow:hidden;font:400 9px/1 var(--px);text-align:center;white-space:nowrap;color:var(--cy);background:transparent;border:2px solid var(--cy);border-radius:4px;padding:10px 2px;cursor:pointer;text-shadow:0 0 6px var(--cy)}
 .tg.big{width:calc(2*var(--sw) + var(--sg))}
 .tg[aria-checked="true"]{background:var(--cy);color:#07030f;text-shadow:none;box-shadow:0 0 12px var(--cy)}
@@ -439,7 +440,7 @@ function endRound(closer,closeTile,why){token++;G.phase='over';
   if(G.atuBy===i)s+=50;
   if(i===closer){if(!(P.board&&G.bw))s+=50;if(dbl(closeTile))s*=2}
   if(G.dbl)s*=2;P.score+=s;return s});
- G.res={closer,x:closer>=0&&dbl(closeTile),why,pen,bw:closer>=0&&G.pl[closer].board?G.bw:null};G.over=G.pl.some(P=>P.score>=LIMIT);if(G.over)addRec(leader()===0);G.starter=(G.starter+1)%4;save();
+ G.res={closer,x:closer>=0&&dbl(closeTile),why,pen,bw:closer>=0&&G.pl[closer].board?G.bw:null};const top=Math.max(...G.pl.map(P=>P.score));G.tie=G.pl.some(P=>P.score>=LIMIT)&&G.pl.filter(P=>P.score===top).length>1;G.over=G.pl.some(P=>P.score>=LIMIT)&&!G.tie;if(G.over)addRec(leader()===0);G.starter=(G.starter+1)%4;save();
  const lead=leader();sfx(G.over?(lead===0?'win':'lose'):(closer===0?'win':'disc'));say(why);render()}
 function leader(){return G.pl.reduce((b,P,i)=>P.score>G.pl[b].score?i:b,0)}
 
@@ -454,7 +455,7 @@ function hDraw(){if(G.phase!=='draw')return;if(!G.pile.length){endRound(-1,-1,'T
  const id=G.pile.pop();G.pl[0].hand.push(id);newIds=[id];G.phase='play';T.snap=snap();sfx('draw');say(boardReady()?'Board ready: discard your spare tile':'You drew '+tname(id));render()}
 function hBoard(){if(!canBoard(0)||!(G.phase==='draw'||G.phase==='play')||T.runs||T.sets)return;
  if(!boardArm){boardArm=true;clearTimeout(boardT);boardT=setTimeout(()=>{boardArm=false;render()},3000);render();return}
- clearTimeout(boardT);boardArm=false;G.pl[0].board=true;T.must=[];sfx('lay');say('Board game: keep all your tiles in hand');save();render()}
+ clearTimeout(boardT);boardArm=false;G.pl[0].board=true;T.must=[];sfx('lay');say('Board game: keep all your tiles in hand');if(G.phase==='draw')save();render()}
 function hTake(i){if(G.phase!=='draw')return;const n=G.disc.length,P=G.pl[0];
  if(i===0)return bad('First discard is out of play');
  if(P.board){if(i<n-1)return bad('Board game: only the last');if(!canOpen())return bad('Not in round 1: draw');
@@ -549,7 +550,7 @@ function renderRes(tb){const r=G.res,box=document.createElement('div');box.class
  const bon=[];if(G.dbl)bon.push('double game x2');if(r.x)bon.push('closed with 1/joly x2');if(G.atuBy>=0)bon.push('atu: '+NAMES[G.atuBy]);if(r.bw)bon.unshift(r.bw.nm+' '+r.bw.pts);
  h+='<p>'+(bon.length?bon.join(' · '):'&nbsp;')+'</p><table><tr><td></td><td>Round</td><td>Total</td></tr>';
  G.pl.forEach((P,i)=>{h+='<tr'+(i===(G.over?lead:r.closer)?' class="win"':'')+'><td style="color:'+OWN[i]+'">'+NAMES[i]+'</td><td>'+(r.pen[i]>0?'+':'')+r.pen[i]+'</td><td>'+P.score+'</td></tr>'});
- h+='</table><p>First to '+LIMIT+' wins</p>';box.innerHTML=h;tb.appendChild(box)}
+ h+='</table><p>'+(G.tie?'Tie at the top: one more round':'First to '+LIMIT+' wins')+'</p>';box.innerHTML=h;tb.appendChild(box)}
 // Fixed tile sizes; the table grows into the free space but never taller than it is wide
 function layout(){const t=$('table'),g=$('game');if(t.clientWidth){const m=document.querySelector('main'),h=m.querySelector('h1'),bar=$('bar'),cs=getComputedStyle(m),hs=getComputedStyle(h),bs=getComputedStyle(bar),gs=getComputedStyle(g);
   const ht=hs.display==='none'?0:parseFloat(hs.fontSize)+parseFloat(hs.marginTop)+parseFloat(hs.marginBottom);
@@ -562,13 +563,13 @@ function layout(){const t=$('table'),g=$('game');if(t.clientWidth){const m=docum
 const panel=$('panel'),bar=$('bar'),pR=$('pRules'),pS=$('pSet'),bR=$('bRules'),bS=$('bSet');let armT=null;
 function showPanel(n){const cur=panel.hidden?'':panel.dataset.p,nx=n&&n!==cur?n:'';panel.hidden=!nx;panel.dataset.p=nx;pR.hidden=nx!=='rules';pS.hidden=nx!=='settings';
  bR.setAttribute('aria-expanded',nx==='rules'?'true':'false');bS.setAttribute('aria-expanded',nx==='settings'?'true':'false');if(nx==='settings')sync()}
-function seg(el,names,cur,fn){el.innerHTML='';names.forEach((t,i)=>{const b=document.createElement('button');b.type='button';b.textContent=t;b.setAttribute('aria-pressed',i===cur?'true':'false');b.onclick=()=>{fn(i);sync()};el.appendChild(b)})}
+function seg(el,names,cur,fn,dis){el.innerHTML='';names.forEach((t,i)=>{const b=document.createElement('button');b.type='button';b.textContent=t;b.setAttribute('aria-pressed',i===cur?'true':'false');b.disabled=!!dis;b.onclick=()=>{if(b.disabled)return;fn(i);sync()};el.appendChild(b)})}
 function setSw(id,on){const b=$(id);b.setAttribute('aria-checked',on?'true':'false');b.textContent=on?'On':'Off'}
 function inGame(){return G&&!G.over&&(G.round>1||G.tn>0)}
-function sync(){seg($('sLvl'),['Easy','Norm','Hard'],lvl,i=>{lvl=i;saveSet()});seg($('sSpd'),['Slow','Norm','Fast'],spd,i=>{spd=i;saveSet()});seg($('sTgt'),TARGETS.map(String),TARGETS.indexOf(LIMIT),i=>{LIMIT=TARGETS[i];saveSet();render()});
+function sync(){const lock=inGame();seg($('sLvl'),['Easy','Norm','Hard'],lvl,i=>{lvl=i;saveSet()},lock);seg($('sSpd'),['Slow','Norm','Fast'],spd,i=>{spd=i;saveSet()});seg($('sTgt'),TARGETS.map(String),TARGETS.indexOf(LIMIT),i=>{LIMIT=TARGETS[i];saveSet();render()},lock);
  setSw('tgSound',sndOn);setSw('tgCrt',!document.body.classList.contains('nocrt'));setSw('tgSwp',swp);$('recNote').textContent=recText();
  const b=$('btnNew');clearTimeout(armT);b.classList.remove('arm');b.textContent='New';
- $('note').textContent=G?'Round '+G.round+' · first to '+LIMIT+' wins.':''}
+ $('note').textContent=(G?'Round '+G.round+' · first to '+LIMIT+' wins. ':'')+(lock?'CPU level and target are locked until this match ends or New.':'')}
 $('btnNew').onclick=function(){const b=this;
  if(inGame()&&!b.classList.contains('arm')){b.classList.add('arm');b.textContent='Tap again';clearTimeout(armT);armT=setTimeout(()=>{b.classList.remove('arm');b.textContent='New'},3000);return}
  clearTimeout(armT);newGame();showPanel('')};

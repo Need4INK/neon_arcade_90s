@@ -137,7 +137,7 @@ var COLORS=['#ff2bd6','#19f3ff','#ffe94d','#ff7a3d','#39ff7a','#9b5cff','#ff3b5c
 var TIERS=[{id:'easy',name:'Easy',from:1,colors:8,pick:'low'},{id:'normal',name:'Normal',from:4,colors:8,pick:'mid'},
            {id:'hard',name:'Hard',from:8,colors:8,pick:'high'},{id:'expert',name:'Expert',from:13,colors:9,pick:'high'}];
 var $=function(id){return document.getElementById(id)};
-var level=1,best=0,solvedN=0,start=[],tubes=[],hist=[],sel=null,moves=0,won=false,hitIdx=-1;
+var level=1,best=0,solvedN=0,start=[],tubes=[],hist=[],sel=null,moves=0,won=false,hitIdx=-1,counted=false;
 
 try{level=parseInt(localStorage.getItem('ws_level'))||1;best=parseInt(localStorage.getItem('ws_best'))||0;solvedN=parseInt(localStorage.getItem('ws_solved'))||0}catch(e){}
 function save(){try{localStorage.setItem('ws_level',level);localStorage.setItem('ws_best',best);localStorage.setItem('ws_solved',solvedN)}catch(e){}}
@@ -189,14 +189,14 @@ try{WK=new Worker(URL.createObjectURL(new Blob(['var CAP='+CAP+',TUBES='+TUBES+'
  '\nonmessage=function(e){var t=TIERS.filter(function(x){return x.id===e.data})[0];postMessage({id:e.data,ts:generate(t)})}'],{type:'text/javascript'})));
  WK.onmessage=function(e){asked[e.data.id]=0;pre[e.data.id]=e.data.ts};WK.onerror=function(){WK=null}}catch(e){WK=null}
 function want(id){if(!WK||pre[id]||asked[id])return;asked[id]=1;try{WK.postMessage(id)}catch(e){asked[id]=0}}
-function newPuzzle(){var t=tierOf(level);start=pre[t.id]||generate(t);delete pre[t.id];restart();want(t.id);want(tierOf(level+1).id)}
+function newPuzzle(){var t=tierOf(level);counted=false;start=pre[t.id]||generate(t);delete pre[t.id];restart();want(t.id);want(tierOf(level+1).id)}
 function restart(){tubes=clone(start);hist=[];sel=null;moves=0;won=false;hitIdx=-1;render(tierOf(level).name+' · tap a tube')}
 function tap(i){if(won)return;var t=tubes[i];
  if(sel===null){if(t.length&&!isDone(t)){sel=i;sfx('pick');render('Now tap where to pour')}return}
  if(sel===i){sel=null;render('Tap a tube');return}
  if(canPour(tubes,sel,i)){hist.push({ts:clone(tubes),moves:moves});var n=pour(tubes,sel,i);moves++;sel=null;hitIdx=i;sfx('pour',n);
   if(isDone(tubes[i]))sfx('full');
-  if(solved(tubes)){won=true;best=Math.max(best,level);solvedN++;save();sfx('win');render('Solved in '+moves+' moves!');return}
+  if(solved(tubes)){won=true;best=Math.max(best,level);if(!counted){solvedN++;counted=true}save();sfx('win');render('Solved in '+moves+' moves!');return}
   render(isDone(tubes[i])?'Tube complete!':'Poured '+n+(n>1?' layers':' layer'));return}
  if(t.length&&!isDone(t)){sel=i;sfx('pick');render('Now tap where to pour');return}
  sfx('bad');var s=sel;sel=null;render("Can't pour there",i)}
@@ -224,7 +224,12 @@ function render(m,badIdx){
  var a=$('acts');a.innerHTML='';
  a.appendChild(won?btn('Next level',next):btn('Undo',undo,!hist.length));
  if(typeof panel!=='undefined'&&panel&&!panel.hidden&&panel.dataset.p==='settings')sync()
- layout()}
+ layout();saveG()}
+// The puzzle in progress is kept when the app is closed (a solved puzzle counts once, even after Restart)
+function saveG(){try{localStorage.setItem('ws_game',JSON.stringify({level:level,start:start,tubes:tubes,hist:hist.slice(-200),moves:moves,won:won,counted:counted}))}catch(e){}}
+function loadG(){try{var g=JSON.parse(localStorage.getItem('ws_game'));if(!g||g.level!==level||!g.start||!g.tubes||g.tubes.length!==TUBES)return false;
+ start=g.start;tubes=g.tubes;hist=g.hist||[];moves=g.moves||0;won=!!g.won;counted=!!g.counted;sel=null;hitIdx=-1;
+ render(won?'Solved in '+moves+' moves!':moves?'Welcome back':tierOf(level).name+' · tap a tube');want(tierOf(level).id);want(tierOf(level+1).id);return true}catch(e){return false}}
 // Size tubes so 2 rows of 5 fill the board without overflowing.
 // Space the game may use: the screen minus the title and the bar (both at their natural height)
 function gameRoom(){var m=document.querySelector('main'),h=m.querySelector('h1'),bar=$('bar'),cs=getComputedStyle(m),hs=getComputedStyle(h),bs=getComputedStyle(bar);
@@ -266,7 +271,7 @@ function fit(){var de=document.documentElement,W=innerWidth,H=innerHeight,
 fit();addEventListener('resize',fit);addEventListener('orientationchange',function(){setTimeout(fit,100)});
 try{screen.orientation.addEventListener('change',fit)}catch(e){}
 
-newPuzzle();
+if(!loadG())newPuzzle();
 })();
 </script>
 <script>
