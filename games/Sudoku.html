@@ -112,7 +112,7 @@ main::before,main::after{display:none}
 <h1 id="t1">Sudoku</h1>
 <noscript>Sudoku needs JavaScript to run.</noscript>
 <div class="mid" id="mid"><div class="msg" id="msg" role="status" aria-live="polite"></div></div>
-<div class="hd" id="hd"><span id="hdn">Normal <small id="best"></small></span><b id="clock" role="timer" aria-label="Time">0:00</b></div>
+<div class="hd" id="hd"><span id="hdn">Easy <small id="best"></small></span><b id="clock" role="timer" aria-label="Time">0:00</b></div>
 <div id="board" role="grid" aria-label="Sudoku board"></div>
 <div class="acts" id="acts">
 <button type="button" class="b" id="aUndo">Undo</button><button type="button" class="b" id="aNotes" aria-pressed="false">Notes</button><button type="button" class="b" id="aErase">Erase</button><button type="button" class="b" id="aHint">Hint</button><button type="button" class="b" id="aAgain" hidden>Play again</button>
@@ -122,10 +122,10 @@ main::before,main::after{display:none}
 <section class="panel" id="panel" hidden>
 <div id="pRules" hidden>
 <p>Fill the grid so every <b>row</b>, <b>column</b> and <b>3×3 box</b> holds each number 1 to 9 exactly once.</p>
-<p><b>Play:</b> tap a cell, then a number. Tap the same number again to clear it. White numbers are given and can't change. The clock starts with your first number.</p>
+<p><b>Play:</b> tap a cell, then a number. Tap the same number again to clear it. White numbers are given and can't change. The clock starts with your first number and pauses while Rules or Settings is open.</p>
 <p><b>Notes:</b> turn on Notes to pencil small candidates into a cell. Placing a number clears it from notes in the same row, column and box.</p>
 <p><b>Clashes</b> (the same number twice in a row, column or box) glow magenta.</p>
-<p><b>Hint</b> (turn it on in Settings) fills the selected cell, or a random one, with the right number (green). <b>Undo</b> takes back moves one at a time. Best times count only puzzles solved without hints.</p>
+<p><b>Hint</b> (turn it on in Settings) fills the selected cell, or a random one, with the right number (green). <b>Undo</b> takes back moves one at a time. Best times count only puzzles solved without hints (an undone hint still counts).</p>
 <p><b>Levels:</b> every puzzle has exactly one solution. Easy and Normal need only simple steps; Hard needs smarter eliminations; Master has the fewest clues. Pick the difficulty in <b>Settings</b>; it locks once you start a puzzle.</p></div>
 <div id="pSet" hidden>
 <div class="row wrap"><span class="lab">Difficulty</span><div class="seg" id="diff" role="group" aria-label="Difficulty"></div></div>
@@ -213,11 +213,11 @@ var SFX={on:function(){tone(660,.1,'square',.18);tone(990,.16,'square',.18,.11)}
 function sfx(n){if(!sndOn)return;try{SFX[n]()}catch(e){}}
 // ---- state
 var DIFFS=['easy','normal','hard','master'],DN={easy:'Easy',normal:'Normal',hard:'Hard',master:'Master'};
-var S={diff:'normal'},giv=null,sol,val,notes,fix,hist=[],sel=-1,over=false,started=false,time=0,hints=0,noteMode=false,undoOn=true,hintOn=false,best={},gid=0,lastMsg='',clockOn=false;
+var S={diff:'easy'},giv=null,sol,val,notes,fix,hist=[],sel=-1,over=false,started=false,time=0,hints=0,noteMode=false,undoOn=true,hintOn=false,best={},gid=0,lastMsg='',clockOn=false;
 function save(){try{if(giv)localStorage.setItem('sdk-game',JSON.stringify({diff:S.diff,giv:giv,sol:sol,val:val,notes:notes,fix:fix,over:over,started:started,time:time,clock:clockOn,hints:hints,undo:undoOn,hintOn:hintOn}));localStorage.setItem('sdk-best',JSON.stringify(best))}catch(e){}}
 function load(){try{best=JSON.parse(localStorage.getItem('sdk-best'))||{};var s=JSON.parse(localStorage.getItem('sdk-game'));
  if(s&&s.giv&&s.giv.length===81&&!s.over){S.diff=s.diff;giv=s.giv;sol=s.sol;val=s.val;notes=s.notes;fix=s.fix;started=!!s.started;time=s.time||0;clockOn=s.clock!=null?!!s.clock:time>0;hints=s.hints||0;undoOn=s.undo!==false;hintOn=s.hintOn===true;return true}
- if(s){S.diff=s.diff||'normal';undoOn=s.undo!==false;hintOn=s.hintOn===true}}catch(e){best=best||{}}return false}
+ if(s){S.diff=s.diff||'easy';undoOn=s.undo!==false;hintOn=s.hintOn===true}}catch(e){best=best||{}}return false}
 function fmt(ms){var s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor(s/60)%60;s%=60;return(h?h+':'+(m<10?'0':''):'')+m+':'+(s<10?'0':'')+s}
 function start(){gid++;var g=gid;giv=null;over=false;started=false;sel=-1;hist=[];noteMode=false;render('Building puzzle…');
  setTimeout(function(){if(g!==gid)return;var p=generate(S.diff);giv=p.g;sol=p.sol;val=giv.slice();notes=Array(81).fill(0);
@@ -291,9 +291,9 @@ function renderDiff(){var el=document.getElementById('diff');el.innerHTML='';var
  DIFFS.forEach(function(d){var b=document.createElement('button');b.type='button';b.textContent=DN[d];
   b.setAttribute('aria-pressed',S.diff===d?'true':'false');b.disabled=lock;if(lock)b.title='Locked until this puzzle ends';
   b.onclick=function(){if(inGame()||(S.diff===d&&giv&&!over))return;S.diff=d;start();showPanel('')};el.appendChild(b)})}
-// ---- timer: starts with the first number placed, then runs while the puzzle is on screen (pauses when the app is hidden or you go back to the Menu)
+// ---- timer: starts with the first number placed, then runs while the puzzle is on screen (pauses when the app is hidden, you go back to the cover, or Rules/Settings is open)
 var lastT=Date.now(),shown=-1;
-function active(){if(!giv||over||!clockOn||document.hidden)return false;try{if(window.frameElement&&window.frameElement.hidden)return false}catch(e){}return true}
+function active(){if(!giv||over||!clockOn||document.hidden)return false;var pn=document.getElementById('panel');if(pn&&!pn.hidden)return false;try{if(window.frameElement&&window.frameElement.hidden)return false}catch(e){}return true}
 setInterval(function(){var now=Date.now(),dt=Math.min(now-lastT,1000);lastT=now;if(!active())return;time+=dt;var s=Math.floor(time/1000);if(s!==shown){shown=s;showTime();if(s%5===0)save()}},250);
 document.addEventListener('visibilitychange',function(){lastT=Date.now();save()});
 addEventListener('pagehide',save);
@@ -314,7 +314,7 @@ function showPanel(n){var cur=panel.hidden?'':panel.dataset.p,nx=n&&n!==cur?n:''
  bR.setAttribute('aria-expanded',nx==='rules');bS.setAttribute('aria-expanded',nx==='settings');if(nx==='settings')sync()}
 function setSw(id,on){var b=document.getElementById(id);b.setAttribute('aria-checked',on?'true':'false');b.textContent=on?'On':'Off'}
 function sync(){var lock=inGame();
- document.getElementById('lockNote').textContent=lock?'Difficulty is locked until this puzzle is solved or canceled.':'';document.getElementById('recNote').textContent=recText();
+ document.getElementById('lockNote').textContent=lock?'Difficulty is locked until this puzzle is solved or cancelled.':'';document.getElementById('recNote').textContent=recText();
  var cb=document.getElementById('btnCancel');cb.disabled=!giv||over;clearTimeout(cancelT);cb.classList.remove('arm');cb.textContent='Cancel game';
  setSw('tgSound',sndOn);setSw('tgCrt',!document.body.classList.contains('nocrt'));setSw('tgHint',hintOn);setSw('tgUndo',undoOn)}
 document.getElementById('tgSound').onclick=function(){sndOn=!sndOn;if(sndOn){try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}audio();SFX.on()}sync()};

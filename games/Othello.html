@@ -28,7 +28,7 @@ h1{font:400 20px/1 var(--px);text-transform:uppercase;letter-spacing:2px;margin:
 .diff{display:flex;gap:8px}
 .diff button{font:400 9px/1 var(--px);color:var(--cy);background:transparent;border:2px solid var(--cy);border-radius:4px;padding:8.5px 8px;cursor:pointer;text-shadow:0 0 6px var(--cy)}
 .diff button[aria-pressed="true"]{background:var(--cy);color:#07030f;text-shadow:none;box-shadow:0 0 12px var(--cy)}
-.diff button:disabled{opacity:.45;cursor:default}
+.diff button:disabled,.diff button.lk{opacity:.45;cursor:default}
 .hd{display:flex;justify-content:space-between;align-items:center;background:var(--panel);border:2px solid var(--line);border-radius:6px;padding:8px 10px;font:400 10px/1 var(--px)}
 .hd.opp{border-color:var(--mag);box-shadow:0 0 8px rgba(255,43,214,.55),inset 0 0 14px rgba(255,43,214,.18)}
 .hd.you{border-color:var(--cy);box-shadow:0 0 8px rgba(25,243,255,.55),inset 0 0 14px rgba(25,243,255,.16)}
@@ -122,7 +122,7 @@ body:not(.flip) .bar{flex:1 1 auto;max-height:none}
 <h1 id="t1">Othello</h1>
 <div class="ctl"><div class="diff" id="diff" role="group" aria-label="Difficulty"></div></div>
 <div class="mid" id="msg2"><div class="msg" id="msg2t"></div></div>
-<div class="hd opp" id="hdO"><span id="on">Opponent <small id="os"></small></span><b id="cs">2</b></div>
+<div class="hd opp" id="hdO"><span id="on">CPU <small id="os"></small></span><b id="cs">2</b></div>
 <div id="board" role="group" aria-label="Othello board"></div>
 <div class="hd you" id="hdY"><span id="yn">You <small id="ys"></small></span><b id="ps">2</b></div>
 <div class="mid"><div class="msg" id="msg" role="status" aria-live="polite"></div></div>
@@ -134,7 +134,7 @@ body:not(.flip) .bar{flex:1 1 auto;max-height:none}
 <p><b>Flip:</b> every sandwiched disc turns to your color. A move must flip at least one disc. Glowing dots mark where you can play.</p>
 <p><b>Pass:</b> if you have no legal move, your turn is skipped.</p>
 <p><b>End:</b> the game ends when neither player can move. The player with the most discs wins.</p>
-<p><b>Undo:</b> you can take back your last move until the other player moves.</p></div>
+<p><b>Undo:</b> against the CPU, Undo takes back your last move and the CPU's reply. With two players, you can take back your last move until the other player moves.</p></div>
 <div id="pSet" hidden>
 <div class="row"><span class="lab">Mode</span><div class="seg" id="modeSeg"><button type="button" data-m="cpu">P1 vs CPU</button><button type="button" data-m="2p">P1 vs P2</button></div></div>
 <div class="row" id="rowFlip" hidden><span class="lab">Flip top player</span><button type="button" class="tg" id="tgFlip" role="switch" aria-checked="false">Off</button></div>
@@ -172,7 +172,7 @@ function flips(b,r,c,p){if(b[r][c])return[];var out=[];DIRS.forEach(function(d){
 function moves(b,p){var m=[];for(var r=0;r<N;r++)for(var c=0;c<N;c++){var f=flips(b,r,c,p);if(f.length)m.push({r:r,c:c,f:f})}return m}
 function apply(b,m,p){var nb=b.map(function(x){return x.slice()});nb[m.r][m.c]=p;m.f.forEach(function(q){nb[q[0]][q[1]]=p});return nb}
 function count(b){var a=0,z=0;b.forEach(function(row){row.forEach(function(v){if(v===P)a++;else if(v===C)z++})});return[a,z]}
-function name(s){return mode==='2p'?(s===P?'Player 1':'Player 2'):(s===P?'You':'Opponent')}
+function name(s){return mode==='2p'?(s===P?'Player 1':'Player 2'):(s===P?'You':'CPU')}
 function sn(s){return mode==='2p'?(s===P?'P1':'P2'):(s===P?'You':'CPU')}
 function cpuSide(){return mode==='cpu'&&turn===C}
 // ---- AI
@@ -209,11 +209,11 @@ function next(note){
   if(!moves(bd,-turn).length){over=true;var k=count(bd),a=k[0],z=k[1];
    if(mode==='cpu'){if(a>z)S.w++;else if(a<z)S.l++;else S.t++;addRec(S.diff,a>z?0:a<z?1:2)}else{if(a>z)S.p1++;else if(a<z)S.p2++;else S.pt++}
    sfx(a===z?'tie':(mode==='2p'||a>z)?'win':'loss');
-   render(a===z?'Tie at '+a:mode==='2p'?'P'+(a>z?1:2)+' wins '+Math.max(a,z)+'–'+Math.min(a,z)+'!':a>z?'You win '+a+'–'+z+'!':'You lose '+a+'–'+z);return}
+   render(a===z?'Tie at '+a+'.':mode==='2p'?'P'+(a>z?1:2)+' wins '+Math.max(a,z)+'–'+Math.min(a,z)+'!':a>z?'You win '+a+'–'+z+'!':'You lose '+a+'–'+z+'.');return}
   sfx('pass');note=sn(turn)+' must pass · ';turn=-turn}
  if(cpuSide()){busy=true;render(note+'CPU thinking…');var g=gid;
   setTimeout(function(){if(g!==gid)return;busy=false;play(cpuPick())},650)}
- else render(note+(mode==='2p'?sn(turn)+' to move':'your move'))}
+ else render(note+(mode==='2p'?sn(turn)+' to move':note?'your move':'Your move'))}
 // ---- render
 function render(m){renderDiff();document.body.classList.toggle('p2t',mode==='2p'&&turn===C&&!over);
  var el=document.getElementById('board');el.className=(over||hints)?'':turn===P?'tp':'tc';var ms=(over||busy||cpuSide())?[]:moves(bd,turn);el.innerHTML='';
@@ -263,8 +263,11 @@ function renderDiff(){var el=document.getElementById('diff');el.innerHTML='';
  document.querySelector('.ctl').hidden=mode==='2p';
  if(mode==='2p')return;
  var lock=inGame();['easy','normal','hard'].forEach(function(d){var b=document.createElement('button');b.type='button';b.textContent=d[0].toUpperCase()+d.slice(1);
-  b.setAttribute('aria-pressed',S.diff===d?'true':'false');b.disabled=lock;if(lock)b.title='Locked until this game ends';
-  b.onclick=function(){S.diff=d;renderDiff()};el.appendChild(b)})}
+  b.setAttribute('aria-pressed',S.diff===d?'true':'false');if(lock){b.className='lk';b.setAttribute('aria-disabled','true')}
+  b.onclick=function(){if(lock){flash('Finish or cancel this game to change level.');return}S.diff=d;renderDiff()};el.appendChild(b)})}
+// A short note in the message line; the previous message comes back after 2.5 s unless the game moved on
+var flashT=null;function flash(t){var e=document.querySelector('#msg>div');if(!e)return;var old=e.getAttribute('data-m')!=null?e.getAttribute('data-m'):e.textContent;clearTimeout(flashT);e.setAttribute('data-m',old);e.textContent=t;oneLine(e);
+ flashT=setTimeout(function(){var x=document.querySelector('#msg>div');if(x===e&&x.textContent===t){x.textContent=old;x.removeAttribute('data-m');oneLine(x)}},2500)}
 // ---- panel
 var panel=document.getElementById('panel'),bar=document.getElementById('bar'),pR=document.getElementById('pRules'),pS=document.getElementById('pSet'),bR=document.getElementById('bRules'),bS=document.getElementById('bSet'),cancelT=null;
 function showPanel(n){var cur=panel.hidden?'':panel.dataset.p,nx=n&&n!==cur?n:'';panel.hidden=!nx;panel.dataset.p=nx;pR.hidden=nx!=='rules';pS.hidden=nx!=='settings';
@@ -272,7 +275,7 @@ function showPanel(n){var cur=panel.hidden?'':panel.dataset.p,nx=n&&n!==cur?n:''
 function setSw(id,on){var b=document.getElementById(id);b.setAttribute('aria-checked',on?'true':'false');b.textContent=on?'On':'Off'}
 function sync(){var lock=inGame();
  document.querySelectorAll('#modeSeg button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.m===mode?'true':'false');b.disabled=lock});
- document.getElementById('lockNote').textContent=lock?'Mode is locked until this game ends or is canceled.':'';document.getElementById('recNote').textContent=recText();
+ document.getElementById('lockNote').textContent=lock?'Mode is locked until this game ends or is cancelled.':'';document.getElementById('recNote').textContent=recText();
  var cb=document.getElementById('btnCancel');cb.disabled=!lock;clearTimeout(cancelT);cb.classList.remove('arm');cb.textContent='Cancel game';
  setSw('tgSound',sndOn);setSw('tgCrt',!document.body.classList.contains('nocrt'));setSw('tgHint',hints);setSw('tgUndo',undoOn);setSw('tgFlip',document.body.classList.contains('flip'));document.getElementById('rowFlip').hidden=mode!=='2p'}
 document.querySelectorAll('#modeSeg button').forEach(function(b){b.onclick=function(){if(b.disabled||mode===b.dataset.m)return;mode=b.dataset.m;if(mode!=='2p')document.body.classList.remove('flip');start();sync()}});
