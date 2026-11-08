@@ -69,6 +69,9 @@ h1{font:400 20px/1 var(--px);text-transform:uppercase;letter-spacing:2px;margin:
 .res td{padding:2px 8px;text-align:right}
 .res td:first-child{text-align:left}
 .res .win td{color:var(--yel)}
+/* Round end: a diagonal light across the score table in the winner's colour, like Sudoku's solve */
+.res.wv td{animation:remWave .7s ease-out both}
+@keyframes remWave{35%{background:var(--wc)}}
 .acts{display:flex;justify-content:center;gap:8px;flex:none}
 button.b{background:transparent;color:var(--yel);border:2px solid var(--yel);border-radius:4px;padding:6px 10px;margin:0;font:400 10px/1.2 var(--px);cursor:pointer;text-shadow:0 0 8px var(--yel);box-shadow:0 0 10px rgba(255,233,77,.5)}
 button.b:active{background:var(--yel);color:#07030f;text-shadow:none}
@@ -447,7 +450,7 @@ function endRound(closer,closeTile,why){token++;G.phase='over';ev=[];
   if(i===closer){if(!(P.board&&G.bw))s+=50;if(dbl(closeTile))s*=2}
   if(G.dbl)s*=2;P.score+=s;return s});
  G.res={closer,x:closer>=0&&dbl(closeTile),why,pen,bw:closer>=0&&G.pl[closer].board?G.bw:null};const top=Math.max(...G.pl.map(P=>P.score));G.tie=G.pl.some(P=>P.score>=LIMIT)&&G.pl.filter(P=>P.score===top).length>1;G.over=G.pl.some(P=>P.score>=LIMIT)&&!G.tie;if(G.over)addRec(leader()===0);G.starter=(G.starter+1)%4;save();
- const lead=leader();sfx(G.over?(lead===0?'win':'lose'):(closer===0?'win':'disc'));say(why);render()}
+ const lead=leader();sfx(G.over?(lead===0?'win':'lose'):(closer===0?'win':'disc'));say(why);waveRes=true;render()}
 function leader(){return G.pl.reduce((b,P,i)=>P.score>G.pl[b].score?i:b,0)}
 
 // ---- your moves
@@ -558,12 +561,15 @@ function render(){
   if(!me.board)a.appendChild(btn('Lay down',hLay,!my||sel.size<3));a.appendChild(btn('Discard',hDiscard,!my||sel.size!==1))}
  if(!panel.hidden&&panel.dataset.p==='settings')sync();
  layout()}
-function renderRes(tb){const r=G.res,box=document.createElement('div');box.className='res';const lead=leader();
+let waveRes=false;
+function renderRes(tb){const r=G.res,box=document.createElement('div');box.className='res'+(waveRes?' wv':'');waveRes=false;const lead=leader();
  let h='<h2>'+(G.over?(lead===0?'You win the game!':NAMES[lead]+' wins the game'):'Round '+G.round)+'</h2>';
  const bon=[];if(G.dbl)bon.push('double game x2');if(r.x)bon.push('closed with 1/joly x2');if(G.atuBy>=0)bon.push('atu: '+NAMES[G.atuBy]);if(r.bw)bon.unshift(r.bw.nm+' '+r.bw.pts);
  h+='<p>'+(bon.length?bon.join(' · '):'&nbsp;')+'</p><table><tr><td></td><td>Round</td><td>Total</td></tr>';
  G.pl.forEach((P,i)=>{h+='<tr'+(i===(G.over?lead:r.closer)?' class="win"':'')+'><td style="color:'+OWN[i]+'">'+NAMES[i]+'</td><td>'+(r.pen[i]>0?'+':'')+r.pen[i]+'</td><td>'+P.score+'</td></tr>'});
- h+='</table><p>'+(G.tie?'Tie at the top: one more round':'First to '+LIMIT+' wins')+'</p>';box.innerHTML=h;tb.appendChild(box)}
+ h+='</table><p>'+(G.tie?'Tie at the top: one more round':'First to '+LIMIT+' wins')+'</p>';box.innerHTML=h;
+ const w=G.over?lead:r.closer,hx=w>=0?OWN[w]:'#ffe94d';box.style.setProperty('--wc','rgba('+[1,3,5].map(k=>parseInt(hx.substr(k,2),16)).join(',')+',.45)');
+ [...box.querySelectorAll('tr')].forEach((t,i)=>[...t.children].forEach((c,j)=>c.style.animationDelay=(i+j)*45+'ms'));tb.appendChild(box)}
 // Fixed tile sizes; the table grows into the free space but never taller than it is wide
 function layout(){const t=$('table'),g=$('game');if(t.clientWidth){const m=document.querySelector('main'),h=m.querySelector('h1'),bar=$('bar'),cs=getComputedStyle(m),hs=getComputedStyle(h),bs=getComputedStyle(bar),gs=getComputedStyle(g);
   const ht=hs.display==='none'?0:parseFloat(hs.fontSize)+parseFloat(hs.marginTop)+parseFloat(hs.marginBottom);

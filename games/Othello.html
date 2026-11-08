@@ -52,6 +52,9 @@ h1{font:400 20px/1 var(--px);text-transform:uppercase;letter-spacing:2px;margin:
 .disc.p{background:radial-gradient(circle at 35% 30%,#c7fcff,#0b5f70 75%);border-color:var(--cy);box-shadow:0 0 8px var(--cy)}
 .disc.c{background:radial-gradient(circle at 35% 30%,#ffc2f4,#7a0d65 75%);border-color:var(--mag);box-shadow:0 0 8px var(--mag)}
 .disc.new{animation:drop .35s}
+/* End of game: a wave across the board in the winner's colour (yellow on a tie), like Sudoku's solve */
+.sq.wv{animation:othWave .7s ease-out both}
+@keyframes othWave{35%{background:var(--wc)}}
 .disc.flip{animation:flip .45s}
 @keyframes drop{0%{transform:scale(1.5);box-shadow:0 0 22px #fff,0 0 30px var(--yel)}100%{transform:scale(1)}}
 @keyframes flip{0%{transform:scaleX(1)}50%{transform:scaleX(0);box-shadow:0 0 22px var(--yel)}100%{transform:scaleX(1)}}
@@ -204,12 +207,13 @@ function play(m){hist.push({bd:bd.map(function(x){return x.slice()}),turn:turn,l
  else floor=n-1;
  bd=apply(bd,m,turn);last=[m.r,m.c];fresh=m.f;sfx(side===P||mode==='2p'?'place':'opp');sfx('flip',m.f.length);
  var note=sn(side)+' flipped '+m.f.length+' · ';turn=-turn;next(note)}
+function wave(col){[].forEach.call(document.querySelectorAll('#board .sq'),function(q,i){q.style.setProperty('--wc',col);q.style.animationDelay=(Math.floor(i/N)+i%N)*45+'ms';q.classList.add('wv')})}
 function next(note){
  if(!moves(bd,turn).length){
   if(!moves(bd,-turn).length){over=true;var k=count(bd),a=k[0],z=k[1];
    if(mode==='cpu'){if(a>z)S.w++;else if(a<z)S.l++;else S.t++;addRec(S.diff,a>z?0:a<z?1:2)}else{if(a>z)S.p1++;else if(a<z)S.p2++;else S.pt++}
    sfx(a===z?'tie':(mode==='2p'||a>z)?'win':'loss');
-   render(a===z?'Tie at '+a+'.':mode==='2p'?'P'+(a>z?1:2)+' wins '+Math.max(a,z)+'–'+Math.min(a,z)+'!':a>z?'You win '+a+'–'+z+'!':'You lose '+a+'–'+z+'.');return}
+   render(a===z?'Tie at '+a+'.':mode==='2p'?'P'+(a>z?1:2)+' wins '+Math.max(a,z)+'–'+Math.min(a,z)+'!':a>z?'You win '+a+'–'+z+'!':'You lose '+a+'–'+z+'.');wave(a>z?'rgba(25,243,255,.5)':a<z?'rgba(255,43,214,.5)':'rgba(255,233,77,.45)');return}
   sfx('pass');note=sn(turn)+' must pass · ';turn=-turn}
  if(cpuSide()){busy=true;render(note+'CPU thinking…');var g=gid;
   setTimeout(function(){if(g!==gid)return;busy=false;play(cpuPick())},650)}

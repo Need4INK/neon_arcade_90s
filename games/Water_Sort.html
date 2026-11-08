@@ -44,6 +44,9 @@ h1{font:400 20px/1 var(--px);text-transform:uppercase;letter-spacing:2px;margin:
 .tube.done::before{background:var(--mag)}
 .tube.bad{animation:shake .3s}
 .tube.hit{animation:pop .35s}
+/* Solved: a diagonal light across the tubes, like Sudoku's solve */
+.tube.wv::after{content:"";position:absolute;top:0;right:0;bottom:0;left:0;pointer-events:none;background:rgba(25,243,255,.5);opacity:0;animation:wsWave .7s ease-out both;animation-delay:inherit}
+@keyframes wsWave{35%{opacity:1}}
 @keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 @keyframes pop{0%{filter:brightness(1.8)}100%{filter:none}}
 .tube:focus-visible,button.b:focus-visible,.bar button:focus-visible,.seg button:focus-visible,.tg:focus-visible{outline:3px solid var(--yel);outline-offset:2px}
@@ -202,7 +205,7 @@ function tap(i){if(won)return;var t=tubes[i];
  if(sel===i){sel=null;render('Tap a tube');return}
  if(canPour(tubes,sel,i)){hist.push({ts:clone(tubes),moves:moves});var n=pour(tubes,sel,i);moves++;sel=null;hitIdx=i;sfx('pour',n);
   if(isDone(tubes[i]))sfx('full');
-  if(solved(tubes)){won=true;best=Math.max(best,level);if(!counted){solvedN++;counted=true}save();sfx('win');render('Solved in '+moves+' moves!',-1,'win');return}
+  if(solved(tubes)){won=true;best=Math.max(best,level);if(!counted){solvedN++;counted=true}save();sfx('win');waveNow=true;render('Solved in '+moves+' moves!',-1,'win');return}
   render(isDone(tubes[i])?'Tube complete!':'Poured '+n+(n>1?' layers':' layer'));return}
  if(t.length&&!isDone(t)){sel=i;sfx('pick');render("Can't pour: picked this tube",-1,'bad');return}
  sfx('bad');var s=sel;sel=null;render("Can't pour there",i,'bad')}
@@ -220,13 +223,14 @@ function renderDiff(){var el=$('diff'),cur=tierOf(level),on=cur.sub||cur.id,lock
     $('note').textContent=t.name+' starts at level '+t.from+' (you are on level '+level+'). Tap again to go there.';clearTimeout(diffT);diffT=setTimeout(function(){renderDiff();if(!panel.hidden)sync()},3000);return}
    clearTimeout(diffT);level=t.from;save();newPuzzle();showPanel('')};el.appendChild(b)})}
 var diffT=null;
+var waveNow=false;
 function render(m,badIdx,cls){
  renderDiff();var me=$('msg');if(m!==undefined){me.textContent=m;me.className='msg'+(cls?' '+cls:'')}
  $('lvl').textContent=level;
  $('sub').textContent=won?'· Solved in '+moves+'!':'· Moves '+moves+(best?' · Best Lv '+best:'');
  var board=$('board');board.innerHTML='';board.classList.toggle('won',won);
  tubes.forEach(function(t,i){var d=document.createElement('button');d.type='button';
-  d.className='tube'+(sel===i?' sel':'')+(isDone(t)?' done':'')+(i===badIdx?' bad':'')+(i===hitIdx?' hit':'');
+  d.className='tube'+(sel===i?' sel':'')+(isDone(t)?' done':'')+(i===badIdx?' bad':'')+(i===hitIdx?' hit':'')+(waveNow?' wv':'');
   d.setAttribute('aria-label','Tube '+(i+1)+', '+t.length+' of 4 layers'+(isDone(t)?', complete':''));
   t.forEach(function(c,j){var s=document.createElement('div');s.className='liq'+(j?' cut':'');s.style.color=COLORS[c];d.appendChild(s)});
   d.onclick=function(){tap(i)};board.appendChild(d)});
@@ -234,7 +238,10 @@ function render(m,badIdx,cls){
  var a=$('acts');a.innerHTML='';
  a.appendChild(won?btn('Next level',next):btn('Undo',undo,!hist.length));
  if(typeof panel!=='undefined'&&panel&&!panel.hidden&&panel.dataset.p==='settings')sync()
- layout();saveG()}
+ layout();
+ if(waveNow){waveNow=false;var ts=[].slice.call(board.children),xs=[],ys=[];ts.forEach(function(t){if(xs.indexOf(t.offsetLeft)<0)xs.push(t.offsetLeft);if(ys.indexOf(t.offsetTop)<0)ys.push(t.offsetTop)});
+  xs.sort(function(a,b){return a-b});ys.sort(function(a,b){return a-b});ts.forEach(function(t){t.style.animationDelay=(xs.indexOf(t.offsetLeft)+ys.indexOf(t.offsetTop))*60+'ms'})}
+ saveG()}
 // The puzzle in progress is kept when the app is closed (a solved puzzle counts once, even after Restart)
 function saveG(){try{localStorage.setItem('ws_game',JSON.stringify({level:level,start:start,tubes:tubes,hist:hist.slice(-200),moves:moves,won:won,counted:counted}))}catch(e){}}
 function loadG(){try{var g=JSON.parse(localStorage.getItem('ws_game'));if(!g||g.level!==level||!g.start||!g.tubes||g.tubes.length!==TUBES)return false;
