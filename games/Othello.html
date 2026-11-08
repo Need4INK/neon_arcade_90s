@@ -153,6 +153,7 @@ var P=1,C=-1,N=8,DIRS=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
 var WT=[[100,-20,10,5,5,10,-20,100],[-20,-50,-2,-2,-2,-2,-50,-20],[10,-2,1,1,1,1,-2,10],[5,-2,1,0,0,1,-2,5],[5,-2,1,0,0,1,-2,5],[10,-2,1,1,1,1,-2,10],[-20,-50,-2,-2,-2,-2,-50,-20],[100,-20,10,5,5,10,-20,100]];
 var bd,turn,over,last,fresh=[],hist=[],busy=false,mode='cpu',gid=0,hints=true,undoOn=true,floor=0;
 var S={diff:'normal',w:0,l:0,t:0,p1:0,p2:0,pt:0};
+try{var sv=JSON.parse(localStorage.getItem('oth-stats'));if(sv)for(var sk in S)if(sk in sv)S[sk]=sv[sk]}catch(e){}
 // ---- sound (same chip-tune style as Knucklebones)
 var AC=null,sndOn=false;
 function audio(){if(!AC){try{var X=window.AudioContext||window.webkitAudioContext;AC=X?new X():null}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
@@ -192,6 +193,7 @@ function cpuPick(){var ms=moves(bd,C);
 // Saved record vs the CPU per difficulty (wins, losses, ties)
 var REC={};try{REC=JSON.parse(localStorage.getItem('oth-rec'))||{}}catch(e){}
 function addRec(k,i){var r=REC[k]||(REC[k]=[0,0,0]);r[i]++;try{localStorage.setItem('oth-rec',JSON.stringify(REC))}catch(e){}}
+try{if(!localStorage.getItem('oth-stats'))['easy','normal','hard'].forEach(function(d){var r=REC[d];if(r){S.w+=r[0];S.l+=r[1];S.t+=r[2]}})}catch(e){}
 function recText(){return 'Won vs CPU: '+['easy','normal','hard'].map(function(d){var r=REC[d]||[0,0,0];return d[0].toUpperCase()+d.slice(1)+' '+r[0]+'/'+(r[0]+r[1]+r[2])}).join(' · ')}
 // ---- flow
 function start(){gid++;bd=[];for(var i=0;i<N;i++)bd.push(Array(N).fill(0));bd[3][3]=bd[4][4]=C;bd[3][4]=bd[4][3]=P;
@@ -238,7 +240,13 @@ function render(m){renderDiff();document.body.classList.toggle('p2t',mode==='2p'
  else if(undoOn){
   if(mode==='cpu')msg.appendChild(undoBtn(P,'Undo'));
   else if(flip){msg.appendChild(undoBtn(P,'Undo'));m2.appendChild(undoBtn(C,'Undo'))}
-  else msg.appendChild(undoBtn(hist.length?hist[hist.length-1].turn:P,'Undo'))}fit();[t,t2].forEach(oneLine)}
+  else msg.appendChild(undoBtn(hist.length?hist[hist.length-1].turn:P,'Undo'))}fit();[t,t2].forEach(oneLine);saveG()}
+// Game in progress, settings and header stats are kept when the app is closed
+function saveG(){try{localStorage.setItem('oth-stats',JSON.stringify(S));localStorage.setItem('oth-game',JSON.stringify({bd:bd,turn:turn,over:over,last:last,hist:hist,floor:floor,mode:mode,hints:hints,undo:undoOn,flip:document.body.classList.contains('flip')}))}catch(e){}}
+function loadG(){try{var g=JSON.parse(localStorage.getItem('oth-game'));if(!g)return false;hints=g.hints!==false;undoOn=g.undo!==false;
+ if(g.over||!g.bd||g.bd.length!==N||!g.hist||!g.hist.length)return false;
+ gid++;bd=g.bd;turn=g.turn===C?C:P;over=false;last=g.last;hist=g.hist;floor=g.floor||0;busy=false;fresh=[];mode=g.mode==='2p'?'2p':'cpu';
+ document.body.classList.toggle('flip',mode==='2p'&&!!g.flip);next('');return true}catch(e){return false}}
 function oneLine(d){d.style.fontSize='';var f=parseFloat(getComputedStyle(d).fontSize);while(d.scrollWidth>d.clientWidth&&f>14){f-=1;d.style.fontSize=f+'px'}}
 // vs CPU the CPU replies instantly, so Undo takes back your move and the CPU's reply.
 // Undo: only the newest move can be taken back. Once the other player moves, earlier moves are
@@ -303,7 +311,7 @@ function orient(){var app=document.getElementById('app'),W=innerWidth,H=innerHei
 window.addEventListener('resize',orient);
 if(screen.orientation)screen.orientation.addEventListener('change',function(){setTimeout(orient,50)});
 
-start();orient();
+if(!loadG())start();orient();
 </script>
 <script>
 // The bar sits in the layout: keep the Rules/Settings panel opening right above it

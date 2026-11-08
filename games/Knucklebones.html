@@ -178,6 +178,7 @@ function cols(){var r=[];for(var i=0;i<NC;i++)r.push(i);return r}
 function colScore(a){var s=0,n={};a.forEach(function(v){n[v]=(n[v]||0)+1});for(var v in n)s+=v*n[v]*n[v];return s}
 function total(g){return g.reduce(function(s,a){return s+colScore(a)},0)}
 var S={best:0,w:0,l:0,t:0,diff:'normal',p1:0,p2:0,pt:0,b1:0,b2:0};
+try{var sv=JSON.parse(localStorage.getItem('kb-stats'));if(sv)for(var sk in S)if(sk in sv)S[sk]=sv[sk]}catch(e){}
 var DIFF={easy:{n:6,r:0,k:.5,rand:0.6},normal:{n:.8,r:.65,k:1.1},hard:{n:.1,r:1,k:1.3}};
 var AC=null,sndOn=false;
 function audio(){if(!AC){try{var C=window.AudioContext||window.webkitAudioContext;AC=C?new C():null}catch(e){AC=null}}
@@ -207,6 +208,7 @@ function record(a,b){S.best=Math.max(S.best,a);if(a>b)S.w++;else if(a<b)S.l++;el
 // Saved record vs the CPU per difficulty (wins, losses, ties)
 var REC={};try{REC=JSON.parse(localStorage.getItem('kb-rec'))||{}}catch(e){}
 function addRec(k,i){var r=REC[k]||(REC[k]=[0,0,0]);r[i]++;try{localStorage.setItem('kb-rec',JSON.stringify(REC))}catch(e){}}
+try{if(!localStorage.getItem('kb-stats'))['easy','normal','hard'].forEach(function(d){var r=REC[d];if(r){S.w+=r[0];S.l+=r[1];S.t+=r[2]}});}catch(e){}
 function recText(){return 'Won vs CPU: '+['easy','normal','hard'].map(function(d){var r=REC[d]||[0,0,0];return d[0].toUpperCase()+d.slice(1)+' '+r[0]+'/'+(r[0]+r[1]+r[2])}).join(' · ')}
 function renderDiff(){var el=document.getElementById('diff');el.innerHTML='';
 
@@ -287,8 +289,8 @@ function play(col,side){
   sfx('place');if(k)sfx('crunch',80);
   if(end())return;
   if(mode==='2p'){turn=other;die=roll();render((k?'Destroyed '+k+(k>1?' dice':' die')+'! ':'')+'Player '+(other==='p'?1:2)+': your turn.');return}
-  turn='c';render(k?'You destroyed '+k+(k>1?' dice':' die')+'.':'Opponent is rolling…');
-  var g=gid;setTimeout(function(){if(g!==gid)return;die=roll();hit=null;render('Opponent rolled a '+die+'.');
+  turn='c';render(k?'You destroyed '+k+(k>1?' dice':' die')+'.':'Opponent is rolling…');cpuGo()}
+function cpuGo(){var g=gid;setTimeout(function(){if(g!==gid)return;die=roll();hit=null;render('Opponent rolled a '+die+'.');
     setTimeout(function(){if(g!==gid)return;var k2=cpuMove();sfx('opp');if(k2)sfx('lose',80);if(end())return;
       turn='p';die=roll();render(k2?'Lost '+k2+(k2>1?' dice':' die')+'! Your turn.':'Your turn: tap a column.')},800)},700)}
 function grid(el,g,mine){
@@ -322,7 +324,16 @@ function render(m){renderDiff();document.body.classList.toggle('p2turn',mode==='
   document.getElementById('ps').textContent=total(p);document.getElementById('cs').textContent=total(c);
   var dv=document.getElementById('die'),ms=document.getElementById('msg');
   showBest();dv.className='die'+(over?'':turn==='c'?' tc':' tp');dv.innerHTML=over?'':pips(die);ms.textContent='';var t=document.createElement('span');t.className='t';t.textContent=m||'';ms.appendChild(t);
-  if(over){var b=document.createElement('button');b.className='b';b.textContent='Play again';b.onclick=start;ms.appendChild(b)}}
+  if(over){var b=document.createElement('button');b.className='b';b.textContent='Play again';b.onclick=start;ms.appendChild(b)}
+  saveG(m)}
+// Game in progress and header stats are kept when the app is closed
+function saveG(m){try{localStorage.setItem('kb-stats',JSON.stringify(S));
+  localStorage.setItem('kb-game',JSON.stringify({p:p,c:c,die:die,turn:turn,over:over,mode:mode,NC:NC,flip:document.body.classList.contains('flip'),m:m||''}))}catch(e){}}
+function loadG(){try{var g=JSON.parse(localStorage.getItem('kb-game'));
+  if(!g||g.over||!g.p||!g.c||g.p.length!==g.NC||!g.p.concat(g.c).some(function(a){return a.length}))return false;
+  gid++;p=g.p;c=g.c;die=g.die;turn=g.turn;over=false;hit=null;mode=g.mode==='2p'?'2p':'cpu';NC=g.NC===4?4:3;
+  document.body.classList.toggle('c4',NC===4);document.body.classList.toggle('flip',mode==='2p'&&!!g.flip);
+  if(mode==='cpu'&&turn==='c'){render('Opponent is rolling…');cpuGo()}else render(g.m||'Your turn: tap a column.');return true}catch(e){return false}}
 var panel=document.getElementById('panel'),bar=document.getElementById('bar'),pR=document.getElementById('pRules'),pS=document.getElementById('pSet'),bR=document.getElementById('bRules'),bS=document.getElementById('bSet');
 function inGame(){return !over&&!!p&&!!c&&(p.some(function(a){return a.length})||c.some(function(a){return a.length}))}
 function showPanel(n){var cur=panel.hidden?'':panel.dataset.p,nx=n&&n!==cur?n:'';panel.hidden=!nx;document.getElementById('shade').hidden=!nx;panel.dataset.p=nx;pR.hidden=nx!=='rules';pS.hidden=nx!=='settings';
@@ -356,7 +367,7 @@ function fit(){var de=document.documentElement,W=innerWidth,H=innerHeight,
   var w=rot?H:W,h=rot?W:H;de.classList.toggle('short',h<=600);de.classList.toggle('tiny',h<=440);de.classList.toggle('narrow',w<360)}
 fit();addEventListener('resize',fit);addEventListener('orientationchange',function(){setTimeout(fit,100)});
 try{screen.orientation.addEventListener('change',fit)}catch(e){}
-renderDiff();start();
+renderDiff();if(!loadG())start();
 </script>
 <script>
 // The bar sits in the layout: keep the Rules/Settings panel opening right above it
