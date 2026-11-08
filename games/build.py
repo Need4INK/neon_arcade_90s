@@ -44,7 +44,8 @@ STAGE = ('<style>html.stg #app{position:fixed!important;left:0!important;top:0!i
          # one background for the whole screen: on the html (some games only painted the body, which iOS can leave short)
          'html.stg{padding:0!important;height:100%!important;background:linear-gradient(#07030f,rgba(7,3,15,0) 64px),radial-gradient(120% 55% at 50% 0%,rgba(255,43,214,.18),transparent 60%),radial-gradient(120% 45% at 50% 100%,rgba(25,243,255,.13),transparent 60%),#07030f!important}'
          'html.stg body{background:transparent!important}html.stg.rot #app,html.stg #app{background:transparent!important;padding:0!important}'
-         'html.stg main{max-height:none!important}html.stg body:not(.flip) main{padding-bottom:6px!important}html.stg body:not(.flip) .side{max-height:none!important}'
+         # iOS does give the home-bar inset inside the games after all: the bars added it as padding, lifting them ~34pt
+         'html.stg .bar{padding-bottom:0!important}html.stg main{max-height:none!important}html.stg body:not(.flip) main{padding-bottom:6px!important}html.stg body:not(.flip) .side{max-height:none!important}'
          # title at the top, bar at the bottom, the game takes the room between (grows where it can, else centred);
          # the 2-player flip modes keep their own layout
          'html.stg body:not(.flip) main>h1{flex:none!important;max-height:none!important}html.stg body:not(.flip) main>.bar{flex:none!important;margin-top:auto!important}'
