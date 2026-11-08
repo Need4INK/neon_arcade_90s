@@ -280,7 +280,7 @@ html.full #cover,html.full iframe{position:absolute!important}html.full #cover::
      <path d="M27 29.5q5 5.5 10 0" stroke="#ff3b5c" stroke-width="1.8"/>
      <ellipse cx="32" cy="45" rx="6" ry="4" stroke="#9a8bd6" stroke-width="1.2"/>
      <circle cx="32" cy="45" r="2" fill="#ffe94d" stroke="none"/></g></svg>
-   <span><b>Remi</b><small>Romanian rummy: open 45, close first.</small></span>
+   <span><b>Remi</b><small>Classic Rummy with Romanian rules, open 45 and close first.</small></span>
   </button>
  </div>
  <div class="blink">Select a game</div>
