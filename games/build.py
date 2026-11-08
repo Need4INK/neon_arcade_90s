@@ -303,7 +303,9 @@ __NACALC__
 // iOS home-screen apps with a see-through status bar draw the page from the top of the screen but report a
 // height that leaves out the status bar, so a strip at the bottom stays empty. Detect it (page height + top inset =
 // screen height) and use the full height. Not tied to navigator.standalone: newer iOS web apps don't set it.
-function naFullH(){var s=__safe(),H=innerHeight;try{if(s.t>0&&innerWidth<innerHeight&&H<screen.height-1&&Math.abs(H+s.t-screen.height)<2)H+=s.t}catch(e){}document.documentElement.classList.toggle('full',H>innerHeight);if(H>innerHeight)scrollTo(0,0);return H}
+// See-through status bar: iOS reports the page 47pt short (797 of 844); once laid out full height it may report 844.
+// Both count as the full-screen case, so the layout doesn't flip between the two (that flickered).
+function naFullH(){var s=__safe(),H=innerHeight,f=false;try{var S=screen.height;if(s.t>0&&innerWidth<innerHeight&&(Math.abs(H+s.t-S)<2||(document.documentElement.classList.contains('full')&&Math.abs(H-S)<2))){H=S;f=true}}catch(e){}document.documentElement.classList.toggle('full',f);if(f)scrollTo(0,0);return H}
 document.addEventListener('touchmove',function(e){if(document.documentElement.classList.contains('full'))e.preventDefault()},{passive:false});
 function naCover(){var de=document.documentElement,H=naFullH();de.style.setProperty('--fullh',H+'px');var r=naCalc(__safe(),innerWidth,H,de.classList.contains('rot'),de.classList.contains('r270'));
  de.style.setProperty('--sh',r.sh+'px');de.style.setProperty('--st',r.st);de.style.setProperty('--sr','rotate('+r.a+'deg) scale('+r.k+')')}
@@ -316,8 +318,12 @@ function orientCover(){var de=document.documentElement,W=innerWidth,H=innerHeigh
  if(rot){a=screen.orientation&&typeof screen.orientation.angle==='number'?screen.orientation.angle:(window.orientation===-90?270:90)}
  de.classList.toggle('rot',rot);de.classList.toggle('r270',rot&&a===270);
  c.style.width=rot?H+'px':'';c.style.height=rot?W+'px':'';naCover();fitCards()}
-orientCover();addEventListener('resize',orientCover);addEventListener('orientationchange',function(){setTimeout(orientCover,100)});
-try{screen.orientation.addEventListener('change',orientCover)}catch(e){}try{document.fonts.ready.then(fitCards)}catch(e){}
+// iOS updates the safe-area insets and the window height a little after a rotation: check again several times,
+// so the full-height layout (see-through status bar) comes back when the phone is turned upright again
+var naT=[];function naSettle(){naT.forEach(clearTimeout);orientCover();naT=[100,300,600,1000,1600].map(function(d){return setTimeout(orientCover,d)})}
+orientCover();addEventListener('resize',orientCover);addEventListener('orientationchange',naSettle);
+try{screen.orientation.addEventListener('change',naSettle)}catch(e){}
+addEventListener('pageshow',naSettle);document.addEventListener('visibilitychange',function(){if(!document.hidden)naSettle()});try{document.fonts.ready.then(fitCards)}catch(e){}
 (function(){if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
  var w1=document.querySelector('.logo .w1'),w2=document.querySelector('.logo .w2'),R=function(a,b){return a+Math.random()*(b-a)};
  // Build a one-off flicker: a few blinks of random depth and length, sometimes a longer dim "buzz".
