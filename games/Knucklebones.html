@@ -210,7 +210,7 @@ function addRec(k,i){var r=REC[k]||(REC[k]=[0,0,0]);r[i]++;try{localStorage.setI
 function recText(){return 'Won vs CPU: '+['easy','normal','hard'].map(function(d){var r=REC[d]||[0,0,0];return d[0].toUpperCase()+d.slice(1)+' '+r[0]+'/'+(r[0]+r[1]+r[2])}).join(' · ')}
 function renderDiff(){var el=document.getElementById('diff');el.innerHTML='';
 
-  if(mode==='2p'){var tg=document.createElement('span');tg.className='tag';tg.textContent='Pass & Play';el.appendChild(tg);return}
+  el.parentNode.hidden=(mode==='2p');if(mode==='2p')return;
   var lock=!over&&!!p&&!!c&&(p.some(function(a){return a.length})||c.some(function(a){return a.length}));
   ['easy','normal','hard'].forEach(function(d){var b=document.createElement('button');b.type='button';b.textContent=d[0].toUpperCase()+d.slice(1);
     b.setAttribute('aria-pressed',S.diff===d?'true':'false');
