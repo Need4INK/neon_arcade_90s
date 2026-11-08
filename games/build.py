@@ -152,6 +152,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .sbox p{margin:6px 0 0;color:var(--mut);font-size:19px;line-height:20px}
 .sbox p b{font-weight:400;color:var(--ink)}
 .sbox .sp{margin-top:12px;color:var(--ink)}.sbox .sq{margin-top:6px;white-space:nowrap}.sbox .sq b{color:var(--cy)}
+.sbox .dbg{font-size:13px;line-height:15px;margin-top:8px;color:#6f62a8;white-space:normal;word-break:break-all}
 .sbtn{display:flex;justify-content:center;gap:10px;margin-top:14px}
 .sbtn button{background:transparent;color:var(--cy);border:2px solid var(--cy);border-radius:4px;padding:6px 10px;font:400 10px/1.2 var(--px);cursor:pointer;text-shadow:0 0 8px var(--cy);box-shadow:0 0 10px rgba(25,243,255,.4)}
 .sbtn button.y{color:var(--yel);border-color:var(--yel);text-shadow:0 0 8px var(--yel);box-shadow:0 0 10px rgba(255,233,77,.5)}
@@ -267,6 +268,7 @@ html.stg #cover{bottom:auto!important;height:var(--fullh,100%)!important}
   <p class="sp">Save it to your home screen:</p>
   <p class="sq"><b>iPhone</b>: Share › Add to Home Screen</p>
   <p class="sq"><b>Android</b>: Menu › Install app</p>
+  <p class="dbg" id="shDbg"></p>
   <div class="sbtn"><button type="button" id="shShare">Copy link</button><button type="button" class="y" id="shClose">Close</button></div>
  </div></div>
 </div>
@@ -279,7 +281,7 @@ __NACALC__
 // iOS home-screen apps with a see-through status bar draw the page from the top of the screen but report a
 // height that leaves out the status bar, so a strip at the bottom stays empty. Detect it (page height + top inset =
 // screen height) and use the full height. Not tied to navigator.standalone: newer iOS web apps don't set it.
-function naFullH(){var s=__safe(),H=innerHeight;try{if(s.t>0&&innerWidth<innerHeight&&H<screen.height-1&&Math.abs(H+s.t-screen.height)<2)H+=s.t}catch(e){}return H}
+function naFullH(){var s=__safe(),H=innerHeight;return H}
 function naCover(){var de=document.documentElement,H=naFullH();de.style.setProperty('--fullh',H+'px');var r=naCalc(__safe(),innerWidth,H,de.classList.contains('rot'),de.classList.contains('r270'));
  de.style.setProperty('--sh',r.sh+'px');de.style.setProperty('--st',r.st);de.style.setProperty('--sr','rotate('+r.a+'deg) scale('+r.k+')')}
 // Keep each card description to two lines: shrink the text a little if it would wrap to a third.
@@ -323,7 +325,10 @@ function showCover(){
 // Called by the Menu button inside each game. Games stay loaded, so a match in progress is kept.
 // Share pop-up on the title
 (function(){var sh=document.getElementById('share'),t=document.getElementById('logoT'),sb=document.getElementById('shShare'),URL='https://need4ink.github.io/neon_arcade_90s/',tm=null;
- function open(){sh.hidden=false;sb.textContent='Copy link';fitLines();setTimeout(function(){document.getElementById('shClose').focus()},0)}
+ function dbg(){try{var s=__safe(),vv=window.visualViewport,m=function(v){var d=document.createElement('div');d.style.cssText='position:fixed;left:0;top:0;width:1px;visibility:hidden;height:'+v;document.body.appendChild(d);var h=Math.round(d.getBoundingClientRect().height);d.remove();return h},
+  f=document.createElement('div');f.style.cssText='position:fixed;left:0;top:0;bottom:0;width:1px;visibility:hidden';document.body.appendChild(f);var fr=f.getBoundingClientRect();f.remove();
+  document.getElementById('shDbg').textContent='ih'+innerHeight+' iw'+innerWidth+' sh'+screen.height+' sa'+screen.availHeight+' t'+s.t+' b'+s.b+' vv'+(vv?Math.round(vv.height)+'/'+Math.round(vv.offsetTop):'-')+' ch'+document.documentElement.clientHeight+' fx'+Math.round(fr.top)+'-'+Math.round(fr.bottom)+' lvh'+m('100lvh')+' svh'+m('100svh')+' dvh'+m('100dvh')+' st'+(navigator.standalone?1:0)+' dm'+(matchMedia('(display-mode: standalone)').matches?1:0)}catch(e){}}
+ function open(){dbg();sh.hidden=false;sb.textContent='Copy link';fitLines();setTimeout(function(){document.getElementById('shClose').focus()},0)}
  // keep each home-screen line on one line: shrink the text a little on narrow phones
  function fitLines(){sh.querySelectorAll('.sq').forEach(function(p){p.style.fontSize='';var f=19;while(p.scrollWidth>p.clientWidth&&f>14){f-=.5;p.style.fontSize=f+'px'}})}
  function close(){sh.hidden=true;t.focus()}
