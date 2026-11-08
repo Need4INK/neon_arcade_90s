@@ -42,7 +42,7 @@ NACALC = ("var NA_W=390,NA_H=763,NA_MIN=680;function naCalc(s,W,H,rot,r270){s={t
 STAGE = ('<style>html.stg #app{position:fixed!important;left:0!important;top:0!important;right:auto!important;bottom:auto!important;'
          'width:390px!important;height:var(--sh)!important;margin:0!important;transform-origin:0 0!important;transform:var(--st)!important}'
          # one background for the whole screen: on the html (some games only painted the body, which iOS can leave short)
-         'html.stg{padding:0!important;height:100%!important;background:radial-gradient(120% 55% at 50% 0%,rgba(255,43,214,.18),transparent 60%),radial-gradient(120% 45% at 50% 100%,rgba(25,243,255,.13),transparent 60%),#07030f!important}'
+         'html.stg{padding:0!important;height:100%!important;background:linear-gradient(#07030f,rgba(7,3,15,0) 64px),radial-gradient(120% 55% at 50% 0%,rgba(255,43,214,.18),transparent 60%),radial-gradient(120% 45% at 50% 100%,rgba(25,243,255,.13),transparent 60%),#07030f!important}'
          'html.stg body{background:transparent!important}html.stg.rot #app,html.stg #app{background:transparent!important;padding:0!important}'
          'html.stg main{max-height:none!important;padding-bottom:6px!important}html.stg body:not(.flip) .side{max-height:none!important}'
          # title at the top, bar at the bottom, the game takes the room between (grows where it can, else centred)
@@ -135,7 +135,7 @@ page = r'''<!DOCTYPE html>
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--vt);font-size:18px}
 #cover{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;justify-content:safe center;gap:22px;
  padding:calc(20px + env(safe-area-inset-top,0px)) 18px calc(20px + env(safe-area-inset-bottom,0px));overflow:auto;
- background:radial-gradient(120% 55% at 50% 0%,rgba(255,43,214,.2),transparent 60%),radial-gradient(120% 45% at 50% 100%,rgba(25,243,255,.15),transparent 60%),var(--bg)}
+ background:linear-gradient(#07030f,rgba(7,3,15,0) 64px),radial-gradient(120% 55% at 50% 0%,rgba(255,43,214,.2),transparent 60%),radial-gradient(120% 45% at 50% 100%,rgba(25,243,255,.15),transparent 60%),var(--bg)}
 #cover::after{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(to bottom,transparent 0 2px,rgba(0,0,0,.16) 2px 3px)}
 .logo{text-align:center}
 .logo h1{cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -195,6 +195,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .rot.r270 #cover{transform:translate(-50%,-50%) rotate(90deg);padding:calc(20px + env(safe-area-inset-left,0px)) 18px calc(20px + env(safe-area-inset-right,0px))}
 .rot #cover::after{background:repeating-linear-gradient(to right,transparent 0 2px,rgba(0,0,0,.16) 2px 3px)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+html.stg,html.stg body{background:linear-gradient(#07030f,rgba(7,3,15,0) 64px),radial-gradient(120% 55% at 50% 0%,rgba(255,43,214,.18),transparent 60%),radial-gradient(120% 45% at 50% 100%,rgba(25,243,255,.13),transparent 60%),#07030f}
 /* iOS does not pass notch / home-bar insets into iframes, so keep the frame inside the safe area here. */
 html{background:var(--bg)}
 iframe{position:fixed;top:env(safe-area-inset-top,0px);bottom:env(safe-area-inset-bottom,0px);left:env(safe-area-inset-left,0px);right:env(safe-area-inset-right,0px);width:calc(100% - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px));height:calc(100% - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));border:0;background:var(--bg)}
