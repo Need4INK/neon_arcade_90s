@@ -165,7 +165,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .logo{text-align:center}
 .logo h1{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .logo h1:focus-visible{outline:3px solid var(--yel);outline-offset:6px}
-/* Share pop-up: tap the title for the QR code, home-screen steps and a share button */
+/* Share pop-up: tap the title for the QR code, home-screen steps and Copy link */
 .share{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(7,3,15,.86);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
 .sbox{width:100%;max-width:300px;background:var(--panel);border:2px solid var(--cy);border-radius:10px;padding:16px 16px 14px;text-align:center;box-shadow:0 0 18px rgba(25,243,255,.45),inset 0 0 12px rgba(25,243,255,.08)}
 .sbox .st{display:block;font:400 12px/1.4 var(--px);color:var(--yel);text-shadow:0 0 8px var(--yel);margin-bottom:12px}
@@ -175,6 +175,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .sbox p{margin:6px 0 0;color:var(--mut);font-size:19px;line-height:20px}
 .sbox p b{font-weight:400;color:var(--ink)}
 .sbox .sp{margin-top:12px;color:var(--ink)}.sbox .sq{margin-top:6px;white-space:nowrap}.sbox .sq b{color:var(--cy)}
+.sbox .su{margin-top:10px;color:var(--ink);font-size:17px;line-height:18px;word-break:break-all;-webkit-user-select:all;user-select:all}
 .sbtn{display:flex;justify-content:center;gap:10px;margin-top:14px}
 .sbtn button{background:transparent;color:var(--cy);border:2px solid var(--cy);border-radius:4px;padding:6px 10px;font:400 10px/1.2 var(--px);cursor:pointer;text-shadow:0 0 8px var(--cy);box-shadow:0 0 10px rgba(25,243,255,.4)}
 .sbtn button.y{color:var(--yel);border-color:var(--yel);text-shadow:0 0 8px var(--yel);box-shadow:0 0 10px rgba(255,233,77,.5)}
@@ -294,6 +295,7 @@ html.full #cover,html.full iframe{position:absolute!important}html.full #cover::
   <p class="sp">Save it to your home screen:</p>
   <p class="sq"><b>iPhone</b>: Share › Add to Home Screen</p>
   <p class="sq"><b>Android</b>: Menu › Install app</p>
+  <p class="su" id="shUrl" hidden>https://need4ink.github.io/neon_arcade_90s/</p>
   <div class="sbtn"><button type="button" id="shShare">Copy link</button><button type="button" class="y" id="shClose">Close</button></div>
  </div></div>
 </div>
@@ -357,16 +359,18 @@ function showCover(){
 // Called by the Menu button inside each game. Games stay loaded, so a match in progress is kept.
 // Share pop-up on the title
 (function(){var sh=document.getElementById('share'),t=document.getElementById('logoT'),sb=document.getElementById('shShare'),URL='https://need4ink.github.io/neon_arcade_90s/',tm=null;
- function open(){sh.hidden=false;sb.textContent='Copy link';fitLines();setTimeout(function(){document.getElementById('shClose').focus()},0)}
+ function open(){sh.hidden=false;sb.textContent='Copy link';document.getElementById('shUrl').hidden=true;fitLines();setTimeout(function(){document.getElementById('shClose').focus()},0)}
  // keep each home-screen line on one line: shrink the text a little on narrow phones
  function fitLines(){sh.querySelectorAll('.sq').forEach(function(p){p.style.fontSize='';var f=19;while(p.scrollWidth>p.clientWidth&&f>14){f-=.5;p.style.fontSize=f+'px'}})}
  function close(){sh.hidden=true;t.focus()}
  t.onclick=open;t.onkeydown=function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}};
  document.getElementById('shClose').onclick=close;sh.onclick=function(e){if(e.target===sh)close()};
  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!sh.hidden)close()});
+ // Copy link: clipboard API, else the older copy command; if both fail, show the address to copy by hand
  sb.onclick=function(){
-  function done(ok){sb.textContent=ok?'Copied!':URL;clearTimeout(tm);tm=setTimeout(function(){sb.textContent='Copy link'},2500)}
-  try{navigator.clipboard.writeText(URL).then(function(){done(true)},function(){done(false)})}catch(e){done(false)}}})();
+  function done(ok){sb.textContent=ok?'Copied!':'Copy failed';if(!ok)document.getElementById('shUrl').hidden=false;clearTimeout(tm);tm=setTimeout(function(){sb.textContent='Copy link'},2500)}
+  function legacy(){var a=document.createElement('textarea'),ok=false;a.value=URL;a.setAttribute('readonly','');a.style.cssText='position:fixed;top:0;left:0;opacity:0;font-size:16px';document.body.appendChild(a);a.select();a.setSelectionRange(0,URL.length);try{ok=document.execCommand('copy')}catch(e){}document.body.removeChild(a);sb.focus();done(ok)}
+  try{navigator.clipboard.writeText(URL).then(function(){done(true)},legacy)}catch(e){legacy()}}})();
 window.kbShowCover=function(){if(history.state&&history.state.g){try{history.back();return}catch(e){}}showCover()};
 window.addEventListener('popstate',function(e){var g=e.state&&e.state.g;g&&GAMES[g]?openGame(g,false):showCover()});
 document.querySelectorAll('.card').forEach(function(b){b.onclick=function(){openGame(b.dataset.g,true)}});
