@@ -29,6 +29,9 @@ PRESETS = {
     "water_sort":   {"title": [("WATER", 230, 300), ("SORT", 262, 520)],    "tag": ("’90s", 262, 805)},
     "sudoku":       {"title": [("SUDOKU", 220, 450)],                     "tag": ("’90s", 262, 805)},
     "remi":         {"title": [("REMI", 262, 450)],                       "tag": ("’90s", 262, 805)},
+    # Android "maskable" version of neon_arcade: the same picture with the text at 76% so all of it sits inside
+    # the central safe circle (diameter 80%) that every launcher shape keeps. Saved as ../icon-maskable.png (512px).
+    "neon_arcade_maskable": {"title": [("NEON", 199, 351), ("ARCADE", 172, 521)], "tag": ("’90s", 199, 735)},
 }
 
 S = 1024
@@ -161,4 +164,10 @@ def build(cfg, out_path):
 if __name__ == "__main__":
     names = sys.argv[1:] or list(PRESETS)
     for n in names:
-        build(PRESETS[n], f"{n}_icon.png")
+        if n == "neon_arcade_maskable":
+            out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "icon-maskable.png")
+            build(PRESETS[n], out)
+            Image.open(out).resize((512, 512), Image.LANCZOS).save(out, optimize=True)
+            print("  resized to 512px for the manifest")
+        else:
+            build(PRESETS[n], f"{n}_icon.png")
