@@ -49,6 +49,8 @@ STAGE = ('<style>html.stg #app{position:fixed!important;left:0!important;top:0!i
          # title at the top, bar at the bottom, the game takes the room between (grows where it can, else centred);
          # the 2-player flip modes keep their own layout
          'html.stg body:not(.flip) main>h1{flex:none!important;max-height:none!important}html.stg body:not(.flip) main>.bar{flex:none!important;margin-top:auto!important}'
+         # 2-player flipped: full width, less top padding, both boards grow into the room
+         'html.stg body.flip main{width:100%!important;padding-top:10px!important}html.stg body.flip .side{max-height:none!important;flex-grow:1!important}'
          'html.stg body:not(.flip) main>noscript+*,html.stg body:not(.flip) main>h1+:not(noscript){margin-top:auto!important}</style>\n'
          '<script>(function(){var de=document.documentElement;de.classList.add("stg");' + NACALC +
          'function st(){var W=innerWidth,H=innerHeight,rot=W>H&&H<600&&matchMedia("(pointer:coarse)").matches,a=0;'
@@ -152,7 +154,6 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
 .sbox p{margin:6px 0 0;color:var(--mut);font-size:19px;line-height:20px}
 .sbox p b{font-weight:400;color:var(--ink)}
 .sbox .sp{margin-top:12px;color:var(--ink)}.sbox .sq{margin-top:6px;white-space:nowrap}.sbox .sq b{color:var(--cy)}
-.sbox .dbg{font-size:13px;line-height:15px;margin-top:8px;color:#6f62a8;white-space:normal;word-break:break-all}
 .sbtn{display:flex;justify-content:center;gap:10px;margin-top:14px}
 .sbtn button{background:transparent;color:var(--cy);border:2px solid var(--cy);border-radius:4px;padding:6px 10px;font:400 10px/1.2 var(--px);cursor:pointer;text-shadow:0 0 8px var(--cy);box-shadow:0 0 10px rgba(25,243,255,.4)}
 .sbtn button.y{color:var(--yel);border-color:var(--yel);text-shadow:0 0 8px var(--yel);box-shadow:0 0 10px rgba(255,233,77,.5)}
@@ -272,7 +273,6 @@ html.full #cover,html.full iframe{position:absolute!important}html.full #cover::
   <p class="sp">Save it to your home screen:</p>
   <p class="sq"><b>iPhone</b>: Share › Add to Home Screen</p>
   <p class="sq"><b>Android</b>: Menu › Install app</p>
-  <p class="dbg" id="shDbg"></p>
   <div class="sbtn"><button type="button" id="shShare">Copy link</button><button type="button" class="y" id="shClose">Close</button></div>
  </div></div>
 </div>
@@ -330,10 +330,7 @@ function showCover(){
 // Called by the Menu button inside each game. Games stay loaded, so a match in progress is kept.
 // Share pop-up on the title
 (function(){var sh=document.getElementById('share'),t=document.getElementById('logoT'),sb=document.getElementById('shShare'),URL='https://need4ink.github.io/neon_arcade_90s/',tm=null;
- function dbg(){try{var s=__safe(),vv=window.visualViewport,m=function(v){var d=document.createElement('div');d.style.cssText='position:fixed;left:0;top:0;width:1px;visibility:hidden;height:'+v;document.body.appendChild(d);var h=Math.round(d.getBoundingClientRect().height);d.remove();return h},
-  f=document.createElement('div');f.style.cssText='position:fixed;left:0;top:0;bottom:0;width:1px;visibility:hidden';document.body.appendChild(f);var fr=f.getBoundingClientRect();f.remove();
-  document.getElementById('shDbg').textContent='ih'+innerHeight+' iw'+innerWidth+' sh'+screen.height+' sa'+screen.availHeight+' t'+s.t+' b'+s.b+' vv'+(vv?Math.round(vv.height)+'/'+Math.round(vv.offsetTop):'-')+' ch'+document.documentElement.clientHeight+' fx'+Math.round(fr.top)+'-'+Math.round(fr.bottom)+' lvh'+m('100lvh')+' svh'+m('100svh')+' dvh'+m('100dvh')+' st'+(navigator.standalone?1:0)+' dm'+(matchMedia('(display-mode: standalone)').matches?1:0)}catch(e){}}
- function open(){dbg();sh.hidden=false;sb.textContent='Copy link';fitLines();setTimeout(function(){document.getElementById('shClose').focus()},0)}
+ function open(){sh.hidden=false;sb.textContent='Copy link';fitLines();setTimeout(function(){document.getElementById('shClose').focus()},0)}
  // keep each home-screen line on one line: shrink the text a little on narrow phones
  function fitLines(){sh.querySelectorAll('.sq').forEach(function(p){p.style.fontSize='';var f=19;while(p.scrollWidth>p.clientWidth&&f>14){f-=.5;p.style.fontSize=f+'px'}})}
  function close(){sh.hidden=true;t.focus()}
