@@ -165,7 +165,7 @@ main>h1{flex:1 1 auto;max-height:none}
 <div id="pRules" hidden>
 <p><b>You (green) vs three CPUs (CPU 1 red, CPU 2 yellow, CPU 3 blue)</b>, rules from the Romanian Remy set. Tiles 1–13 in red, yellow, blue and white (the black of a real set), two of each, plus 2 joly <b>★</b>.</p>
 <p><b>Deal:</b> 14 tiles each, the starter 15. One tile is turned up as the <b>atu</b>: whoever holds its twin (yellow dot) announces it and gets +50. If the atu is a 1 or a joly it's a <b>double game</b>: every score is doubled. Anyone dealt 3 doubles may reshuffle.</p>
-<p><b>Turn:</b> draw from the pile, or take the last discard and lay it in a new formation this turn (adding it to one doesn't count). Then discard one tile. The starter's first discard is out of play.</p>
+<p><b>Turn:</b> draw from the pile, or take the last discard and lay it in a new formation this turn (adding it to one doesn't count). Then discard one tile. <b>Until you open you can only draw</b>: you open with tiles from your hand and ones you draw. The starter's first discard is out of play.</p>
 <p><b>Formations:</b> a <b>run</b> is 3+ consecutive tiles of one colour (1-2-3 or 12-13-1, never 13-1-2). A <b>set</b> is 3–4 tiles of one number in different colours. A joly replaces any tile.</p>
 <p><b>Opening</b> (from your second turn): at least <b>45</b> points with at least one run, or a set of 1s on its own. Values: 2–9 = 5, 10–13 = 10, 1 in 1-2-3 = 5, 1 in 12-13-1 = 10, 1 in a set = 25, joly = the tile it replaces.</p>
 <p><b>After opening</b> (next turns): lay any formations and add tiles to anyone's formations; a joly only goes on your own. Once opened, with 4+ tiles you can take a discard from anywhere in the row (not the first) together with all tiles after it, if you lay it in a new formation this turn.</p>
@@ -338,8 +338,7 @@ function openFor(h){const b=findBest(h,OPEN,true);if(b.melds.length)return b;
  if(m&&m.length<h.length){const a=analyze(m);if(a)return {melds:[m],pts:a.pts}}
  return {melds:[],pts:0}}
 function cpuWants(p,d){const P=G.pl[p],h=P.hand.concat(d);
- if(P.opened)return findBest(h,1,false).melds.some(m=>m.includes(d));
- return canOpen()&&openFor(h).melds.some(m=>m.includes(d))}
+ return P.opened&&findBest(h,1,false).melds.some(m=>m.includes(d))}
 function swapIdsFor(m,hand){const a=analyze(m.t);if(!a)return null;
  for(const s of a.seq){if(!s.j||G.jl[s.id])continue;
   if(a.type==='run'){const id=hand.find(x=>!isJ(x)&&TILES[x].n===face(s.n)&&TILES[x].c===s.c);if(id!=null)return [id]}
@@ -375,7 +374,7 @@ async function cpuTurn(tk){
  if(lvl>0&&canBoard(p)&&doubles(P.hand)>=5){P.board=true;ev.push([nm,'plays on the board']);say(nm+' plays on the board!');render();if(!await wait())return}
  if(P.board)return cpuBoard(p,wait);
  if(G.tn>0){const n=G.disc.length,d=n>1?G.disc[n-1]:-1;
-  if(d>=0&&start>=3&&cpuWants(p,d)){G.disc.pop();P.hand.push(d);ev.push([nm,'took '+tname(d)]);say(nm+' takes '+tname(d))}
+  if(d>=0&&startOpened&&start>=3&&cpuWants(p,d)){G.disc.pop();P.hand.push(d);ev.push([nm,'took '+tname(d)]);say(nm+' takes '+tname(d))}
   else{if(!G.pile.length){endRound(-1,-1,'The pile ran out');return}P.hand.push(G.pile.pop());say(nm+' draws')}
   sfx('draw');render();if(!await wait())return}
  if(start>2){const b=P.opened?findBest(P.hand,1,false):canOpen()?openFor(P.hand):null;
@@ -435,7 +434,7 @@ function startTurn(){sel.clear();const P=G.pl[G.cur];
   if(G.tn===0)say('You start: discard one tile');
   else if(T.start<=2)say('Draw, then add to formations');
   else if(P.board)say('Board · '+boardProg(P.hand));
-  else{const n=G.disc.length;say('Your turn: draw'+(n>1?' or take '+tname(G.disc[n-1]):''))}
+  else{const n=G.disc.length;say('Your turn: draw'+(canTake(n-1)?' or take '+tname(G.disc[n-1]):''))}
   if(G.tn>0&&ev.length){const yt=msg,by={};ev.forEach(([n,x])=>{const l=by[n]||(by[n]=[]);if(!l.includes(x))l.push(x)});const sm=Object.keys(by).map(n=>n+' '+by[n].join(', ')).join(' · ');say(sm);const g=token;setTimeout(()=>{if(g===token&&msg===sm&&G.cur===0&&G.phase==='draw'){say(yt);render()}},Math.min(4500,1800+700*ev.length))}
   ev=[];render()}
  else{G.phase='cpu';save();render();cpuTurn(token)}}
@@ -468,8 +467,8 @@ function hTake(i){if(G.phase!=='draw')return;const n=G.disc.length,P=G.pl[0];
  if(P.board){if(i<n-1)return bad('Board game: only the last');if(!canOpen())return bad('Not in round 1: draw');
   T.snap=snap();const got=G.disc.splice(i);P.hand.push(...got);newIds=got;sel.clear();G.phase='play';sfx('draw');say(boardReady()?'Board ready: discard your spare tile':'You take '+tname(got[0]));render();return}
  if(T.start<=2)return bad('1–2 tiles: you must draw');
- if(i<n-1){if(!P.opened)return bad('Only the last until you open');if(T.start<4)return bad('3 tiles: only the last')}
- if(!P.opened&&!canOpen())return bad('No opening in round 1: draw');
+ if(!P.opened)return bad('Open first: until then, draw');
+ if(i<n-1&&T.start<4)return bad('3 tiles: only the last');
  T.snap=snap();const got=G.disc.splice(i);P.hand.push(...got);T.must.push(got[0]);T.take=got[0];newIds=got;sel.clear();sel.add(got[0]);
  G.phase='play';sfx('draw');say('Lay '+tname(got[0])+' in a new formation'+(got.length>1?' (+'+(got.length-1)+')':''));render()}
 function hLay(){if(G.phase!=='play')return;const P=G.pl[0],ids=[...sel],h=P.hand;
@@ -524,7 +523,7 @@ function sorted(h){return h.slice().sort((a,b)=>{const A=TILES[a],B=TILES[b];if(
 function btn(label,fn,dis,cls){const b=document.createElement('button');b.type='button';b.className='b'+(cls?' '+cls:'');b.textContent=label;b.disabled=!!dis;b.onclick=fn;return b}
 function canTake(i){const n=G.disc.length,P=G.pl[0];if(G.phase!=='draw'||i===0||i>=n||T.start<=2)return false;
  if(P.board)return i===n-1&&canOpen();
- if(i<n-1&&(!P.opened||T.start<4))return false;return P.opened||canOpen()}
+ if(!P.opened)return false;return i===n-1||T.start>=4}
 function render(){
  if(!G)return;const me=G.pl[0],ph=G.phase;
  const ch=$('chips');ch.innerHTML='';
@@ -552,7 +551,7 @@ function render(){
  const a=$('acts');a.innerHTML='';
  if(ph==='over'){a.appendChild(G.over?btn('New game',()=>{newGame();showPanel('')}):btn('Next round',dealRound))}
  else if(ph==='dbl'){const d3=G.d3!=null?G.d3:doubles(me.hand)>=3;if(d3)a.appendChild(btn('Reshuffle',()=>{G.round--;dealRound()}));
-  if(swp)a.appendChild(btn('Swap',hSwap,sel.size!==1));a.appendChild(btn('Play',()=>{sel.clear();startTurn()},0,'cy'))}
+  if(swp)a.appendChild(btn('Swap',hSwap,sel.size!==1||!dbs.includes([...sel][0])));a.appendChild(btn('Play',()=>{sel.clear();startTurn()},0,'cy'))}
  else if(ph==='draw'){const n=G.disc.length;a.appendChild(btn('Draw',hDraw));a.appendChild(btn('Take last',()=>hTake(n-1),!canTake(n-1)));
   if(canBoard(0))a.appendChild(btn(boardArm?'Tap again':'Board',hBoard));a.appendChild(btn('Sort',hSort,0,'cy'))}
  else{const my=ph==='play';a.appendChild(btn('Undo',hUndo,!my||!T||!T.snap));a.appendChild(btn('Sort',hSort,0,'cy'));

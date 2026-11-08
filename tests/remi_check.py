@@ -5,7 +5,7 @@
 
 You draw and discard; the CPUs play normally at Fast speed. About every 5 steps it checks that all 106 tiles are
 accounted for (pile + discards + hands + table, each once) and that every formation on the table is valid
-(the game's own `analyze`). Then it checks that reopening after a draw keeps the drawn tile (no peeking at the
+(the game's own `analyze`); and that nobody takes a discard before opening (house rule; board players excepted). Then it checks that reopening after a draw keeps the drawn tile (no peeking at the
 pile). Uses the game's test hook `window.__remi` (G, T, hDraw, hDiscard, sel, analyze, lvl, spd, ...).
 """
 import sys
@@ -25,17 +25,23 @@ STEP = """(()=>{const R=__remi,G=R.G,btn=t=>[...document.querySelectorAll('#acts
  return G.phase})()"""
 
 
+# CPUs take the last discard with G.disc.pop(): wrap it (re-wrapped every step, as each round makes a new row)
+# and record whether the taker had opened (or plays on the board) at that moment
+HOOK = """(()=>{window.__takes=window.__takes||[];const G=__remi.G,d=G.disc;if(d.__w)return;d.__w=1;
+ d.pop=function(){const P=G.pl[G.cur];__takes.push([G.cur,P.opened||P.board]);return Array.prototype.pop.call(this)}})()"""
+
+
 def fresh(lvl):
     page.evaluate("localStorage.removeItem('remi_game2')"); page.reload(); page.wait_for_timeout(700)
-    open_game(page, 'rem', 700); f = fr(); f.evaluate(f"__remi.lvl={lvl};__remi.spd=2"); return f
+    open_game(page, 'rem', 700); f = fr(); f.evaluate(f"__remi.lvl={lvl};__remi.spd=2"); f.evaluate(HOOK); return f
 
 
-viol = checks = 0
+viol = checks = takes = 0
 rounds = {}
 for lvl, name in [(0, 'Easy'), (1, 'Norm'), (2, 'Hard')]:
     f = fresh(lvl); rounds[name] = 0
     for step in range(8000):
-        ph = f.evaluate(STEP)
+        f.evaluate(HOOK); ph = f.evaluate(STEP)
         if ph == 'over':
             rounds[name] += 1
             if rounds[name] >= ROUNDS or f.evaluate("__remi.G.over"): break
@@ -45,7 +51,10 @@ for lvl, name in [(0, 'Easy'), (1, 'Norm'), (2, 'Hard')]:
             n, u, bad = f.evaluate(CHK); checks += 1
             if n != 106 or u != 106 or bad: viol += 1; print('VIOLATION', name, n, u, bad)
         page.wait_for_timeout(40)
-print('rounds:', rounds, '| checks:', checks, '| violations:', viol)
+    tk = f.evaluate("__takes"); takes += len(tk)
+    for m, ok in tk:
+        if not ok: viol += 1; print('VIOLATION take before opening:', name, 'CPU', m)
+print('rounds:', rounds, '| checks:', checks, '| CPU takes:', takes, '| violations:', viol)
 
 # Reload after a draw: the drawn tile stays in hand and Draw is off
 f = fresh(1)
