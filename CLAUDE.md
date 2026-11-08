@@ -15,13 +15,13 @@ A phone-first pack of neon arcade games (Knucklebones, Othello, Water Sort, Sudo
 - Rebuild the pack from the repo root:
   `python3 games/build.py games/Knucklebones.html games/Othello.html games/Water_Sort.html games/Sudoku.html games/Remi.html index.html`
 - The build adds the green Exit button to each game's bar, injects the stage (scaled layout) into each game, packs the fonts and the QR code, and wraps the games in the cover. Each game runs in its own iframe, so games never clash.
-- After changing `sw.js`, bump `CACHE` (e.g. `neon-arcade-v2`).
+- After changing `sw.js`, bump `CACHE` (now `neon-arcade-v2`, so next `neon-arcade-v3`). Game-only changes need no bump: the page is re-checked on every load.
 - Fonts: `games/fonts/` holds `PressStart2P-Regular.ttf` and `VT323-Regular.ttf` (SIL Open Font License); the build packs them into `index.html` (subset to the characters used, licence kept), so the games never need Google Fonts.
 - Changes go on a branch with a pull request; `main` is the live site.
 - Work and test locally; push nothing to GitHub until the user says "deploy". On "deploy": push the branch, open the pull request and merge it (the user doesn't need to confirm it on GitHub).
 
 ## Style rules
-- Shared neon look: dark `#07030f` background, magenta `#ff2bd6`, cyan `#19f3ff`, yellow `#ffe94d`, green `#39ff7a`; "Press Start 2P" for labels, "VT323" for text; scanlines.
+- Shared neon look: dark `#07030f` background, magenta `#ff2bd6`, cyan `#19f3ff`, yellow `#ffe94d`, green `#39ff7a`, orange `#ff9e2c`, soft red `#e8566a`; "Press Start 2P" for labels, "VT323" for text; scanlines. British spelling ("colour", "cancelled"); the computer player is called "CPU".
 - Template (iPhone 12 reference): every screen is a 390 × 797 block below the status bar, scaled as one to fit the phone (other screen shapes get plain background around it). 1-player: banner 64 (title centred) / game area 667 (game centred; Knucklebones' boards and Remi's table grow) / bar 36 (Rules / Exit / Settings, buttons flush with its bottom edge) / gap 30. 2-player flipped: banner 64 / game area 603 / banner 64 (second title) / bar 36 / gap 30. Exit is green and centred; an open Rules/Settings button turns yellow. The Rules/Settings panel opens right above the bar.
 - One background in every game, painted on the html, fading in from `#07030f` at the top so it blends with the status bar.
 - iPhone home-screen icons with a see-through status bar report a page 47pt shorter than the screen (797 of 844), or the full 844 once laid out full height; the cover treats both as full screen and lays the cover and games out in the page (not the fixed layer) so they reach the bottom. iOS updates the insets late after a rotation, so the cover re-checks several times after rotating and when the app returns to the foreground. Android and other browsers skip this and use the normal layout.
