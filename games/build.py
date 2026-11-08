@@ -15,9 +15,9 @@ sdk = open(sys.argv[4], encoding='utf-8').read()
 rem = open(sys.argv[5], encoding='utf-8').read()
 out = sys.argv[6]
 
-MENU_CSS = '.bar .mnu{color:var(--yel);text-shadow:0 0 6px var(--yel)}'
+MENU_CSS = '.bar .mnu{color:#39ff7a!important;text-shadow:0 0 6px #39ff7a!important}'
 # Menu button in each game's bottom bar: closes any open panel (games close it on Escape), then shows the cover.
-MENU_BTN = '<button type="button" class="mnu" onclick="try{document.dispatchEvent(new KeyboardEvent(\'keydown\',{key:\'Escape\'}))}catch(e){}try{parent.kbShowCover()}catch(e){}">Menu</button>'
+MENU_BTN = '<button type="button" class="mnu" onclick="try{document.dispatchEvent(new KeyboardEvent(\'keydown\',{key:\'Escape\'}))}catch(e){}try{parent.kbShowCover()}catch(e){}">Exit</button>'
 CENTRE = '.bar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}#bRules{justify-self:start}#bar .mnu{justify-self:center}#bSet{justify-self:end}'
 
 # Knucklebones: bar is already a 3-column grid, middle column is free
@@ -31,27 +31,33 @@ for name in ('oth', 'ws', 'sdk', 'rem'):
     globals()[name] = g
 assert all(g.count('class="mnu"') == 1 for g in (kb, oth, ws, sdk, rem))
 
-# Stage: every screen is laid out 390 points wide (iPhone 12) and scaled evenly to fit; the stage always fills
-# the full height below the notch, reaching over the home-bar area (only 10 points kept), so the bar sits at the
-# very bottom (iPhone 12: 390 x 787). Screens
-# shorter than 680 (after scaling to the width) shrink instead. The iframe fills the whole screen (no seams at the notch / home
-# bar); the cover tells each game the safe-area insets, which iOS doesn't pass into iframes.
-NACALC = ("var NA_W=390,NA_H=763,NA_MIN=680;function naCalc(s,W,H,rot,r270){s={t:s.t,l:s.l,r:s.r,b:Math.min(s.b,10)};var w=W-s.l-s.r,h=H-s.t-s.b,cw=rot?h:w,ch=rot?w:h,"
-          "k=Math.min(cw/NA_W,ch/NA_MIN),sh=ch/k,a=rot?(r270?90:-90):0;return {k:k,sh:sh,a:a,"
+# Stage: every screen (cover and games) is a 390 x 797 block laid out for the iPhone 12 (banner 64 + game area 667 + bar 36 +
+# gap 30), placed below the top safe inset and scaled as one, evenly, to fit; other screen shapes get plain background around it.
+# The iframe fills the whole screen; the cover tells each game the safe-area insets, which iOS doesn't pass into iframes.
+NACALC = ("var NA_W=390,NA_H=797;function naCalc(s,W,H,rot,r270){var w=W-s.l-s.r,h=H-s.t,cw=rot?h:w,ch=rot?w:h,"
+          "k=Math.min(cw/NA_W,ch/NA_H),sh=NA_H,a=rot?(r270?90:-90):0;return {k:k,sh:sh,a:a,"
           "st:'translate('+(s.l+w/2)+'px,'+(s.t+h/2)+'px) rotate('+a+'deg) scale('+k+') translate('+(-NA_W/2)+'px,'+(-sh/2)+'px)'}}")
 STAGE = ('<style>html.stg #app{position:fixed!important;left:0!important;top:0!important;right:auto!important;bottom:auto!important;'
          'width:390px!important;height:var(--sh)!important;margin:0!important;transform-origin:0 0!important;transform:var(--st)!important}'
          # one background for the whole screen: on the html (some games only painted the body, which iOS can leave short)
          'html.stg{padding:0!important;height:100%!important;background:linear-gradient(#07030f,rgba(7,3,15,0) 64px),radial-gradient(120% 55% at 50% 0%,rgba(255,43,214,.18),transparent 60%),radial-gradient(120% 45% at 50% 100%,rgba(25,243,255,.13),transparent 60%),#07030f!important}'
          'html.stg body{background:transparent!important}html.stg.rot #app,html.stg #app{background:transparent!important;padding:0!important}'
-         # iOS does give the home-bar inset inside the games after all: the bars added it as padding, lifting them ~34pt
-         'html.stg .bar{padding-bottom:0!important}html.stg main{max-height:none!important}html.stg body:not(.flip) main{padding-bottom:6px!important}html.stg body:not(.flip) .side{max-height:none!important}'
-         # title at the top, bar at the bottom, the game takes the room between (grows where it can, else centred);
-         # the 2-player flip modes keep their own layout
-         'html.stg body:not(.flip) main>h1{flex:none!important;max-height:none!important}html.stg body:not(.flip) main>.bar{flex:none!important;margin-top:auto!important}'
-         # 2-player flipped: full width, less top padding, both boards grow into the room
-         'html.stg body.flip main{width:100%!important;padding-top:10px!important}html.stg body.flip .side{max-height:none!important;flex-grow:1!important}'
-         'html.stg body:not(.flip) main>noscript+*,html.stg body:not(.flip) main>h1+:not(noscript){margin-top:auto!important}</style>\n'
+         # Template (iPhone 12 reference, stage 390 x 797 below the status bar):
+         #   1-player: banner 64 (title centred) / game area 667 (game centred) / bar 36 (buttons flush with its bottom edge) / gap 30
+         #   2-player flipped: banner 64 / game area 603 / banner 64 (second title) / bar 36 / gap 30
+         # iOS gives the home-bar inset inside the games: the bars must not add it
+         "html.stg main{max-width:none!important;max-height:none!important;width:100%!important;height:100%!important;margin:0!important}"
+         "html.stg body:not(.flip) main{padding:0 14px 30px!important;justify-content:flex-start!important}"
+         "html.stg main>h1:not(#t2){flex:none!important;height:64px!important;max-height:none!important;display:flex!important;align-items:center;justify-content:center;font-size:20px!important}"
+         "html.stg body:not(.flip) main>h1:not(#t2){margin:0 0 auto!important}"
+         "html.stg body:not(.flip) .bar{position:relative!important;inset:auto!important;flex:none!important;height:36px!important;max-height:none!important;margin:auto 0 0!important;padding:0!important;width:100%!important;max-width:none!important}"
+         "html.stg .bar{display:grid!important;grid-template-columns:1fr auto 1fr!important;align-items:end!important;align-content:end!important}"
+         "html.stg .bar button{padding:22px 0 0!important}"
+         "html.stg body.flip main{padding:0 14px 66px!important;gap:8px!important;justify-content:flex-start!important}"
+         "html.stg body.flip main>h1:not(#t2){margin:0 0 auto!important}"
+         "html.stg body.flip main>.ttl2,html.stg body.flip main>#t2{flex:none!important;height:64px!important;max-height:none!important;display:flex!important;align-items:center;justify-content:center;font-size:20px!important;margin:auto 0 0!important}"
+         "html.stg body.flip .bar{position:absolute!important;left:0!important;right:0!important;top:auto!important;bottom:30px!important;height:36px!important;margin:0!important;padding:0 14px!important;max-width:none!important}"
+         "</style>\n"
          '<script>(function(){var de=document.documentElement;de.classList.add("stg");' + NACALC +
          'function st(){var W=innerWidth,H=innerHeight,rot=W>H&&H<600&&matchMedia("(pointer:coarse)").matches,a=0;'
          'if(rot){a=screen.orientation&&typeof screen.orientation.angle==="number"?screen.orientation.angle:(window.orientation===-90?270:90)}'
@@ -63,10 +69,22 @@ STAGE = ('<style>html.stg #app{position:fixed!important;left:0!important;top:0!i
          '})()</script>\n')
 PANEL_A = "function place(){if(document.documentElement.classList.contains('rot')){"
 PANEL_B = "function place(){if(document.documentElement.classList.contains('rot')||document.documentElement.classList.contains('stg')){"
+GAME_CSS = {
+    # Knucklebones: boards grow to fill the game area, 8pt clear of its edges; no difficulty row in 2-player
+    'kb': 'html.stg body:not(.flip) .side{flex-grow:8}html.stg body:not(.flip) .ctl{margin:8px 0!important}'
+          'html.stg body:not(.flip) .ctl[hidden]+.side.opp{margin-top:8px}html.stg body:not(.flip) .side.you{margin-bottom:8px}',
+    'oth': 'html.stg body:not(.flip) .mid:not(#msg2){margin-bottom:0!important}html.stg .flip.tight #t1,html.stg .flip.tight #t2{display:flex!important}',
+    'ws': '', 'sdk': '', 'rem': '',
+}
 for name in ('kb', 'oth', 'ws', 'sdk', 'rem'):
     g = globals()[name]
     assert g.count('</head>') == 1 and g.count(PANEL_A) == 1, name
-    globals()[name] = g.replace('</head>', STAGE + '</head>', 1).replace(PANEL_A, PANEL_B, 1)
+    css = '<style>' + GAME_CSS[name] + '</style>\n' if GAME_CSS[name] else ''
+    globals()[name] = g.replace('</head>', STAGE + css + '</head>', 1).replace(PANEL_A, PANEL_B, 1)
+# Remi sizes its table from the room left: count the full banner height, not just the title's font size
+RH = 'parseFloat(hs.fontSize)+parseFloat(hs.marginTop)'
+assert rem.count(RH) == 1
+rem = rem.replace(RH, 'h.offsetHeight+parseFloat(hs.marginTop)', 1)
 
 # Fonts: if games/fonts/ holds PressStart2P-Regular and VT323-Regular (.woff2, .woff or .ttf), they are packed
 # into the page so the games never depend on Google Fonts (works offline even if the fonts were never saved).
