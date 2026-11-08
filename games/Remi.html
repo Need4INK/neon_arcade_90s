@@ -164,10 +164,10 @@ main>h1{flex:1 1 auto;max-height:none}
 <div id="pRules" hidden>
 <p><b>You (green) vs CPU 1–3 (red, yellow, blue)</b>, rules from the Romanian Remy set. Tiles 1–13 in red, yellow, blue and white (the black of a real set), two of each, plus 2 joly <b>★</b>.</p>
 <p><b>Deal:</b> 14 tiles each, the starter 15. One tile is turned up as the <b>atu</b>: whoever holds its twin (yellow dot) announces it and gets +50. If the atu is a 1 or a joly it's a <b>double game</b>: every score is doubled. Anyone dealt 3 doubles may reshuffle.</p>
-<p><b>Turn:</b> draw from the pile, or take the last discard and use it in a formation this turn. Then discard one tile. The starter's first discard is out of play.</p>
+<p><b>Turn:</b> draw from the pile, or take the last discard and lay it in a new formation this turn (adding it to one doesn't count). Then discard one tile. The starter's first discard is out of play.</p>
 <p><b>Formations:</b> a <b>run</b> is 3+ consecutive tiles of one colour (1-2-3 or 12-13-1, never 13-1-2). A <b>set</b> is 3–4 tiles of one number in different colours. A joly replaces any tile.</p>
 <p><b>Opening</b> (from your second turn): at least <b>45</b> points with at least one run, or a set of 1s on its own. Values: 2–9 = 5, 10–13 = 10, 1 in 1-2-3 = 5, 1 in 12-13-1 = 10, 1 in a set = 25, joly = the tile it replaces.</p>
-<p><b>After opening</b> (next turns): lay any formations and add tiles to anyone's formations; a joly only goes on your own. Once opened, with 4+ tiles you can take a discard from anywhere in the row (not the first) together with all tiles after it, if you use it this turn.</p>
+<p><b>After opening</b> (next turns): lay any formations and add tiles to anyone's formations; a joly only goes on your own. Once opened, with 4+ tiles you can take a discard from anywhere in the row (not the first) together with all tiles after it, if you lay it in a new formation this turn.</p>
 <p><b>Jolly swap:</b> place the tile a joly stands for and take the joly; you must use it this turn, and each joly swaps only once. For a joly in a set of 2, add both missing colours.</p>
 <p><b>Few tiles:</b> with 3 tiles you can only take the last discard. With 1–2 you must draw and can only add to formations. Players announce when they have 3 or fewer.</p>
 <p><b>Closing:</b> lay down everything and discard your last tile. If the pile runs out the round ends with no closing bonus.</p>
@@ -336,7 +336,7 @@ function openFor(h){const b=findBest(h,OPEN,true);if(b.melds.length)return b;
  if(m&&m.length<h.length){const a=analyze(m);if(a)return {melds:[m],pts:a.pts}}
  return {melds:[],pts:0}}
 function cpuWants(p,d){const P=G.pl[p],h=P.hand.concat(d);
- if(P.opened){if(findBest(h,1,false).melds.some(m=>m.includes(d)))return true;return lvl>0&&fitsTable(d,p)>=0}
+ if(P.opened)return findBest(h,1,false).melds.some(m=>m.includes(d));
  return canOpen()&&openFor(h).melds.some(m=>m.includes(d))}
 function swapIdsFor(m,hand){const a=analyze(m.t);if(!a)return null;
  for(const s of a.seq){if(!s.j||G.jl[s.id])continue;
@@ -379,7 +379,7 @@ async function cpuTurn(tk){
  if(start>2){const b=P.opened?findBest(P.hand,1,false):canOpen()?openFor(P.hand):null;
   if(b&&b.melds.length){b.melds.forEach(ids=>{const a=analyze(ids);rm(P.hand,ids);G.melds.push({o:p,t:a.seq.map(s=>s.id)});place(p,ids)});
    const was=P.opened;P.opened=true;hitMeld=G.melds.length-1;sfx('lay');say(nm+(was?' lays down':' opens with '+b.pts));render();if(!await wait())return}}
- if(startOpened&&lvl>0&&cpuExtras(p,start>2)){sfx('lay');say(nm+' adds to the table');render();if(!await wait())return}
+ if(startOpened&&cpuExtras(p,start>2)){sfx('lay');say(nm+' adds to the table');render();if(!await wait())return}
  const id=chooseDiscard(p);rm(P.hand,[id]);G.disc.push(id);sfx('disc');
  if(!P.hand.length){endRound(p,id,nm+' closes with '+tname(id));return}
  say(nm+' discards '+tname(id)+(P.hand.length<=3?' · '+P.hand.length+' left!':''));nextTurn()}
@@ -425,7 +425,7 @@ function hSwap(){if(G.phase!=='dbl')return;const id=[...sel][0];
 function nextTurn(){G.cur=(G.cur+1)%4;G.tn++;startTurn()}
 function startTurn(){sel.clear();const P=G.pl[G.cur];
  if(G.tn>0&&!G.pile.length){endRound(-1,-1,'The pile ran out');return}
- if(G.cur===0){G.phase=G.tn===0?'play':'draw';T={must:[],startOpened:P.opened,start:P.hand.length,staged:0,runs:0,sets:0,ones:false,snap:null};
+ if(G.cur===0){G.phase=G.tn===0?'play':'draw';T={must:[],take:null,startOpened:P.opened,start:P.hand.length,staged:0,runs:0,sets:0,ones:false,snap:null};
   if(G.phase==='play')T.snap=snap();save();
   if(G.tn===0)say('You start: discard one tile');
   else if(T.start<=2)say('Draw, then add to formations');
@@ -445,7 +445,7 @@ function endRound(closer,closeTile,why){token++;G.phase='over';
 function leader(){return G.pl.reduce((b,P,i)=>P.score>G.pl[b].score?i:b,0)}
 
 // ---- your moves
-function snap(){return JSON.stringify({hand:G.pl[0].hand,melds:G.melds,disc:G.disc,own:G.own,jl:G.jl,phase:G.phase,T:{must:T.must,staged:T.staged,runs:T.runs,sets:T.sets,ones:T.ones}})}
+function snap(){return JSON.stringify({hand:G.pl[0].hand,melds:G.melds,disc:G.disc,own:G.own,jl:G.jl,phase:G.phase,T:{must:T.must,take:T.take,staged:T.staged,runs:T.runs,sets:T.sets,ones:T.ones}})}
 function okOpen(){return T.staged>=OPEN&&(T.runs>0||(T.sets===1&&T.ones))}
 function openMsg(){if(T.runs===0&&T.sets>0&&!(T.sets===1&&T.ones))return 'Opening needs a run (or 1s set)';
  return 'Opening: '+T.staged+' / '+OPEN+(T.staged<OPEN?'':T.runs||T.ones?' ✓':' · need a run')}
@@ -463,8 +463,8 @@ function hTake(i){if(G.phase!=='draw')return;const n=G.disc.length,P=G.pl[0];
  if(T.start<=2)return bad('1–2 tiles: you must draw');
  if(i<n-1){if(!P.opened)return bad('Only the last until you open');if(T.start<4)return bad('3 tiles: only the last')}
  if(!P.opened&&!canOpen())return bad('No opening in round 1: draw');
- T.snap=snap();const got=G.disc.splice(i);P.hand.push(...got);T.must.push(got[0]);newIds=got;sel.clear();sel.add(got[0]);
- G.phase='play';sfx('draw');say('Use '+tname(got[0])+' this turn'+(got.length>1?' (+'+(got.length-1)+')':''));render()}
+ T.snap=snap();const got=G.disc.splice(i);P.hand.push(...got);T.must.push(got[0]);T.take=got[0];newIds=got;sel.clear();sel.add(got[0]);
+ G.phase='play';sfx('draw');say('Lay '+tname(got[0])+' in a new formation'+(got.length>1?' (+'+(got.length-1)+')':''));render()}
 function hLay(){if(G.phase!=='play')return;const P=G.pl[0],ids=[...sel],h=P.hand;
  if(P.board)return bad('Board game: no laying down');
  if(T.start<=2)return bad('1–2 tiles: only add to sets');
@@ -476,6 +476,7 @@ function hLay(){if(G.phase!=='play')return;const P=G.pl[0],ids=[...sel],h=P.hand
 function hAdd(mi){if(G.phase==='over'||G.phase==='dbl')return;if(G.phase!=='play'||!sel.size){say(G.phase==='play'?'Select tiles, tap a formation':'');render();return}
  const P=G.pl[0];if(P.board)return bad('Board game: no adding');if(!P.opened)return bad(T.runs||T.sets?'Add from your next turn':'Open first: 45 with a run');
  const ids=[...sel],m=G.melds[mi],h=P.hand;
+ if(T.take!=null&&ids.includes(T.take))return bad('Lay '+tname(T.take)+' in a new formation');
  const j=trySwap(m,ids);
  if(j>=0){rm(h,ids);h.push(j);place(0,ids);T.must.push(j);newIds=[j];sel.clear();hitMeld=mi;sfx('lay');say('Joly is yours: use it this turn');render();return}
  if(ids.some(isJ)&&m.o!==0)return bad('Joly only on your formations');
@@ -486,7 +487,7 @@ function hDiscard(){if(G.phase!=='play')return;const P=G.pl[0];
  if(sel.size!==1)return bad('Select one tile to discard');
  if(P.board){const id=[...sel][0],b=boardBest(P.hand.filter(x=>x!==id));
   if(b){rm(P.hand,[id]);G.disc.push(id);sel.clear();G.bw=b;sfx('disc');endRound(0,id,'You close: '+b.nm+' +'+b.pts+'!');return}}
- const must=T.must.filter(id=>P.hand.includes(id));if(must.length)return bad('Use '+tname(must[0])+' first, or Undo');
+ const must=T.must.filter(id=>P.hand.includes(id));if(must.length)return bad((must[0]===T.take?'Lay ':'Use ')+tname(must[0])+' first, or Undo');
  if(!P.opened&&(T.runs||T.sets)&&!okOpen())return bad(openMsg());
  if(okOpen())P.opened=true;
  const id=[...sel][0];rm(P.hand,[id]);G.disc.push(id);sel.clear();sfx('disc');
