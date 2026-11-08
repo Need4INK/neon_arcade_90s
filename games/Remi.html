@@ -170,11 +170,11 @@ main>h1{flex:1 1 auto;max-height:none}
 <p><b>Deal:</b> 14 tiles each, the starter 15. One tile is turned up as the <b>atu</b>: whoever holds its twin (yellow dot) announces it and gets +50. If the atu is a 1 or a joly it's a <b>double game</b>: every score is doubled. Anyone dealt 3 doubles may reshuffle.</p>
 <p><b>Turn:</b> draw from the pile, or take the last discard and lay it in a new formation this turn (adding it to one doesn't count). Then discard one tile. <b>Until you open you can only draw</b>: you open with tiles from your hand and ones you draw. The starter's first discard is out of play.</p>
 <p><b>Formations:</b> a <b>run</b> is 3+ consecutive tiles of one colour (1-2-3 or 12-13-1, never 13-1-2). A <b>set</b> is 3–4 tiles of one number in different colours. A joly replaces any tile.</p>
-<p><b>Opening</b> (from your second turn): at least <b>45</b> points with at least one run, or a set of 1s on its own. Values: 2–9 = 5, 10–13 = 10, 1 in 1-2-3 = 5, 1 in 12-13-1 = 10, 1 in a set = 25, joly = the tile it replaces.</p>
+<p><b>Opening</b> (from your second turn): at least <b>45</b> points with at least one run <b>and</b> at least one set (house rule; the rulebook asks only for a run), or a set of 1s on its own. Values: 2–9 = 5, 10–13 = 10, 1 in 1-2-3 = 5, 1 in 12-13-1 = 10, 1 in a set = 25, joly = the tile it replaces.</p>
 <p><b>After opening</b> (next turns): lay any formations and add tiles to anyone's formations; a joly only goes on your own. Once opened, with 4+ tiles you can take a discard from anywhere in the row (not the first) together with all tiles after it, if you lay it in a new formation this turn.</p>
 <p><b>Joly swap:</b> place the tile a joly stands for and take the joly; you must use it this turn, and each joly swaps only once. For a joly in a set of 2, add both missing colours.</p>
 <p><b>Few tiles:</b> with 3 tiles you can only take the last discard. With 1–2 you must draw and can only add to formations. Players announce when they have 3 or fewer.</p>
-<p><b>Closing:</b> lay down everything and discard your last tile. If the pile runs out the round ends with no closing bonus.</p>
+<p><b>Closing:</b> lay down everything and discard your last tile. If the pile runs out, the discards (all but the first and the last) are shuffled into a new pile and play goes on (house rule); with nothing to reshuffle the round ends with no closing bonus.</p>
 <p><b>Scoring:</b> 2–9 = 5, 10–13 = 10, 1 = 25, joly = 50, closing +50, atu +50. Tiles you laid or added count <b>+</b>, tiles in hand <b>−</b>. Not opened when someone closes: −100. Closing with a 1 or joly doubles the closer's score (x4 in a double game).</p>
 <p><b>Game:</b> first to the target (500, 750 or 1000 in Settings) wins.</p>
 <p><b>Doubles swap:</b> after the deal you may swap one tile of a double (two identical tiles) for one of a CPU's double of the same kind: small (2–9), big (10–13) or key (1). Select it and tap <b>Swap</b>, then <b>Play</b>. CPUs swap among themselves too. Can be turned off in Settings.</p>
@@ -314,7 +314,7 @@ function cpuSwaps(){for(let p=1;p<4;p++)for(let q=p+1;q<4;q++)for(const k of ['s
   if(doubles(G.pl[p].hand)>=5||doubles(G.pl[q].hand)>=5)continue;const a=dblTiles(G.pl[p].hand,k),b=dblTiles(G.pl[q].hand,k);if(a.length&&b.length)swapD(p,q,pickR(a),pickR(b))}}
 
 // ---- CPU search: best formations in a hand (keeps one tile to discard)
-function findBest(ids,minPts,needRun){
+function findBest(ids,minPts,needRun,needSet){
  const by=[0,1,2,3].map(()=>Array.from({length:14},()=>[])),jk=[];
  ids.forEach(id=>{const t=TILES[id];t.n?by[t.c][t.n].push(id):jk.push(id)});
  const J=jk.length,C=[],ix=n=>n===14?1:n;
@@ -326,16 +326,16 @@ function findBest(ids,minPts,needRun){
    if(k.length>=3)C.push({k,j:0,pts:v*k.length,run:0});if(J&&k.length>=2&&k.length<=3)C.push({k,j:1,pts:v*(k.length+1),run:0})}}
  C.sort((a,b)=>b.pts-a.pts);
  const av=by.map(r=>r.map(a=>a.length));let jl=J,nodes=0,best={pts:0,list:[]};
- (function dfs(i,pts,used,list,runs){if(++nodes>30000)return;
-  if(pts>best.pts&&used<ids.length&&(!needRun||runs))best={pts,list:list.slice()};
+ (function dfs(i,pts,used,list,runs,sets){if(++nodes>30000)return;
+  if(pts>best.pts&&used<ids.length&&(!needRun||runs)&&(!needSet||sets))best={pts,list:list.slice()};
   for(let k=i;k<C.length;k++){const c=C[k];if(c.j>jl||!c.k.every(([a,b])=>av[a][ix(b)]>0))continue;
-   c.k.forEach(([a,b])=>av[a][ix(b)]--);jl-=c.j;list.push(c);dfs(k,pts+c.pts,used+c.k.length+c.j,list,runs+c.run);list.pop();jl+=c.j;c.k.forEach(([a,b])=>av[a][ix(b)]++)}})(0,0,0,[],0);
+   c.k.forEach(([a,b])=>av[a][ix(b)]--);jl-=c.j;list.push(c);dfs(k,pts+c.pts,used+c.k.length+c.j,list,runs+c.run,sets+1-c.run);list.pop();jl+=c.j;c.k.forEach(([a,b])=>av[a][ix(b)]++)}})(0,0,0,[],0,0);
  const pool=by.map(r=>r.map(a=>a.slice())),jp=jk.slice();
  const melds=best.list.map(c=>c.k.map(([a,b])=>pool[a][ix(b)].pop()).concat(jp.splice(0,c.j)));
- let pts=0,runs=0;for(const m of melds){const a=analyze(m);if(!a)return {melds:[],pts:0};pts+=a.pts;if(a.type==='run')runs++}
- return pts>=Math.max(1,minPts)&&(!needRun||runs)?{melds,pts}:{melds:[],pts:0}}
-// Opening: 45+ with a run, or a set of 1s on its own
-function openFor(h){const b=findBest(h,OPEN,true);if(b.melds.length)return b;
+ let pts=0,runs=0,sets=0;for(const m of melds){const a=analyze(m);if(!a)return {melds:[],pts:0};pts+=a.pts;if(a.type==='run')runs++;else sets++}
+ return pts>=Math.max(1,minPts)&&(!needRun||runs)&&(!needSet||sets)?{melds,pts}:{melds:[],pts:0}}
+// Opening (house rule): 45+ with at least one run and one set, or a set of 1s on its own
+function openFor(h){const b=findBest(h,OPEN,true,true);if(b.melds.length)return b;
  const ones=[0,1,2,3].map(c=>h.find(id=>TILES[id].n===1&&TILES[id].c===c)).filter(x=>x!=null),jk=h.filter(isJ);
  const m=ones.length>=3?ones:ones.length===2&&jk.length?ones.concat(jk[0]):null;
  if(m&&m.length<h.length){const a=analyze(m);if(a)return {melds:[m],pts:a.pts}}
@@ -378,7 +378,7 @@ async function cpuTurn(tk){
  if(P.board)return cpuBoard(p,wait);
  if(G.tn>0){const n=G.disc.length,d=n>1?G.disc[n-1]:-1;
   if(d>=0&&startOpened&&start>=3&&cpuWants(p,d)){G.disc.pop();P.hand.push(d);ev.push([nm,'took '+tname(d)]);say(nm+' takes '+tname(d))}
-  else{if(!G.pile.length){endRound(-1,-1,'The pile ran out');return}P.hand.push(G.pile.pop());say(nm+' draws')}
+  else{if(!refill()){endRound(-1,-1,'The pile ran out');return}P.hand.push(G.pile.pop());say(nm+' draws')}
   sfx('draw');render();if(!await wait())return}
  if(start>2){const b=P.opened?findBest(P.hand,1,false):canOpen()?openFor(P.hand):null;
   if(b&&b.melds.length){b.melds.forEach(ids=>{const a=analyze(ids);rm(P.hand,ids);G.melds.push({o:p,t:a.seq.map(s=>s.id)});place(p,ids)});
@@ -392,7 +392,7 @@ async function cpuTurn(tk){
 async function cpuBoard(p,wait){const P=G.pl[p],nm=NAMES[p],key=x=>isJ(x)?'j':TILES[x].c*13+TILES[x].n,cnt=x=>P.hand.filter(y=>key(y)===key(x)).length;
  if(G.tn>0){const n=G.disc.length,d=n>1?G.disc[n-1]:-1;
   if(d>=0&&canOpen()&&!isJ(d)&&cnt(d)===1){G.disc.pop();P.hand.push(d);ev.push([nm,'took '+tname(d)]);say(nm+' takes '+tname(d))}
-  else{if(!G.pile.length){endRound(-1,-1,'The pile ran out');return}P.hand.push(G.pile.pop());say(nm+' draws')}
+  else{if(!refill()){endRound(-1,-1,'The pile ran out');return}P.hand.push(G.pile.pop());say(nm+' draws')}
   sfx('draw');render();if(!await wait())return}
  const out=boardOuts(P.hand);
  if(out.length){const {id,b}=out[0];rm(P.hand,[id]);G.disc.push(id);G.bw=b;sfx('disc');endRound(p,id,nm+' closes: '+b.nm+' +'+b.pts+'!');return}
@@ -400,6 +400,10 @@ async function cpuBoard(p,wait){const P=G.pl[p],nm=NAMES[p],key=x=>isJ(x)?'j':TI
  rm(P.hand,[id]);G.disc.push(id);sfx('disc');say(nm+' discards '+tname(id));nextTurn()}
 
 // ---- game flow
+// Pile ran out (house rule): the discards go back as a new, shuffled pile and play goes on. The row keeps its
+// dead first tile and the last discard (the next player may still take it). Nothing to reshuffle: the round ends.
+function refill(){if(G.pile.length)return true;if(G.disc.length<3)return false;
+ G.pile=shuffle(G.disc.splice(1,G.disc.length-2));ev.push(['Discards','reshuffled into the pile']);say('Pile ran out: discards reshuffled');return true}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function doubles(h){let n=0;const s=new Set(h);h.forEach(id=>{if(id<52&&s.has(id+52))n++});if(s.has(104)&&s.has(105))n++;return n}
 function newGame(){token++;G={pl:[0,1,2,3].map(()=>({hand:[],opened:false,score:0})),round:0,starter:0,over:false};dealRound()}
@@ -428,7 +432,7 @@ function hSwap(){if(G.phase!=='dbl')return;const id=[...sel][0];
  G.atuBy=G.pl.findIndex(P=>P.hand.includes(twin(G.atu)));sel.clear();newIds=[y];sfx('draw');say('Gave '+tname(id)+' to '+NAMES[p]+', got '+tname(y));save();render()}
 function nextTurn(){G.cur=(G.cur+1)%4;G.tn++;startTurn()}
 function startTurn(){sel.clear();const P=G.pl[G.cur];
- if(G.tn>0&&!G.pile.length){endRound(-1,-1,'The pile ran out');return}
+ if(G.tn>0&&!refill()){endRound(-1,-1,'The pile ran out');return}
  if(G.cur===0&&G.phase==='play'&&G.drew!=null&&G.tn>0){const id=G.drew;T={must:[],take:null,startOpened:P.opened,start:P.hand.length-1,staged:0,runs:0,sets:0,ones:false,snap:null};T.snap=snap();newIds=[id];
   say(boardReady()?'Board ready: discard your spare tile':'You drew '+tname(id)+(P.board?' · '+boardProg(P.hand):''));render();return}
  delete G.drew;
@@ -455,13 +459,13 @@ function leader(){return G.pl.reduce((b,P,i)=>P.score>G.pl[b].score?i:b,0)}
 
 // ---- your moves
 function snap(){return JSON.stringify({hand:G.pl[0].hand,melds:G.melds,disc:G.disc,own:G.own,jl:G.jl,phase:G.phase,T:{must:T.must,take:T.take,staged:T.staged,runs:T.runs,sets:T.sets,ones:T.ones}})}
-function okOpen(){return T.staged>=OPEN&&(T.runs>0||(T.sets===1&&T.ones))}
-function openMsg(){if(T.runs===0&&T.sets>0&&!(T.sets===1&&T.ones))return 'Opening needs a run (or 1s set)';
- return 'Opening: '+T.staged+' / '+OPEN+(T.staged<OPEN?'':T.runs||T.ones?' ✓':' · need a run')}
+function okOpen(){return T.staged>=OPEN&&((T.runs>0&&T.sets>0)||(T.runs===0&&T.sets===1&&T.ones))}
+function openMsg(){const o=okOpen();
+ return 'Opening: '+T.staged+' / '+OPEN+(o?' ✓':T.runs&&!T.sets?' · need a set':T.sets&&!T.runs&&!(T.sets===1&&T.ones)?' · need a run':'')}
 function bad(m){sfx('bad');say(m,true);render()}
 function boardReady(){return G.pl[0].board&&boardOuts(G.pl[0].hand).length>0}
-function hDraw(){if(G.phase!=='draw')return;if(!G.pile.length){endRound(-1,-1,'The pile ran out');return}
- const id=G.pile.pop();G.pl[0].hand.push(id);newIds=[id];G.phase='play';G.drew=id;T.snap=snap();save();sfx('draw');say(boardReady()?'Board ready: discard your spare tile':'You drew '+tname(id)+(G.pl[0].board?' · '+boardProg(G.pl[0].hand):''));render()}
+function hDraw(){if(G.phase!=='draw')return;const re=!G.pile.length;if(!refill()){endRound(-1,-1,'The pile ran out');return}
+ const id=G.pile.pop();G.pl[0].hand.push(id);newIds=[id];G.phase='play';G.drew=id;T.snap=snap();save();sfx('draw');say(boardReady()?'Board ready: discard your spare tile':(re?'Discards reshuffled · you drew ':'You drew ')+tname(id)+(G.pl[0].board?' · '+boardProg(G.pl[0].hand):''));render()}
 function hBoard(){if(!canBoard(0)||!(G.phase==='draw'||G.phase==='play')||T.runs||T.sets)return;
  if(!boardArm){boardArm=true;clearTimeout(boardT);boardT=setTimeout(()=>{boardArm=false;render()},3000);render();return}
  clearTimeout(boardT);boardArm=false;G.pl[0].board=true;T.must=[];sfx('lay');say('Board game: keep all your tiles in hand');if(G.phase==='draw')save();render()}
@@ -483,7 +487,7 @@ function hLay(){if(G.phase!=='play')return;const P=G.pl[0],ids=[...sel],h=P.hand
  rm(h,ids);G.melds.push({o:0,t:a.seq.map(s=>s.id)});place(0,ids);hitMeld=G.melds.length-1;sel.clear();sfx('lay');
  if(!P.opened){T.staged+=a.pts;if(a.type==='run')T.runs++;else{T.sets++;if(face(a.seq[0].n)===1)T.ones=true}say(openMsg())}else say('Laid down');render()}
 function hAdd(mi){if(G.phase==='over'||G.phase==='dbl')return;if(G.phase!=='play'||!sel.size){say(G.phase==='play'?'Select tiles, tap a formation':'');render();return}
- const P=G.pl[0];if(P.board)return bad('Board game: no adding');if(!P.opened)return bad(T.runs||T.sets?'Add from your next turn':'Open first: 45 with a run');
+ const P=G.pl[0];if(P.board)return bad('Board game: no adding');if(!P.opened)return bad(T.runs||T.sets?'Add from your next turn':'Open first: 45, a run and a set');
  const ids=[...sel],m=G.melds[mi],h=P.hand;
  if(T.take!=null&&ids.includes(T.take))return bad('Lay '+tname(T.take)+' in a new formation');
  const j=trySwap(m,ids);
