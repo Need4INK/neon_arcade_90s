@@ -31,16 +31,19 @@ for name in ('oth', 'ws', 'sdk', 'rem'):
     globals()[name] = g
 assert all(g.count('class="mnu"') == 1 for g in (kb, oth, ws, sdk, rem))
 
-# Stage: every screen is laid out at the iPhone 12 home-screen size (390 x 763 points inside the notch and
-# home bar) and scaled evenly to fit, using whichever side is tighter. On shorter screens the stage may get
-# shorter (down to 680) before it shrinks. The iframe fills the whole screen (no seams at the notch / home
+# Stage: every screen is laid out 390 points wide (iPhone 12) and scaled evenly to fit; the stage always fills
+# the full height inside the notch and home bar (763 on an iPhone 12), so the bar sits at the bottom. Screens
+# shorter than 680 (after scaling to the width) shrink instead. The iframe fills the whole screen (no seams at the notch / home
 # bar); the cover tells each game the safe-area insets, which iOS doesn't pass into iframes.
 NACALC = ("var NA_W=390,NA_H=763,NA_MIN=680;function naCalc(s,W,H,rot,r270){var w=W-s.l-s.r,h=H-s.t-s.b,cw=rot?h:w,ch=rot?w:h,"
-          "k=Math.min(cw/NA_W,ch/NA_MIN),sh=Math.min(NA_H,ch/k),a=rot?(r270?90:-90):0;return {k:k,sh:sh,a:a,"
+          "k=Math.min(cw/NA_W,ch/NA_MIN),sh=ch/k,a=rot?(r270?90:-90):0;return {k:k,sh:sh,a:a,"
           "st:'translate('+(s.l+w/2)+'px,'+(s.t+h/2)+'px) rotate('+a+'deg) scale('+k+') translate('+(-NA_W/2)+'px,'+(-sh/2)+'px)'}}")
 STAGE = ('<style>html.stg #app{position:fixed!important;left:0!important;top:0!important;right:auto!important;bottom:auto!important;'
          'width:390px!important;height:var(--sh)!important;margin:0!important;transform-origin:0 0!important;transform:var(--st)!important}'
-         'html.stg main{max-height:none!important}</style>\n'
+         'html.stg main{max-height:none!important;padding-bottom:6px!important}html.stg body:not(.flip) .side{max-height:none!important}'
+         # title at the top, bar at the bottom, the game takes the room between (grows where it can, else centred)
+         'html.stg main>h1{flex:none!important;max-height:none!important}html.stg main>.bar{flex:none!important;margin-top:auto!important}'
+         'html.stg main>noscript+*,html.stg main>h1+:not(noscript){margin-top:auto!important}</style>\n'
          '<script>(function(){var de=document.documentElement;de.classList.add("stg");' + NACALC +
          'function st(){var W=innerWidth,H=innerHeight,rot=W>H&&H<600&&matchMedia("(pointer:coarse)").matches,a=0;'
          'if(rot){a=screen.orientation&&typeof screen.orientation.angle==="number"?screen.orientation.angle:(window.orientation===-90?270:90)}'
