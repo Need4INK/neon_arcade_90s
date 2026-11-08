@@ -52,6 +52,10 @@ h1{font:400 20px/1 var(--px);text-transform:uppercase;letter-spacing:2px;margin:
 .liq.cut{border-bottom:3px solid #07030f}
 .liq:first-child{border-radius:0 0 calc(var(--w) / 2 - 4px) calc(var(--w) / 2 - 4px)}
 .acts{display:flex;justify-content:center;gap:8px;margin:6px 0 0;flex:none}
+.msg{flex:none;height:24px;margin:8px 0 0;text-align:center;font-size:22px;line-height:24px;white-space:nowrap;overflow:hidden;color:var(--ink)}
+.msg.bad{color:var(--mag)}
+.msg.win{font:400 12px/24px var(--px);color:var(--yel);text-shadow:0 0 10px rgba(255,233,77,.8)}
+.seg button.arm{background:var(--mag);border-color:var(--mag);color:#07030f;text-shadow:none;box-shadow:0 0 12px var(--mag);white-space:normal;font-size:8px;line-height:1;padding:5.5px 2px}
 button.b{background:transparent;color:var(--yel);border:2px solid var(--yel);border-radius:4px;padding:6px 10px;margin:0;font:400 10px/1.2 var(--px);cursor:pointer;text-shadow:0 0 8px var(--yel);box-shadow:0 0 10px rgba(255,233,77,.5)}
 button.b:active{background:var(--yel);color:#07030f;text-shadow:none}
 button.b:disabled{opacity:.4;cursor:default}
@@ -109,6 +113,7 @@ main>h1{flex:1 1 auto;max-height:none}
 <div id="game">
 <div class="hd" id="hd"><span>Level <small id="sub"></small></span><b id="lvl">1</b></div>
 <div id="board" role="group" aria-label="Tubes"></div>
+<div class="msg" id="msg" role="status" aria-live="polite"></div>
 <div class="acts" id="acts"></div>
 </div>
 <nav class="bar" id="bar"><button type="button" id="bRules" aria-expanded="false">Rules</button><button type="button" id="bSet" aria-expanded="false">Settings</button></nav>
@@ -133,7 +138,7 @@ main>h1{flex:1 1 auto;max-height:none}
 <script>
 (function(){
 var CAP=4, TUBES=10;
-var COLORS=['#ff2bd6','#19f3ff','#ffe94d','#ff7a3d','#39ff7a','#9b5cff','#ff3b5c','#eaf6ff','#3d6bff'];
+var COLORS=['#ff2bd6','#19f3ff','#ffe94d','#ff7a3d','#39ff7a','#9b5cff','#ff3b5c','#eaf6ff','#1c3cff'];
 var TIERS=[{id:'easy',name:'Easy',from:1,colors:8,pick:'low'},{id:'normal',name:'Normal',from:4,colors:8,pick:'mid'},
            {id:'hard',name:'Hard',from:8,colors:8,pick:'high'},{id:'expert',name:'Hard',from:13,colors:9,pick:'high',sub:'hard'}];
 // From level 13 Hard turns into the old Expert puzzles (9 colours, one empty tube): one Hard button covers both
@@ -197,10 +202,10 @@ function tap(i){if(won)return;var t=tubes[i];
  if(sel===i){sel=null;render('Tap a tube');return}
  if(canPour(tubes,sel,i)){hist.push({ts:clone(tubes),moves:moves});var n=pour(tubes,sel,i);moves++;sel=null;hitIdx=i;sfx('pour',n);
   if(isDone(tubes[i]))sfx('full');
-  if(solved(tubes)){won=true;best=Math.max(best,level);if(!counted){solvedN++;counted=true}save();sfx('win');render('Solved in '+moves+' moves!');return}
+  if(solved(tubes)){won=true;best=Math.max(best,level);if(!counted){solvedN++;counted=true}save();sfx('win');render('Solved in '+moves+' moves!',-1,'win');return}
   render(isDone(tubes[i])?'Tube complete!':'Poured '+n+(n>1?' layers':' layer'));return}
- if(t.length&&!isDone(t)){sel=i;sfx('pick');render('Now tap where to pour');return}
- sfx('bad');var s=sel;sel=null;render("Can't pour there",i)}
+ if(t.length&&!isDone(t)){sel=i;sfx('pick');render("Can't pour: picked this tube",-1,'bad');return}
+ sfx('bad');var s=sel;sel=null;render("Can't pour there",i,'bad')}
 function undo(){if(!hist.length||won)return;var h=hist.pop();tubes=h.ts;moves=h.moves;sel=null;hitIdx=-1;sfx('undo');render('Undone')}
 function next(){level++;save();newPuzzle()}
 function inGame(){return moves>0&&!won}
@@ -210,9 +215,13 @@ function btn(label,fn,dis){var b=document.createElement('button');b.type='button
 function renderDiff(){var el=$('diff'),cur=tierOf(level),on=cur.sub||cur.id,lock=inGame();el.innerHTML='';
  TIERS.filter(function(t){return !t.sub}).forEach(function(t){var b=document.createElement('button');b.type='button';b.textContent=t.name;
   b.setAttribute('aria-pressed',t.id===on?'true':'false');b.disabled=lock;
-  b.onclick=function(){if(b.disabled||t.id===on)return;level=t.from;save();newPuzzle();showPanel('')};el.appendChild(b)})}
-function render(m,badIdx){
- renderDiff();
+  b.onclick=function(){if(b.disabled||t.id===on)return;
+   if(t.from<level&&!b.classList.contains('arm')){b.classList.add('arm');b.textContent='Tap again';
+    $('note').textContent=t.name+' starts at level '+t.from+' (you are on level '+level+'). Tap again to go there.';clearTimeout(diffT);diffT=setTimeout(function(){renderDiff();if(!panel.hidden)sync()},3000);return}
+   clearTimeout(diffT);level=t.from;save();newPuzzle();showPanel('')};el.appendChild(b)})}
+var diffT=null;
+function render(m,badIdx,cls){
+ renderDiff();var me=$('msg');if(m!==undefined){me.textContent=m;me.className='msg'+(cls?' '+cls:'')}
  $('lvl').textContent=level;
  $('sub').textContent=won?'· Solved in '+moves+'!':'· Moves '+moves+(best?' · Best Lv '+best:'');
  var board=$('board');board.innerHTML='';board.classList.toggle('won',won);
@@ -230,7 +239,7 @@ function render(m,badIdx){
 function saveG(){try{localStorage.setItem('ws_game',JSON.stringify({level:level,start:start,tubes:tubes,hist:hist.slice(-200),moves:moves,won:won,counted:counted}))}catch(e){}}
 function loadG(){try{var g=JSON.parse(localStorage.getItem('ws_game'));if(!g||g.level!==level||!g.start||!g.tubes||g.tubes.length!==TUBES)return false;
  start=g.start;tubes=g.tubes;hist=g.hist||[];moves=g.moves||0;won=!!g.won;counted=!!g.counted;sel=null;hitIdx=-1;
- render(won?'Solved in '+moves+' moves!':moves?'Welcome back':tierOf(level).name+' · tap a tube');want(tierOf(level).id);want(tierOf(level+1).id);return true}catch(e){return false}}
+ render(won?'Solved in '+moves+' moves!':moves?'Welcome back':tierOf(level).name+' · tap a tube',-1,won?'win':'');want(tierOf(level).id);want(tierOf(level+1).id);return true}catch(e){return false}}
 // Size tubes so 2 rows of 5 fill the board without overflowing.
 // Space the game may use: the screen minus the title and the bar (both at their natural height)
 function gameRoom(){var m=document.querySelector('main'),h=m.querySelector('h1'),bar=$('bar'),cs=getComputedStyle(m),hs=getComputedStyle(h),bs=getComputedStyle(bar);
@@ -238,7 +247,7 @@ function gameRoom(){var m=document.querySelector('main'),h=m.querySelector('h1')
  return m.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)-ht-bar.firstElementChild.offsetHeight-parseFloat(bs.paddingBottom)}
 function layout(){var g=$('game'),b=$('board');if(!g.clientWidth)return;
  var W=g.clientWidth-16,
-  H=gameRoom()-32-$('hd').offsetHeight-$('acts').offsetHeight-6-16-28-4;
+  H=gameRoom()-32-$('hd').offsetHeight-$('acts').offsetHeight-6-16-28-4-$('msg').offsetHeight-8;
  var gap=Math.max(8,Math.min(18,W*.05)),w=(W-gap*4)/5;w=Math.min(w,H/7.35,64);w=Math.max(24,Math.floor(w));
  b.style.setProperty('--w',w+'px');b.style.setProperty('--gap',gap+'px')}
 

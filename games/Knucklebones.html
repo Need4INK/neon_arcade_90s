@@ -36,12 +36,14 @@ main{max-width:420px;height:100%;margin:0 auto;padding:4px 14px 36px;display:fle
 .col{display:flex;flex-direction:column;gap:5px;min-height:0;border-radius:6px;padding:4px;border:2px solid transparent;background:transparent;font:inherit;color:inherit}
 .col.rev{flex-direction:column-reverse}
 .cs{text-align:center;font:400 9px/16px var(--px);color:var(--mut);height:16px;flex:none}
-.cell{flex:1 1 0;min-height:0;border-radius:4px;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center}
-.cell.f{background:var(--die);border-style:solid;border-width:2px}
-.opp .cell.f{border-color:var(--mag);box-shadow:0 0 6px rgba(255,43,214,.5),inset 0 0 6px rgba(255,43,214,.25)}
-.you .cell.f{border-color:var(--cy);box-shadow:0 0 6px rgba(25,243,255,.5),inset 0 0 6px rgba(25,243,255,.22)}
-.side .cell.m2{background:rgba(255,233,77,.16);border-color:var(--yel);box-shadow:0 0 8px rgba(255,233,77,.55)}
-.side .cell.m3{background:rgba(255,122,61,.22);border-color:var(--org);box-shadow:0 0 10px rgba(255,122,61,.7)}
+.cell{flex:1 1 0;min-height:0;border-radius:4px;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;container-type:size}
+/* A placed die is a square face centred in its cell (cells are wider than tall) */
+.cell.f{border-color:transparent}
+.cell.f .pips{width:min(100cqw,100cqh);height:min(100cqw,100cqh);max-width:none;aspect-ratio:auto;padding:11%;background:var(--die);border:2px solid;border-radius:6px}
+.opp .cell.f .pips{border-color:var(--mag);box-shadow:0 0 6px rgba(255,43,214,.5),inset 0 0 6px rgba(255,43,214,.25)}
+.you .cell.f .pips{border-color:var(--cy);box-shadow:0 0 6px rgba(25,243,255,.5),inset 0 0 6px rgba(25,243,255,.22)}
+.side .cell.m2 .pips{background:linear-gradient(rgba(255,233,77,.16),rgba(255,233,77,.16)),var(--die);border-color:var(--yel);box-shadow:0 0 8px rgba(255,233,77,.55)}
+.side .cell.m3 .pips{background:linear-gradient(rgba(255,122,61,.22),rgba(255,122,61,.22)),var(--die);border-color:var(--org);box-shadow:0 0 10px rgba(255,122,61,.7)}
 .pips{display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);height:72%;max-width:86%;aspect-ratio:1}
 .pips i{border-radius:50%;margin:12%}
 .opp .pips i.on{background:#ffc2f4;box-shadow:0 0 6px var(--mag)}
@@ -72,7 +74,9 @@ button.b:active{background:var(--yel);color:#07030f;text-shadow:none}
 .diff{display:flex;gap:8px}
 .diff button{font:400 9px/1 var(--px);color:var(--cy);background:transparent;border:2px solid var(--cy);border-radius:4px;padding:8.5px 8px;cursor:pointer;text-shadow:0 0 6px var(--cy)}
 .diff button[aria-pressed="true"]{background:var(--cy);color:#07030f;text-shadow:none;box-shadow:0 0 12px var(--cy)}
-.diff button:disabled{opacity:.45;cursor:default}
+.diff button:disabled,.diff button.lk{opacity:.45;cursor:default}
+.msg2{transform:rotate(180deg)}
+.mid.two .msg{text-align:center;max-width:none}.mid.two .msg .t{white-space:nowrap}
 .short .ttl{font-size:14px;margin:6px 0 6px}.short .ctl{margin-bottom:6px}.short .diff button,.short .diff .tag{padding:7px 8px}.short .mid{margin:4px 0;min-height:46px}.short .die{width:44px;height:44px}.short .die .pips{height:30px}.short .msg{font-size:20px}.short .side{padding:4px}.short .hd{margin-bottom:3px}
 .tiny .ttl{display:none!important}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
@@ -147,8 +151,8 @@ body:not(.flip) .side{flex-grow:8;max-height:360px}
 <h1 class="ttl ttl1">Knucklebones</h1>
 <noscript>Knucklebones needs JavaScript to run.</noscript>
 <div class="ctl"><div class="diff" id="diff" role="group" aria-label="Difficulty"></div></div>
-<div class="side opp"><div class="hd"><span><em class="nm" id="on">Opponent</em> <small id="obd"></small></span><b id="cs">0</b></div><div class="cols" id="cg"></div></div>
-<div class="mid"><div class="die" id="die">–</div><div class="msg" id="msg" role="status" aria-live="polite"></div></div>
+<div class="side opp"><div class="hd"><span><em class="nm" id="on">CPU</em> <small id="obd"></small></span><b id="cs">0</b></div><div class="cols" id="cg"></div></div>
+<div class="mid"><div class="die" id="die">–</div><div class="msg msg2" id="msg2" aria-hidden="true" hidden></div><div class="msg" id="msg" role="status" aria-live="polite"></div></div>
 <div class="side you"><div class="hd"><span><em class="nm" id="yn">You</em> <small id="best"></small></span><b id="ps">0</b></div><div class="cols" id="pg"></div></div>
 <div class="ttl ttl2" aria-hidden="true">Knucklebones</div>
 <nav class="bar" id="bar"><button type="button" id="bRules" aria-expanded="false" aria-controls="panel">Rules</button><button type="button" id="bSet" aria-expanded="false" aria-controls="panel">Settings</button></nav>
@@ -216,10 +220,13 @@ function renderDiff(){var el=document.getElementById('diff');el.innerHTML='';
   var lock=!over&&!!p&&!!c&&(p.some(function(a){return a.length})||c.some(function(a){return a.length}));
   ['easy','normal','hard'].forEach(function(d){var b=document.createElement('button');b.type='button';b.textContent=d[0].toUpperCase()+d.slice(1);
     b.setAttribute('aria-pressed',S.diff===d?'true':'false');
-    b.disabled=lock;if(lock)b.title='Locked until this game ends';
-    b.onclick=function(){if(b.disabled)return;S.diff=d;renderDiff()};el.appendChild(b)})}
+    if(lock){b.className='lk';b.setAttribute('aria-disabled','true')}
+    b.onclick=function(){if(lock){flash('Finish or cancel this game to change level.');return}S.diff=d;renderDiff()};el.appendChild(b)})}
+// A short note in the message line; the previous message comes back after 2.5 s unless the game moved on
+var flashT=null;function flash(t){var e=document.querySelector('#msg .t');if(!e)return;var old=e.getAttribute('data-m')!=null?e.getAttribute('data-m'):e.textContent;clearTimeout(flashT);e.setAttribute('data-m',old);e.textContent=t;
+  flashT=setTimeout(function(){var x=document.querySelector('#msg .t');if(x===e&&x.textContent===t){x.textContent=old;x.removeAttribute('data-m')}},2500)}
 function showBest(){
-  document.getElementById('yn').textContent=mode==='2p'?'Player 1':'You';document.getElementById('on').textContent=mode==='2p'?'Player 2':'Opponent';
+  document.getElementById('yn').textContent=mode==='2p'?'Player 1':'You';document.getElementById('on').textContent=mode==='2p'?'Player 2':'CPU';
   var bd=function(g){return '('+g.map(colScore).join('+')+')'};
   document.getElementById('best').textContent=over?bd(p):(mode==='2p'?'· Best '+S.b1+' · W'+S.p1+' L'+S.p2:'· Best '+S.best+' · W'+S.w+' L'+S.l);
   document.getElementById('obd').textContent=over?bd(c):(mode==='2p'?'· Best '+S.b2+' · W'+S.p2+' L'+S.p1:'')}
@@ -289,8 +296,8 @@ function play(col,side){
   sfx('place');if(k)sfx('crunch',80);
   if(end())return;
   if(mode==='2p'){turn=other;die=roll();render((k?'Destroyed '+k+(k>1?' dice':' die')+'! ':'')+'Player '+(other==='p'?1:2)+': your turn.');return}
-  turn='c';render(k?'You destroyed '+k+(k>1?' dice':' die')+'.':'Opponent is rolling…');cpuGo()}
-function cpuGo(){var g=gid;setTimeout(function(){if(g!==gid)return;die=roll();hit=null;render('Opponent rolled a '+die+'.');
+  turn='c';render(k?'You destroyed '+k+(k>1?' dice':' die')+'.':'CPU is rolling…');cpuGo()}
+function cpuGo(){var g=gid;setTimeout(function(){if(g!==gid)return;die=roll();hit=null;render('CPU rolled a '+die+'.');
     setTimeout(function(){if(g!==gid)return;var k2=cpuMove();sfx('opp');if(k2)sfx('lose',80);if(end())return;
       turn='p';die=roll();render(k2?'Lost '+k2+(k2>1?' dice':' die')+'! Your turn.':'Your turn: tap a column.')},800)},700)}
 function grid(el,g,mine){
@@ -323,8 +330,11 @@ function render(m){renderDiff();document.body.classList.toggle('p2turn',mode==='
   grid(document.getElementById('pg'),p,true);grid(document.getElementById('cg'),c,false);
   document.getElementById('ps').textContent=total(p);document.getElementById('cs').textContent=total(c);
   var dv=document.getElementById('die'),ms=document.getElementById('msg');
-  showBest();dv.className='die'+(over?'':turn==='c'?' tc':' tp');dv.innerHTML=over?'':pips(die);ms.textContent='';var t=document.createElement('span');t.className='t';t.textContent=m||'';ms.appendChild(t);
-  if(over){var b=document.createElement('button');b.className='b';b.textContent='Play again';b.onclick=start;ms.appendChild(b)}
+  showBest();dv.className='die'+(over?'':turn==='c'?' tc':' tp');dv.innerHTML=over?'':pips(die);dv.hidden=!!over;ms.textContent='';var t=document.createElement('span');t.className='t';t.textContent=m||'';ms.appendChild(t);
+  var m2=document.getElementById('msg2'),two=over&&document.body.classList.contains('flip');m2.hidden=!two;m2.textContent='';ms.parentNode.classList.toggle('two',two);
+  if(two){m=m.replace(/^Player (\d)/,'P$1');t.textContent=m}
+  if(over)[ms].concat(two?[m2]:[]).forEach(function(box){if(box===m2){var t2=document.createElement('span');t2.className='t';t2.textContent=m||'';box.appendChild(t2)}
+    var b=document.createElement('button');b.className='b';b.textContent='Play again';b.onclick=start;box.appendChild(b)})
   saveG(m)}
 // Game in progress and header stats are kept when the app is closed
 function saveG(m){try{localStorage.setItem('kb-stats',JSON.stringify(S));
@@ -333,7 +343,7 @@ function loadG(){try{var g=JSON.parse(localStorage.getItem('kb-game'));
   if(!g||g.over||!g.p||!g.c||g.p.length!==g.NC||!g.p.concat(g.c).some(function(a){return a.length}))return false;
   gid++;p=g.p;c=g.c;die=g.die;turn=g.turn;over=false;hit=null;mode=g.mode==='2p'?'2p':'cpu';NC=g.NC===4?4:3;
   document.body.classList.toggle('c4',NC===4);document.body.classList.toggle('flip',mode==='2p'&&!!g.flip);
-  if(mode==='cpu'&&turn==='c'){render('Opponent is rolling…');cpuGo()}else render(g.m||'Your turn: tap a column.');return true}catch(e){return false}}
+  if(mode==='cpu'&&turn==='c'){render('CPU is rolling…');cpuGo()}else render(g.m||'Your turn: tap a column.');return true}catch(e){return false}}
 var panel=document.getElementById('panel'),bar=document.getElementById('bar'),pR=document.getElementById('pRules'),pS=document.getElementById('pSet'),bR=document.getElementById('bRules'),bS=document.getElementById('bSet');
 function inGame(){return !over&&!!p&&!!c&&(p.some(function(a){return a.length})||c.some(function(a){return a.length}))}
 function showPanel(n){var cur=panel.hidden?'':panel.dataset.p,nx=n&&n!==cur?n:'';panel.hidden=!nx;document.getElementById('shade').hidden=!nx;panel.dataset.p=nx;pR.hidden=nx!=='rules';pS.hidden=nx!=='settings';
