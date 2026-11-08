@@ -205,7 +205,8 @@ iframe{position:fixed;top:env(safe-area-inset-top,0px);bottom:env(safe-area-inse
 html.stg #cover{inset:0!important;width:auto!important;height:auto!important;transform:none!important;padding:0!important;display:block;overflow:hidden}
 #cstage{position:absolute;left:0;top:0;width:390px;height:var(--sh,763px);transform-origin:0 0;transform:var(--st);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:20px 15px}
 .sbox{transform:var(--sr)}
-iframe{top:0!important;left:0!important;right:0!important;bottom:0!important;width:100%!important;height:100%!important}
+iframe{top:0!important;left:0!important;right:0!important;bottom:auto!important;width:100%!important;height:var(--fullh,100%)!important}
+html.stg #cover{bottom:auto!important;height:var(--fullh,100%)!important}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -275,7 +276,10 @@ var GAMES=__GAMES__;
 var naP=document.createElement('div');naP.style.cssText='position:fixed;left:0;top:0;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)';document.body.appendChild(naP);
 window.__safe=function(){if(window.__SAFE)return window.__SAFE;var c=getComputedStyle(naP);return {t:parseFloat(c.paddingTop)||0,r:parseFloat(c.paddingRight)||0,b:parseFloat(c.paddingBottom)||0,l:parseFloat(c.paddingLeft)||0}};
 __NACALC__
-function naCover(){var de=document.documentElement,r=naCalc(__safe(),innerWidth,innerHeight,de.classList.contains('rot'),de.classList.contains('r270'));
+// iOS home-screen apps with a see-through status bar draw the page from the top of the screen but report a
+// height that leaves out the status bar, so a strip at the bottom stays empty. Detect it and use the full height.
+function naFullH(){var s=__safe(),H=innerHeight;try{if(navigator.standalone&&s.t>0&&innerWidth<innerHeight&&Math.abs(H+s.t-screen.height)<2)H+=s.t}catch(e){}return H}
+function naCover(){var de=document.documentElement,H=naFullH();de.style.setProperty('--fullh',H+'px');var r=naCalc(__safe(),innerWidth,H,de.classList.contains('rot'),de.classList.contains('r270'));
  de.style.setProperty('--sh',r.sh+'px');de.style.setProperty('--st',r.st);de.style.setProperty('--sr','rotate('+r.a+'deg) scale('+r.k+')')}
 // Keep each card description to two lines: shrink the text a little if it would wrap to a third.
 function fitCards(){document.querySelectorAll('.card small').forEach(function(el){el.style.fontSize='';el.style.webkitLineClamp='unset';
