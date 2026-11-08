@@ -277,8 +277,9 @@ var naP=document.createElement('div');naP.style.cssText='position:fixed;left:0;t
 window.__safe=function(){if(window.__SAFE)return window.__SAFE;var c=getComputedStyle(naP);return {t:parseFloat(c.paddingTop)||0,r:parseFloat(c.paddingRight)||0,b:parseFloat(c.paddingBottom)||0,l:parseFloat(c.paddingLeft)||0}};
 __NACALC__
 // iOS home-screen apps with a see-through status bar draw the page from the top of the screen but report a
-// height that leaves out the status bar, so a strip at the bottom stays empty. Detect it and use the full height.
-function naFullH(){var s=__safe(),H=innerHeight;try{if(navigator.standalone&&s.t>0&&innerWidth<innerHeight&&Math.abs(H+s.t-screen.height)<2)H+=s.t}catch(e){}return H}
+// height that leaves out the status bar, so a strip at the bottom stays empty. Detect it (page height + top inset =
+// screen height) and use the full height. Not tied to navigator.standalone: newer iOS web apps don't set it.
+function naFullH(){var s=__safe(),H=innerHeight;try{if(s.t>0&&innerWidth<innerHeight&&H<screen.height-1&&Math.abs(H+s.t-screen.height)<2)H+=s.t}catch(e){}return H}
 function naCover(){var de=document.documentElement,H=naFullH();de.style.setProperty('--fullh',H+'px');var r=naCalc(__safe(),innerWidth,H,de.classList.contains('rot'),de.classList.contains('r270'));
  de.style.setProperty('--sh',r.sh+'px');de.style.setProperty('--st',r.st);de.style.setProperty('--sr','rotate('+r.a+'deg) scale('+r.k+')')}
 // Keep each card description to two lines: shrink the text a little if it would wrap to a third.
