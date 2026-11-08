@@ -65,7 +65,7 @@ button.b:disabled{opacity:.4;cursor:default}
 .panel b{color:var(--ink);font-weight:400}
 .row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
 .lab{font:400 10px/1.4 var(--px);color:var(--ink);white-space:nowrap}
-@media (max-width:360px){:root{--sw:54px}.seg button{font-size:8px}}
+@media (max-width:360px){:root{--sw:54px}#diff button{font-size:8px}}
 .row>.tg,.row>.seg{margin-left:auto}
 .row.wrap{flex-wrap:wrap}
 .seg{display:flex;gap:var(--sg);flex:none}
@@ -117,7 +117,7 @@ main>h1{flex:1 1 auto;max-height:none}
 <p>Tap a tube to pick it up, then tap another tube to pour into it.</p>
 <p><b>Pouring:</b> the top colour moves only onto the same colour or into an empty tube, and only while there is room. Each tube holds four layers.</p>
 <p><b>Goal:</b> sort the liquid so every tube holds a single colour. Full one-colour tubes glow magenta.</p>
-<p><b>Levels:</b> every puzzle is checked to be solvable. Easy, Normal and Hard get more mixed; Expert adds a ninth colour and leaves only one empty tube.</p>
+<p><b>Levels:</b> every puzzle is checked to be solvable. Easy, Normal and Hard get more mixed; from level 13 Hard adds a ninth colour and leaves only one empty tube.</p>
 <p><b>Undo</b> takes back moves one at a time. Difficulty, <b>Restart</b> and <b>Shuffle</b> (a new puzzle at the same level) are in Settings. <b>Reset</b> goes back to level 1 and keeps your best level.</p></div>
 <div id="pSet" hidden>
 <div class="row wrap"><span class="lab">Difficulty</span><div class="seg" id="diff" role="group" aria-label="Difficulty"></div></div>
@@ -135,7 +135,8 @@ main>h1{flex:1 1 auto;max-height:none}
 var CAP=4, TUBES=10;
 var COLORS=['#ff2bd6','#19f3ff','#ffe94d','#ff7a3d','#39ff7a','#9b5cff','#ff3b5c','#eaf6ff','#3d6bff'];
 var TIERS=[{id:'easy',name:'Easy',from:1,colors:8,pick:'low'},{id:'normal',name:'Normal',from:4,colors:8,pick:'mid'},
-           {id:'hard',name:'Hard',from:8,colors:8,pick:'high'},{id:'expert',name:'Expert',from:13,colors:9,pick:'high'}];
+           {id:'hard',name:'Hard',from:8,colors:8,pick:'high'},{id:'expert',name:'Hard',from:13,colors:9,pick:'high',sub:'hard'}];
+// From level 13 Hard turns into the old Expert puzzles (9 colours, one empty tube): one Hard button covers both
 var $=function(id){return document.getElementById(id)};
 var level=1,best=0,solvedN=0,start=[],tubes=[],hist=[],sel=null,moves=0,won=false,hitIdx=-1,counted=false;
 
@@ -206,10 +207,10 @@ function inGame(){return moves>0&&!won}
 
 // ---- render
 function btn(label,fn,dis){var b=document.createElement('button');b.type='button';b.className='b';b.textContent=label;b.disabled=!!dis;b.onclick=fn;return b}
-function renderDiff(){var el=$('diff'),cur=tierOf(level),lock=inGame();el.innerHTML='';
- TIERS.forEach(function(t){var b=document.createElement('button');b.type='button';b.textContent=t.name;
-  b.setAttribute('aria-pressed',t===cur?'true':'false');b.disabled=lock;
-  b.onclick=function(){if(b.disabled||t===cur)return;level=t.from;save();newPuzzle();showPanel('')};el.appendChild(b)})}
+function renderDiff(){var el=$('diff'),cur=tierOf(level),on=cur.sub||cur.id,lock=inGame();el.innerHTML='';
+ TIERS.filter(function(t){return !t.sub}).forEach(function(t){var b=document.createElement('button');b.type='button';b.textContent=t.name;
+  b.setAttribute('aria-pressed',t.id===on?'true':'false');b.disabled=lock;
+  b.onclick=function(){if(b.disabled||t.id===on)return;level=t.from;save();newPuzzle();showPanel('')};el.appendChild(b)})}
 function render(m,badIdx){
  renderDiff();
  $('lvl').textContent=level;

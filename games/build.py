@@ -53,6 +53,9 @@ STAGE = ('<style>html.stg #app{position:fixed!important;left:0!important;top:0!i
          "html.stg body:not(.flip) .bar{position:relative!important;inset:auto!important;flex:none!important;height:36px!important;max-height:none!important;margin:auto 0 0!important;padding:0!important;width:100%!important;max-width:none!important}"
          "html.stg .bar{display:grid!important;grid-template-columns:1fr auto 1fr!important;align-items:end!important;align-content:end!important}"
          "html.stg .bar button{padding:22px 0 0!important}"
+         # Rules/Settings panel: same height cap in stage units on every screen (the games' own 72dvh used the unscaled
+         # screen, so panels were shorter and scrolled on small phones and sideways); 572 = what the iPhone 12 had
+         "html.stg .panel{max-height:572px!important}"
          "html.stg body.flip main{padding:0 14px 66px!important;gap:8px!important;justify-content:flex-start!important}"
          "html.stg body.flip main>h1:not(#t2){margin:0 0 auto!important}"
          "html.stg body.flip main>.ttl2,html.stg body.flip main>#t2{flex:none!important;height:64px!important;max-height:none!important;display:flex!important;align-items:center;justify-content:center;font-size:20px!important;margin:auto 0 0!important}"
@@ -250,7 +253,7 @@ html.full #cover,html.full iframe{position:absolute!important}html.full #cover::
    <svg class="ic" viewBox="0 0 64 64" aria-hidden="true"><rect x="1.5" y="1.5" width="61" height="61" rx="8" fill="#0b0720" stroke="#ff2bd6" stroke-width="3"/>
     <circle cx="20.5" cy="20.5" r="10" fill="#0b5f70" stroke="#19f3ff" stroke-width="2.5"/><circle cx="43.5" cy="43.5" r="10" fill="#0b5f70" stroke="#19f3ff" stroke-width="2.5"/>
     <circle cx="43.5" cy="20.5" r="10" fill="#7a0d65" stroke="#ff2bd6" stroke-width="2.5"/><circle cx="20.5" cy="43.5" r="10" fill="#7a0d65" stroke="#ff2bd6" stroke-width="2.5"/></svg>
-   <span><b>Othello</b><small>Flip discs and grab the corners.</small></span>
+   <span><b>Othello</b><small>Flip discs, outflank your rival and grab the corners.</small></span>
   </button>
   <button type="button" class="card ws" data-g="ws">
    <i class="flag" role="img" aria-label="1 player">1P</i>
@@ -266,7 +269,7 @@ html.full #cover,html.full iframe{position:absolute!important}html.full #cover::
    <svg class="ic" viewBox="0 0 64 64" aria-hidden="true"><rect x="1.5" y="1.5" width="61" height="61" rx="8" fill="#0b0720" stroke="#ff9e2c" stroke-width="3"/>
     <path d="M23.5 8v48M40.5 8v48M8 23.5h48M8 40.5h48" stroke="#ff9e2c" stroke-width="2" opacity=".7"/>
     <g font-family="'Press Start 2P',monospace" font-size="10" text-anchor="middle"><text x="15.5" y="20.5" fill="#eaf6ff">5</text><text x="48.5" y="20.5" fill="#19f3ff">3</text><text x="32" y="37.5" fill="#ffe94d">9</text><text x="15.5" y="54.5" fill="#39ff7a">1</text><text x="48.5" y="54.5" fill="#ff2bd6">7</text></g></svg>
-   <span><b>Sudoku</b><small>Fill rows, columns and boxes 1–9.</small></span>
+   <span><b>Sudoku</b><small>Place 1–9 once in every row, column and box.</small></span>
   </button>
   <button type="button" class="card rem" data-g="rem">
    <i class="flag" role="img" aria-label="1 player against 3 CPU">1P</i>
