@@ -41,6 +41,9 @@ NACALC = ("var NA_W=390,NA_H=763,NA_MIN=680;function naCalc(s,W,H,rot,r270){s={t
           "st:'translate('+(s.l+w/2)+'px,'+(s.t+h/2)+'px) rotate('+a+'deg) scale('+k+') translate('+(-NA_W/2)+'px,'+(-sh/2)+'px)'}}")
 STAGE = ('<style>html.stg #app{position:fixed!important;left:0!important;top:0!important;right:auto!important;bottom:auto!important;'
          'width:390px!important;height:var(--sh)!important;margin:0!important;transform-origin:0 0!important;transform:var(--st)!important}'
+         # one background for the whole screen: on the html (some games only painted the body, which iOS can leave short)
+         'html.stg{padding:0!important;height:100%!important;background:radial-gradient(120% 55% at 50% 0%,rgba(255,43,214,.18),transparent 60%),radial-gradient(120% 45% at 50% 100%,rgba(25,243,255,.13),transparent 60%),#07030f!important}'
+         'html.stg body{background:transparent!important}html.stg.rot #app,html.stg #app{background:transparent!important;padding:0!important}'
          'html.stg main{max-height:none!important;padding-bottom:6px!important}html.stg body:not(.flip) .side{max-height:none!important}'
          # title at the top, bar at the bottom, the game takes the room between (grows where it can, else centred)
          'html.stg main>h1{flex:none!important;max-height:none!important}html.stg main>.bar{flex:none!important;margin-top:auto!important}'
