@@ -12,5 +12,7 @@ Needs Python 3 with `playwright` (and `pillow` for the icon preview). Chrome is 
 | `remi_check.py [rounds]` | Remi auto-play at Easy/Norm/Hard with a rule check (all 106 tiles accounted for, every formation valid, no CPU takes a discard before opening, every CPU opening has 45+ with a run and a set or is a set of 1s), then reload after a draw keeps the drawn tile, and an empty pile is refilled from the discards. |
 | `install_check.py` | Manifest and Android installability errors (none expected) served from a subfolder like the live site and from the root, then offline opening at `/`, `/index.html`, `?fbclid=x`. |
 | `icon_preview.py` | `icon-maskable.png` cut to the common Android launcher shapes (writes `tests/out/android_icon_preview.png`). |
+| `colour_blind_check.py` | How far apart the colours that carry meaning stay under the three kinds of colour blindness (Water Sort liquids, Remi tile colours, Othello discs). Needs `numpy` and `scikit-image`. |
+| `a11y_check.py` | Text contrast and tap-target sizes on the cover and every game (game, Rules, Settings), plus colour-blind screenshots of Water Sort and Remi in `tests/out/`. Dimmed (switched-off) buttons are listed too; those are expected. |
 
 Notes: Water Sort keeps its state inside the page's closure, so deep scripted tests of it need a test-only copy of the game that exposes it (never committed). Real-phone things (iPhone clipping, Android launchers) still need a real device.
