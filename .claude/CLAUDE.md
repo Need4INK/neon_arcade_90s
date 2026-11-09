@@ -29,7 +29,7 @@ A phone-first pack of neon arcade games (Knucklebones, Othello, Water Sort, Sudo
 - Tap the cover title for the share pop-up: QR code, home-screen steps (iPhone / Android), Copy link.
 - Same button sizes in every game: settings buttons 64px (54px on narrow phones), double-width 134px; action buttons like Undo 6px 10px padding.
 - Confirmations use "Tap again".
-- Colour-blind help is an optional **Symbols** switch in Settings (off by default, saved): Water Sort puts a shape on every liquid colour (`.sy.s0`–`.sy.s8`), Remi a mark bottom-left on every tile (clear of the atu-twin dot top-right; the doubles bar sits above it) (red one bar, yellow two, blue three, white none). Check colour changes with `tests/colour_blind_check.py`.
+- Colour-blind help is an optional **Accessibility** switch in Settings (off by default, saved): Water Sort puts a shape on every liquid colour (`.sy.s0`–`.sy.s8`), Remi a mark bottom-left on every tile (clear of the atu-twin dot top-right; the doubles bar sits above it) (red one bar, yellow two, blue three, white none). Check colour changes with `tests/colour_blind_check.py`.
 - Games and the cover stay upright in portrait when a phone is turned sideways (touch screens, short side under 600px).
 - Cover cards, top to bottom: Knucklebones green, Othello magenta, Water Sort cyan, Sudoku orange (`#ff9e2c`), Remi soft red (`#e8566a`). Two-line descriptions, a square icon as tall as the text (62px), a player-count flag tab top-right ("1–2P" / "1P").
 - The URL never changes (no `#game`), so bookmarks and the home-screen app always open on the cover.
