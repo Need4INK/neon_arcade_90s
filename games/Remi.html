@@ -54,9 +54,11 @@ h1{font:400 20px/1 var(--px);text-transform:uppercase;letter-spacing:2px;margin:
  display:flex;align-items:center;justify-content:center;font:400 calc(var(--tw) * .78)/1 var(--vt);text-shadow:0 0 6px currentColor;
  box-shadow:inset 0 0 6px rgba(255,255,255,.08),0 0 4px currentColor;cursor:pointer;transition:transform .12s}
 .meld .tl{border-width:1px;box-shadow:none;cursor:inherit}
-/* Symbols setting: a mark top-left per tile colour (red one bar, yellow two, blue three, white none) */
-.tl .sy{display:none;position:absolute;left:2px;top:2px;width:calc(var(--tw) * .45);height:max(2px,calc(var(--tw) * .09));--u:calc(var(--tw) * .09);box-shadow:none}
+/* Symbols setting: a mark bottom-left per tile colour (red one bar, yellow two, blue three, white none).
+   Bottom-left keeps it clear of the atu-twin dot (top-right); the doubles bar moves up above it. */
+.tl .sy{display:none;position:absolute;left:2px;bottom:2px;width:calc(var(--tw) * .45);height:max(2px,calc(var(--tw) * .09));--u:calc(var(--tw) * .09);box-shadow:none}
 body.sym .tl .sy{display:block}
+body.sym #rack .tl.dbl::before{bottom:7px}
 .tl .sy.c0{background:currentColor}
 .tl .sy.c1{background:linear-gradient(90deg,currentColor 0 40%,transparent 40% 60%,currentColor 60%)}
 .tl .sy.c2{background:linear-gradient(90deg,currentColor 0 20%,transparent 20% 40%,currentColor 40% 60%,transparent 60% 80%,currentColor 80%)}
@@ -192,7 +194,7 @@ main>h1{flex:1 1 auto;max-height:none}
 <p><b>Board game</b> (joc pe tabla): in your first 3 turns, before opening, tap <b>Board</b> (then Tap again). You keep everything in hand: no laying down, no adding, no joly swaps, and you take only the last discard (no need to use it). Close by discarding your 15th tile when the other 14 make a board hand:</p>
 <p>Simplu: runs and sets, <b>500</b> · Bete: 2 sets of 4 + 2 sets of 3, <b>700</b> · Mozaic: 1 to 13 to 1, no two neighbours the same colour, the first 4 all different, the two 1s different, <b>1000</b> · Bicolor: two runs in two colours, <b>1200</b> · Duble: 7 doubles, <b>1300</b> · Monocolor: 1 to 13 to 1 in one colour, <b>1500</b>. Jolys fill in anywhere. The board score replaces your tile count and closing bonus; atu and doubling still count. If someone else closes first: −100.</p>
 <p><b>Player cards:</b> ✓ opened · <b>A</b> holds the atu's twin (+50) · <b>B</b> playing a board game. CPU cards show tiles in hand (14▮) then the score; it turns magenta at 3 tiles or fewer.</p>
-<p><b>Symbols</b> (Settings): a mark in the top-left corner of every tile, if some colours look alike to you: red one bar, yellow two, blue three, white none.</p>
+<p><b>Symbols</b> (Settings): a mark in the bottom-left corner of every tile, if some colours look alike to you: red one bar, yellow two, blue three, white none.</p>
 <p><b>Controls:</b> tap tiles to select, <b>Lay down</b> makes a formation, tap a formation to add the selected tiles or swap a joly. <b>Undo</b> takes back your turn.</p></div>
 <div id="pSet" hidden>
 <div class="row"><span class="lab">CPU level</span><div class="seg" id="sLvl" role="group" aria-label="CPU level"></div></div>
