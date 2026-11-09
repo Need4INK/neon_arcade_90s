@@ -17,7 +17,7 @@ A phone-first pack of neon arcade games (Knucklebones, Othello, Water Sort, Sudo
   `python3 games/build.py games/Knucklebones.html games/Othello.html games/Water_Sort.html games/Sudoku.html games/Remi.html index.html`
 - The build adds the green Exit button to each game's bar, injects the stage (scaled layout) into each game, packs the fonts and the QR code, and wraps the games in the cover. Each game runs in its own iframe, so games never clash.
 - After changing `sw.js`, bump `CACHE` (now `neon-arcade-v2`, so next `neon-arcade-v3`). Game-only changes need no bump: the page is re-checked on every load.
-- Fonts: `games/fonts/` holds `PressStart2P-Regular.ttf` and `VT323-Regular.ttf` (SIL Open Font License); the build packs them into `index.html` (subset to the characters used, licence kept), so the games never need Google Fonts.
+- Fonts: `games/fonts/` holds `PressStart2P-Regular.ttf` and `VT323-Regular.ttf` (SIL Open Font License; the licence texts are `OFL-PressStart2P.txt` and `OFL-VT323.txt` next to them); the build packs them into `index.html` (subset to the characters used, licence kept), so the games never need Google Fonts.
 - Changes go on a branch with a pull request; `main` is the live site.
 - Work and test locally; push nothing to GitHub until the user says "deploy". On "deploy": push the branch, open the pull request and merge it (the user doesn't need to confirm it on GitHub).
 
@@ -29,6 +29,7 @@ A phone-first pack of neon arcade games (Knucklebones, Othello, Water Sort, Sudo
 - Tap the cover title for the share pop-up: QR code, home-screen steps (iPhone / Android), Copy link.
 - Same button sizes in every game: settings buttons 64px (54px on narrow phones), double-width 134px; action buttons like Undo 6px 10px padding.
 - Confirmations use "Tap again".
+- Colour-blind help is an optional **Symbols** switch in Settings (off by default, saved): Water Sort puts a shape on every liquid colour (`.sy.s0`–`.sy.s8`), Remi a mark bottom-left on every tile (clear of the atu-twin dot top-right; the doubles bar sits above it) (red one bar, yellow two, blue three, white none). Check colour changes with `tests/colour_blind_check.py`.
 - Games and the cover stay upright in portrait when a phone is turned sideways (touch screens, short side under 600px).
 - Cover cards, top to bottom: Knucklebones green, Othello magenta, Water Sort cyan, Sudoku orange (`#ff9e2c`), Remi soft red (`#e8566a`). Two-line descriptions, a square icon as tall as the text (62px), a player-count flag tab top-right ("1–2P" / "1P").
 - The URL never changes (no `#game`), so bookmarks and the home-screen app always open on the cover.
