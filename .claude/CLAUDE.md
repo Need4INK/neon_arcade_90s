@@ -5,6 +5,7 @@ A phone-first pack of neon arcade games (Knucklebones, Othello, Water Sort, Sudo
 ## Layout
 - `index.html`: the packed game pack (cover page + all five games). Built, don't hand-edit.
 - `icon.png`, `icon-maskable.png`, `sw.js`, `manifest.json`: home-screen icon (iPhone and default), Android icon (any launcher shape), offline support, app manifest (`start_url`/`scope` `./`, needed for Chrome to treat the site as an installable app).
+- `favicon.png` (48px), `favicon-192.png`: browser-tab / favourites icon for desktop, made from `icon.png` by `icons/favicon.py`.
 - `games/`: editable sources: `Knucklebones.html`, `Othello.html`, `Water_Sort.html`, `Sudoku.html`, `Remi.html` (each a standalone page) and `build.py` (the cover page and the packer).
 - `icons/icon_template.py`: generates the 1024×1024 neon app icons (presets per game).
 - `icons/share_images.py`: makes `icons/qr.svg` (embedded in the share pop-up), the QR poster `icons/neon_arcade_qr.png` and the link-preview picture `og.jpg`.
