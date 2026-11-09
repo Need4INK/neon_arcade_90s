@@ -17,7 +17,7 @@ A phone-first pack of neon arcade games (Knucklebones, Othello, Water Sort, Sudo
   `python3 games/build.py games/Knucklebones.html games/Othello.html games/Water_Sort.html games/Sudoku.html games/Remi.html index.html`
 - The build adds the green Exit button to each game's bar, injects the stage (scaled layout) into each game, packs the fonts and the QR code, and wraps the games in the cover. Each game runs in its own iframe, so games never clash.
 - After changing `sw.js`, bump `CACHE` (now `neon-arcade-v2`, so next `neon-arcade-v3`). Game-only changes need no bump: the page is re-checked on every load.
-- Fonts: `games/fonts/` holds `PressStart2P-Regular.ttf` and `VT323-Regular.ttf` (SIL Open Font License); the build packs them into `index.html` (subset to the characters used, licence kept), so the games never need Google Fonts.
+- Fonts: `games/fonts/` holds `PressStart2P-Regular.ttf` and `VT323-Regular.ttf` (SIL Open Font License; the licence texts are `OFL-PressStart2P.txt` and `OFL-VT323.txt` next to them); the build packs them into `index.html` (subset to the characters used, licence kept), so the games never need Google Fonts.
 - Changes go on a branch with a pull request; `main` is the live site.
 - Work and test locally; push nothing to GitHub until the user says "deploy". On "deploy": push the branch, open the pull request and merge it (the user doesn't need to confirm it on GitHub).
 
