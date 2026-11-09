@@ -125,6 +125,10 @@ button.b.cy:active{background:var(--cy);color:#07030f}
 .sirw{grid-column:2/5;width:100%}
 #sir{height:calc(var(--pw) * 1.32);align-items:center;padding:0 4px}
 #atu{--tw:var(--pw)}
+/* Atu is only a reminder (its real tile is in the pile): number and outline dimmed to 55%, striped background */
+#atu .tl{box-shadow:none;text-shadow:none;color:color-mix(in srgb,var(--ac) 55%,transparent)!important;
+ border-color:color-mix(in srgb,var(--ac) 55%,transparent);
+ background:repeating-linear-gradient(135deg,rgba(255,255,255,.18) 0 3px,transparent 3px 7px)}
 .pile{position:relative;width:calc(var(--pw) + 8px);height:calc(var(--pw) * 1.32)}
 .pile span,.pile .pf{position:absolute;top:0;width:var(--pw);height:100%;border:2px solid #eaf6ff;border-radius:4px;background:#120a2e}
 .pile span:nth-child(1){left:0;opacity:.45}.pile span:nth-child(2){left:4px;opacity:.7}
@@ -167,7 +171,7 @@ main>h1{flex:1 1 auto;max-height:none}
 <section class="panel" id="panel" hidden>
 <div id="pRules" hidden>
 <p><b>You (green) vs three CPUs (CPU 1 red, CPU 2 yellow, CPU 3 blue)</b>, rules from the Romanian Remy set. Tiles 1–13 in red, yellow, blue and white (the black of a real set), two of each, plus 2 joly <b>★</b>.</p>
-<p><b>Deal:</b> 14 tiles each, the starter 15. One tile is turned up as the <b>atu</b>: whoever holds its twin (yellow dot) announces it and gets +50. If the atu is a 1 or a joly it's a <b>double game</b>: every score is doubled. Anyone dealt 3 doubles may reshuffle.</p>
+<p><b>Deal:</b> 14 tiles each, the starter 15. One tile is turned up as the <b>atu</b> and shuffled back into the pile (the striped Atu box is only a reminder): whoever holds its twin (yellow dot) announces it and gets +50. If the atu is a 1 or a joly it's a <b>double game</b>: every score is doubled. Anyone dealt 3 doubles may reshuffle.</p>
 <p><b>Turn:</b> draw from the pile, or take the last discard and lay it in a new formation this turn (adding it to one doesn't count). Then discard one tile. <b>Until you open you can only draw</b>: you open with tiles from your hand and ones you draw. The starter's first discard is out of play.</p>
 <p><b>Formations:</b> a <b>run</b> is 3+ consecutive tiles of one colour (1-2-3 or 12-13-1, never 13-1-2). A <b>set</b> is 3–4 tiles of one number in different colours. A joly replaces any tile.</p>
 <p><b>Opening</b> (from your second turn): at least <b>45</b> points with at least one run <b>and</b> at least one set (house rule; the rulebook asks only for a run), or a set of 1s on its own. Values: 2–9 = 5, 10–13 = 10, 1 in 1-2-3 = 5, 1 in 12-13-1 = 10, 1 in a set = 25, joly = the tile it replaces.</p>
@@ -539,7 +543,7 @@ function render(){
   d.setAttribute('aria-label',NAMES[i]+', '+P.hand.length+' tiles, score '+P.score+(P.opened?', opened':'')+(P.board?', board game':'')+(G.atuBy===i?', atu':''));ch.appendChild(d)});
  $('pileN').textContent=G.pile.length;
  $('sPile').classList.toggle('go',ph==='draw');$('sPile').disabled=ph!=='draw';
- const at=$('atu');at.innerHTML='';const ae=tileEl(G.atu);ae.classList.remove('at');at.appendChild(ae);$('atuL').textContent=G.dbl?'Atu x2':'Atu';
+ const at=$('atu');at.innerHTML='';const ae=tileEl(G.atu);ae.classList.remove('at');ae.style.setProperty('--ac',ae.style.color);at.appendChild(ae);$('atuL').textContent=G.dbl?'Atu x2':'Atu';
  const sr=$('sir');sr.innerHTML='';
  G.disc.forEach((id,i)=>{const e=tileEl(id,true);e.classList.remove('at');if(i===0)e.classList.add('dead');if(T&&G.cur===0&&canTake(i))e.classList.add('go');e.onclick=()=>hTake(i);sr.appendChild(e)});
  sr.scrollLeft=sr.scrollWidth;
