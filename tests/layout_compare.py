@@ -8,6 +8,7 @@ in stage units (offsetTop chains inside #app, so scaling and rotation don't matt
 flipped title and the bar, plus any element outside the 390-wide stage. Prints only differences, elements
 outside the stage and console errors. Expected template: title 0-64, bar 731-767, flipped second title 667-731.
 """
+import shutil
 import json, os, subprocess, sys, tempfile
 from harness import ROOT, GAMES, start_server, open_page, open_game, to_cover
 
@@ -45,6 +46,9 @@ if __name__ == '__main__':
     old_dir = tempfile.mkdtemp()
     with open(os.path.join(old_dir, 'index.html'), 'wb') as fh:
         fh.write(subprocess.check_output(['git', '-C', ROOT, 'show', f'{ref}:index.html']))
+    for extra in ('favicon.png', 'favicon-192.png'):  # files the page links to, so the old copy has no 404s
+        if os.path.exists(os.path.join(ROOT, extra)):
+            shutil.copy(os.path.join(ROOT, extra), old_dir)
     old, new = measure(old_dir, 8831), measure(ROOT, 8832)
     diffs = [k for k in new if old.get(k) != new[k]]
     for k in diffs:
