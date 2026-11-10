@@ -66,7 +66,8 @@ body.sym #rack .tl.dbl::before{bottom:7px}
 .tl.jk{color:var(--mag);font-size:calc(var(--tw) * .62)}
 .tl.at::after{content:"";position:absolute;top:2px;right:2px;width:4px;height:4px;border-radius:50%;background:var(--yel);box-shadow:0 0 4px var(--yel)}
 #rack{display:flex;flex-wrap:wrap;justify-content:flex-start;align-content:flex-start;gap:4px;flex:none;padding-top:8px;width:calc(8 * var(--tw) + 28px);min-height:calc(2 * var(--tw) * 1.32 + 12px);margin:0 auto}
-#rack .tl.sel{transform:translateY(-3px);border-color:var(--yel);box-shadow:0 0 12px var(--yel)}
+/* A picked tile lights up in its own colour (a yellow border made picked tiles look like yellow tiles) */
+#rack .tl.sel{transform:translateY(-3px);background:color-mix(in srgb,currentColor 38%,#0b0720);box-shadow:0 0 10px currentColor}
 #rack .tl.dbl::before{content:"";position:absolute;left:5px;right:5px;bottom:3px;height:2px;background:var(--yel);box-shadow:0 0 4px var(--yel)}
 #rack .tl.new{animation:pop .5s}
 @keyframes pop{0%{filter:brightness(2.2)}100%{filter:none}}
