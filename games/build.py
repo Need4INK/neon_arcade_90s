@@ -353,7 +353,7 @@ function openGame(g,push){
  if(!frames[g]){var f=document.createElement('iframe');f.title={kb:'Knucklebones',oth:'Othello',ws:'Water Sort',sdk:'Sudoku',rem:'Remi'}[g];f.setAttribute('allow','autoplay');
   f.srcdoc=GAMES[g];document.body.appendChild(f);frames[g]=f}
  current=g;
- if(push){try{history.pushState({g:g},'',location.pathname+location.search)}catch(e){}}
+ if(push){try{history[history.state&&history.state.g?'replaceState':'pushState']({g:g},'',location.pathname+location.search)}catch(e){}} // never two game entries in a row
  setTimeout(function(){try{frames[g].contentWindow.focus()}catch(e){}},50)}
 function showCover(){
  Object.keys(frames).forEach(function(k){frames[k].hidden=true});
@@ -373,8 +373,11 @@ function showCover(){
   function done(ok){sb.textContent=ok?'Copied!':'Copy failed';if(!ok)document.getElementById('shUrl').hidden=false;clearTimeout(tm);tm=setTimeout(function(){sb.textContent='Copy link'},2500)}
   function legacy(){var a=document.createElement('textarea'),ok=false;a.value=URL;a.setAttribute('readonly','');a.style.cssText='position:fixed;top:0;left:0;opacity:0;font-size:16px';document.body.appendChild(a);a.select();a.setSelectionRange(0,URL.length);try{ok=document.execCommand('copy')}catch(e){}document.body.removeChild(a);sb.focus();done(ok)}
   try{navigator.clipboard.writeText(URL).then(function(){done(true)},legacy)}catch(e){legacy()}}})();
-window.kbShowCover=function(){if(history.state&&history.state.g){try{history.back();return}catch(e){}}showCover()};
-window.addEventListener('popstate',function(e){var g=e.state&&e.state.g;g&&GAMES[g]?openGame(g,false):showCover()});
+// Exit goes one step back in the history. A second call before that step has finished is ignored,
+// so a fast double tap can't step back twice and leave the arcade.
+var leaving=false;
+window.kbShowCover=function(){if(leaving)return;if(history.state&&history.state.g){try{leaving=true;setTimeout(function(){leaving=false},1500);history.back();return}catch(e){leaving=false}}showCover()};
+window.addEventListener('popstate',function(e){leaving=false;var g=e.state&&e.state.g;g&&GAMES[g]?openGame(g,false):showCover()});
 document.querySelectorAll('.card').forEach(function(b){b.onclick=function(){openGame(b.dataset.g,true)}});
 // Always start on the cover: drop any old #game from the URL and any game left in the history entry.
 try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
