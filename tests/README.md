@@ -18,6 +18,6 @@ Needs Python 3 with `playwright` (and `pillow` for the icon preview). Chrome is 
 | `referee.py oth\|kb [games]` | Auto-played Othello and Knucklebones games checked move by move against an independent copy of the rules. |
 | `puzzle_check.py sdk\|ws` | Sudoku puzzles have exactly one solution (independent solver) and play through; Water Sort levels are solved by a separate solver and played by tapping with Accessibility on. |
 | `monkey.py game port seed [x] [rounds]` | Random fast taps, double taps and reloads, then consistency and stuck-CPU checks. Run one or two at a time (many at once time out). |
-| `exit_check.py` | Several instant taps on Exit or on a card never leave the arcade or need a second Exit. |
+| `exit_check.py` | Exit always brings back the cover: normal window, a window that ignores the step back (Chrome app installed on Windows), several instant taps on Exit or a card, and the Back button. |
 
 Notes: Water Sort keeps its state inside the page's closure, so deep scripted tests of it need a test-only copy of the game that exposes it (never committed). Real-phone things (iPhone clipping, Android launchers) still need a real device.

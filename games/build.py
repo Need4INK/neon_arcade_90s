@@ -373,11 +373,16 @@ function showCover(){
   function done(ok){sb.textContent=ok?'Copied!':'Copy failed';if(!ok)document.getElementById('shUrl').hidden=false;clearTimeout(tm);tm=setTimeout(function(){sb.textContent='Copy link'},2500)}
   function legacy(){var a=document.createElement('textarea'),ok=false;a.value=URL;a.setAttribute('readonly','');a.style.cssText='position:fixed;top:0;left:0;opacity:0;font-size:16px';document.body.appendChild(a);a.select();a.setSelectionRange(0,URL.length);try{ok=document.execCommand('copy')}catch(e){}document.body.removeChild(a);sb.focus();done(ok)}
   try{navigator.clipboard.writeText(URL).then(function(){done(true)},legacy)}catch(e){legacy()}}})();
-// Exit goes one step back in the history. A second call before that step has finished is ignored,
-// so a fast double tap can't step back twice and leave the arcade.
+// Exit shows the cover straight away, then removes the game's history entry with one step back.
+// It never depends on that step: some windows (e.g. a Chrome app installed on Windows) don't take it,
+// and the cover must still appear. Extra presses before the step is done are ignored, so a fast
+// double tap can't step back twice and leave the arcade.
 var leaving=false;
-window.kbShowCover=function(){if(leaving)return;if(history.state&&history.state.g){try{leaving=true;setTimeout(function(){leaving=false},1500);history.back();return}catch(e){leaving=false}}showCover()};
-window.addEventListener('popstate',function(e){leaving=false;var g=e.state&&e.state.g;g&&GAMES[g]?openGame(g,false):showCover()});
+window.kbShowCover=function(){showCover();if(leaving)return;
+ if(history.state&&history.state.g){leaving=true;setTimeout(function(){leaving=false},1500);try{history.back()}catch(e){leaving=false}}};
+window.addEventListener('popstate',function(e){var g=e.state&&e.state.g;
+ if(leaving){leaving=false;showCover();return} // the step back started by Exit: stay on the cover
+ g&&GAMES[g]?openGame(g,false):showCover()});
 document.querySelectorAll('.card').forEach(function(b){b.onclick=function(){openGame(b.dataset.g,true)}});
 // Always start on the cover: drop any old #game from the URL and any game left in the history entry.
 try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
