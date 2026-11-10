@@ -7,7 +7,8 @@ You draw and discard; the CPUs play normally at Fast speed. About every 5 steps 
 accounted for (pile + discards + hands + table, each once) and that every formation on the table is valid
 (the game's own `analyze`); that nobody takes a discard before opening (house rule; board players excepted); and that
 every CPU opening has 45+ points with at least one run and one set, or is a set of 1s alone (house rule). Then that
-reopening after a draw keeps the drawn tile, and that an empty pile is refilled from the discards (house rule).
+reopening after a draw keeps the drawn tile, and that an empty pile is refilled from the discards (house rule), and
+that the round counter above the rack equals your real round score when a CPU closes.
 Uses the game's test hook `window.__remi` (G, T, hDraw, hDiscard, sel, analyze, lvl, spd, ...).
 """
 import sys
@@ -96,5 +97,34 @@ r = f.evaluate("({pile:__remi.G.pile.length,row:__remi.G.disc.length,ph:__remi.G
 n, u, bad = f.evaluate(CHK)
 ok = r['pile'] == k - 3 and r['row'] == 2 and r['ph'] == 'play' and r['msg'].startswith('Discards reshuffled') and n == u == 106 and not bad
 print('pile runs out, discards reshuffled:', 'OK' if ok else 'FAIL', r)
+# Round counter (above the rack): while a CPU closes, the counter's "laid-lost" must equal your real round score.
+# Here you also open when you can (the game's own openFor), so both the 0-100 and the opened cases are covered;
+# the line after a draw must not name the drawn tile, and the counter is empty on the round results
+PLAY = """(()=>{const R=__remi,G=R.G,P=G.pl[0],btn=t=>[...document.querySelectorAll('#acts button')].find(b=>b.textContent===t);
+ const c=document.getElementById('cnt').textContent,m=document.getElementById('msg').textContent;
+ if(G.phase==='dbl')btn('Play').click();
+ else if(G.cur===0&&G.phase==='draw'){btn('Draw').click();window.__drew=window.__drew||/drew/i.test(document.getElementById('msg').textContent)}
+ else if(G.cur===0&&G.phase==='play'){if(!P.opened&&G.tn>3){const o=R.openFor(P.hand);
+   if(o.melds.length&&o.melds.reduce((a,x)=>a+x.length,0)<P.hand.length)o.melds.forEach(x=>{R.sel.clear();x.forEach(i=>R.sel.add(i));R.hLay()})}
+  R.sel.clear();const h=P.hand;R.sel.add(h[h.length-1]);R.hDiscard()}
+ if(G.phase!=='over')window.__cnt=document.getElementById('cnt').textContent;
+ return {ph:G.phase,cnt:window.__cnt,now:document.getElementById('cnt').textContent,pen:G.res&&G.res.pen[0],closer:G.res?G.res.closer:-1,
+  opened:P.opened,drew:!!window.__drew,over:G.over}})()"""
+f = fresh(1); same = diff = opened = 0; shown = False
+for step in range(9000):
+    r = f.evaluate(PLAY)
+    if r['ph'] == 'over':
+        if r['now']: shown = True
+        if r['closer'] > 0:
+            x, y = r['cnt'].split('-'); opened += r['opened']
+            if int(x) - int(y) == r['pen']: same += 1
+            else: diff += 1; print('COUNTER MISMATCH', r)
+        if same + diff >= ROUNDS or r['over']: break
+        f.evaluate("[...document.querySelectorAll('#acts button')].find(b=>/Next round/.test(b.textContent)).click()")
+        page.wait_for_timeout(300); continue
+    page.wait_for_timeout(40)
+okc = same and not diff and not r['drew'] and not shown
+print('round counter:', 'OK' if okc else 'FAIL', {'rounds': same + diff, 'equal': same, 'you opened': opened,
+                                               'drew message': r['drew'], 'shown on results': shown})
 print('console errors:', page.errors)
 b.close(); pw.stop()
