@@ -630,8 +630,15 @@ fit();addEventListener('resize',fit);addEventListener('orientationchange',()=>se
 try{screen.orientation.addEventListener('change',fit)}catch(e){}
 
 // ---- start: resume a saved game if there is one
-try{localStorage.removeItem('remi_game');const s=JSON.parse(localStorage.getItem('remi_game2')||'null');if(s&&s.pl&&s.pile&&s.jl)G=s}catch(e){}
-if(G){if(G.phase==='over'){say(G.res?G.res.why:'');render()}else if(G.phase==='dbl'){say(dblMsg());render()}else startTurn()}else newGame();
+// The saved game is used only if every tile id is real and no tile appears twice
+function okSave(s){const ids=a=>Array.isArray(a)&&a.every(x=>Number.isInteger(x)&&x>=0&&x<106);
+ if(!Array.isArray(s.pl)||s.pl.length!==4||!s.pl.every(P=>P&&ids(P.hand))||!ids(s.pile)||!ids(s.disc)||!Array.isArray(s.melds)||!s.melds.every(m=>m&&ids(m.t)&&m.t.length))return false;
+ if(!Number.isInteger(s.cur)||s.cur<0||s.cur>3||typeof s.phase!=='string'||!Number.isInteger(s.atu)||s.atu<0||s.atu>105)return false;
+ const all=[...s.pile,...s.disc,...s.pl.flatMap(P=>P.hand),...s.melds.flatMap(m=>m.t)];return new Set(all).size===all.length}
+try{localStorage.removeItem('remi_game');const s=JSON.parse(localStorage.getItem('remi_game2')||'null');if(s&&s.pl&&s.pile&&s.jl&&okSave(s))G=s}catch(e){}
+// A saved game that can't be shown (damaged, or from an older version) is dropped and a new game starts
+try{if(G){if(G.phase==='over'){say(G.res?G.res.why:'');render()}else if(G.phase==='dbl'){say(dblMsg());render()}else startTurn()}else newGame()}
+catch(e){token++;clearTimeout(T);G=null;sel.clear();newGame()}
 try{if(!localStorage.getItem('remi-rules-seen')){showPanel('rules');localStorage.setItem('remi-rules-seen','1')}}catch(e){}
 window.__remi={get G(){return G},get T(){return T},boardBest,boardOuts,hBoard,hSwap,hUndo,dblTiles,analyze,findBest,openFor,trySwap,hLay,hDraw,hTake,hDiscard,hAdd,sel,set lvl(v){lvl=v},set spd(v){spd=v}};
 })();

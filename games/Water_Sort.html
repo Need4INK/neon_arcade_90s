@@ -258,8 +258,12 @@ function render(m,badIdx,cls){
  saveG()}
 // The puzzle in progress is kept when the app is closed (a solved puzzle counts once, even after Restart)
 function saveG(){try{localStorage.setItem('ws_game',JSON.stringify({level:level,start:start,tubes:tubes,hist:hist.slice(-200),moves:moves,won:won,counted:counted}))}catch(e){}}
-function loadG(){try{var g=JSON.parse(localStorage.getItem('ws_game'));if(!g||g.level!==level||!g.start||!g.tubes||g.tubes.length!==TUBES)return false;
- start=g.start;tubes=g.tubes;hist=g.hist||[];moves=g.moves||0;won=!!g.won;counted=!!g.counted;sel=null;hitIdx=-1;
+// Saved tubes are used only if they are a real position: 10 tubes, up to 4 layers each, 4 layers of every colour
+function okTubes(ts){if(!Array.isArray(ts)||ts.length!==TUBES)return false;var n={};
+ for(var i=0;i<ts.length;i++){var t=ts[i];if(!Array.isArray(t)||t.length>CAP)return false;for(var j=0;j<t.length;j++){var c=t[j];if(c!==Math.floor(c)||c<0||c>=COLORS.length)return false;n[c]=(n[c]||0)+1}}
+ for(var k in n)if(n[k]!==CAP)return false;return Object.keys(n).length>=1}
+function loadG(){try{var g=JSON.parse(localStorage.getItem('ws_game'));if(!g||g.level!==level||!okTubes(g.start)||!okTubes(g.tubes))return false; // a damaged save starts a fresh puzzle
+ start=g.start;tubes=g.tubes;hist=Array.isArray(g.hist)?g.hist.filter(function(h){return h&&okTubes(h.ts)&&h.moves>=0&&isFinite(h.moves)}):[];moves=g.moves>=0&&isFinite(g.moves)?Math.floor(g.moves):0;won=!!g.won;counted=!!g.counted;sel=null;hitIdx=-1;
  render(won?'Solved in '+moves+' moves!':moves?'Welcome back':tierOf(level).name+' · tap a tube',-1,won?'win':'');want(tierOf(level).id);want(tierOf(level+1).id);return true}catch(e){return false}}
 // Size tubes so 2 rows of 5 fill the board without overflowing.
 // Space the game may use: the screen minus the title and the bar (both at their natural height)
