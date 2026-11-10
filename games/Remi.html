@@ -66,6 +66,10 @@ body.sym #rack .tl.dbl::before{bottom:7px}
 .tl.jk{color:var(--mag);font-size:calc(var(--tw) * .62)}
 .tl.at::after{content:"";position:absolute;top:2px;right:2px;width:4px;height:4px;border-radius:50%;background:var(--yel);box-shadow:0 0 4px var(--yel)}
 #rack{--dc:var(--grn);display:flex;flex-wrap:wrap;justify-content:flex-start;align-content:flex-start;gap:4px;flex:none;padding-top:8px;width:calc(8 * var(--tw) + 28px);min-height:calc(2 * var(--tw) * 1.32 + 12px);margin:0 auto}
+/* Round counter above the rack: points laid (green) - points you would lose (soft red) if someone else closed now */
+#cnt{flex:none;width:calc(8 * var(--tw) + 28px);height:16px;margin:0 auto -6px;text-align:right;font:400 18px/16px var(--vt);white-space:nowrap}
+#cnt b{font-weight:400;color:var(--grn);text-shadow:0 0 6px var(--grn)}
+#cnt i{font-style:normal;color:#e8566a;text-shadow:0 0 6px #e8566a}
 /* A picked tile lights up in its own colour inside a white ring (a yellow border made picked tiles look like yellow tiles) */
 #rack .tl.sel{transform:translateY(-3px);background:color-mix(in srgb,currentColor 38%,#0b0720);box-shadow:0 0 0 2px #07030f,0 0 0 4px #fff,0 0 10px #fff;z-index:1}
 #rack .tl.dbl::before{content:"";position:absolute;left:5px;right:5px;bottom:3px;height:2px;background:var(--yel);box-shadow:0 0 4px var(--yel)}
@@ -179,6 +183,7 @@ main>h1{flex:1 1 auto;max-height:none}
 </div>
 <div class="msg" id="msg" role="status" aria-live="polite"></div>
 <div id="table" aria-label="Sets on the table"></div>
+<div id="cnt"></div>
 <div id="rack" role="group" aria-label="Your tiles"></div>
 <div class="acts" id="acts"></div>
 </div>
@@ -194,7 +199,7 @@ main>h1{flex:1 1 auto;max-height:none}
 <p><b>Joly swap:</b> place the tile a joly stands for and take the joly; you must use it this turn, and each joly swaps only once. For a joly in a set of 2, add both missing colours.</p>
 <p><b>Few tiles:</b> with 3 tiles you can only take the last discard. With 1–2 you must draw and can only add to formations. Players announce when they have 3 or fewer.</p>
 <p><b>Closing:</b> lay down everything and discard your last tile. If the pile runs out, the discards (all but the first and the last) are shuffled into a new pile and play goes on (house rule); with nothing to reshuffle the round ends with no closing bonus.</p>
-<p><b>Scoring:</b> 2–9 = 5, 10–13 = 10, 1 = 25, joly = 50, closing +50, atu +50. Tiles you laid or added count <b>+</b>, tiles in hand <b>−</b>. Not opened when someone closes: −100 (−50 if you hold the atu's twin). Closing with a 1 or joly doubles the closer's score (x4 in a double game).</p>
+<p><b>Scoring:</b> 2–9 = 5, 10–13 = 10, 1 = 25, joly = 50, closing +50, atu +50. Tiles you laid or added count <b>+</b>, tiles in hand <b>−</b>. The counter above your tiles shows both (laid − lost) if someone else closed right now. Not opened when someone closes: −100 (−50 if you hold the atu's twin). Closing with a 1 or joly doubles the closer's score (x4 in a double game).</p>
 <p><b>Game:</b> first to the target (500, 750 or 1000 in Settings) wins.</p>
 <p><b>Doubles swap:</b> after the deal you may swap one tile of a double (two identical tiles) for one of a CPU's double of the same kind: small (2–9), big (10–13) or key (1). Select it and tap <b>Swap</b>, then <b>Play</b>. CPUs swap among themselves too. Can be turned off in Settings.</p>
 <p><b>Board game</b> (joc pe tabla): in your first 3 turns, before opening, tap <b>Board</b> (then Tap again). You keep everything in hand: no laying down, no adding, no joly swaps, and you take only the last discard (no need to use it). Close by discarding your 15th tile when the other 14 make a board hand:</p>
@@ -456,7 +461,7 @@ function nextTurn(){G.cur=(G.cur+1)%4;G.tn++;startTurn()}
 function startTurn(){sel.clear();const P=G.pl[G.cur];
  if(G.tn>0&&!refill()){endRound(-1,-1,'The pile ran out');return}
  if(G.cur===0&&G.phase==='play'&&G.drew!=null&&G.tn>0){const id=G.drew;T={must:[],take:null,startOpened:P.opened,start:P.hand.length-1,staged:0,runs:0,sets:0,ones:false,snap:null};T.snap=snap();newIds=[id];
-  say(boardReady()?'Board ready: discard your spare tile':'You drew '+tname(id)+(P.board?' · '+boardProg(P.hand):''));render();return}
+  say(drewMsg(false));render();return}
  delete G.drew;
  if(G.cur===0){G.phase=G.tn===0?'play':'draw';T={must:[],take:null,startOpened:P.opened,start:P.hand.length,staged:0,runs:0,sets:0,ones:false,snap:null};
   if(G.phase==='play')T.snap=snap();save();
@@ -486,8 +491,11 @@ function openMsg(){const o=okOpen();
  return 'Opening: '+T.staged+' / '+OPEN+(o?' ✓':T.runs&&!T.sets?' · need a set':T.sets&&!T.runs&&!(T.sets===1&&T.ones)?' · need a run':'')}
 function bad(m){sfx('bad');say(m,true);render()}
 function boardReady(){return G.pl[0].board&&boardOuts(G.pl[0].hand).length>0}
+// After your draw: the drawn tile is shown by its green ripple, so the line only says what to do next
+function drewMsg(re){const P=G.pl[0];if(boardReady())return 'Board ready: discard your spare tile';if(P.board)return 'Board · '+boardProg(P.hand);
+ return (re?'Discards reshuffled · ':'')+(T.start<=2?(re?'add or discard':'Add to formations or discard'):(re?'lay down or discard':'Lay down or discard'))}
 function hDraw(){if(G.phase!=='draw')return;const re=!G.pile.length;if(!refill()){endRound(-1,-1,'The pile ran out');return}
- const id=G.pile.pop();G.pl[0].hand.push(id);newIds=[id];G.phase='play';G.drew=id;T.snap=snap();save();sfx('draw');say(boardReady()?'Board ready: discard your spare tile':(re?'Discards reshuffled · you drew ':'You drew ')+tname(id)+(G.pl[0].board?' · '+boardProg(G.pl[0].hand):''));render()}
+ const id=G.pile.pop();G.pl[0].hand.push(id);newIds=[id];G.phase='play';G.drew=id;T.snap=snap();save();sfx('draw');say(drewMsg(re));render()}
 function hBoard(){if(!canBoard(0)||!(G.phase==='draw'||G.phase==='play')||T.runs||T.sets)return;
  if(!boardArm){boardArm=true;clearTimeout(boardT);boardT=setTimeout(()=>{boardArm=false;render()},3000);render();return}
  clearTimeout(boardT);boardArm=false;G.pl[0].board=true;T.must=[];sfx('lay');say('Board game: keep all your tiles in hand');if(G.phase==='draw')save();render()}
@@ -573,6 +581,10 @@ function render(){
   b.style.setProperty('--oc',OWN[md.o]);b.setAttribute('aria-label',NAMES[md.o]+' formation: '+md.t.map(tname).join(', '));
   md.t.forEach(id=>{const e=tileEl(id);if(isJ(id)&&G.jl[id])e.style.opacity='.55';b.appendChild(e)});b.onclick=()=>hAdd(i);tb.appendChild(b)});
  if(hitMeld>=0&&tb.children[hitMeld])tb.children[hitMeld].scrollIntoView({block:'nearest'});hitMeld=-1;
+ const cn=$('cnt');if(ph==='over'||ph==='dbl'){cn.innerHTML='';cn.removeAttribute('aria-label')}
+ else{const op=me.opened||(G.cur===0&&ph==='play'&&T&&okOpen()),k=G.dbl?2:1;let xx=G.atuBy===0?50:0,yy=100;
+  if(op){G.own.forEach((o,id)=>{if(o===0)xx+=val(id)});yy=me.hand.reduce((a,id)=>a+val(id),0)}xx*=k;yy*=k;
+  cn.innerHTML='<b>'+xx+'</b><i>-'+yy+'</i>';cn.setAttribute('aria-label','This round: '+xx+' points laid, minus '+yy+' if someone else closes now')}
  const rk=$('rack');rk.innerHTML='';
  const dbs=ph==='dbl'?dblTiles(me.hand):[];
  sorted(me.hand).forEach(id=>{const e=tileEl(id,true);if(sel.has(id))e.classList.add('sel');if(dbs.includes(id))e.classList.add('dbl');if(newIds.includes(id))e.classList.add('new');if(id===G.drew&&G.cur===0&&G.phase==='play')e.classList.add('drw');e.onclick=()=>tapTile(id);rk.appendChild(e)});
