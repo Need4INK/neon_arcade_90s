@@ -65,11 +65,16 @@ body.sym #rack .tl.dbl::before{bottom:7px}
 .tl .sy.c3{display:none!important}
 .tl.jk{color:var(--mag);font-size:calc(var(--tw) * .62)}
 .tl.at::after{content:"";position:absolute;top:2px;right:2px;width:4px;height:4px;border-radius:50%;background:var(--yel);box-shadow:0 0 4px var(--yel)}
-#rack{display:flex;flex-wrap:wrap;justify-content:flex-start;align-content:flex-start;gap:4px;flex:none;padding-top:8px;width:calc(8 * var(--tw) + 28px);min-height:calc(2 * var(--tw) * 1.32 + 12px);margin:0 auto}
+#rack{--dc:var(--grn);display:flex;flex-wrap:wrap;justify-content:flex-start;align-content:flex-start;gap:4px;flex:none;padding-top:8px;width:calc(8 * var(--tw) + 28px);min-height:calc(2 * var(--tw) * 1.32 + 12px);margin:0 auto}
 /* A picked tile lights up in its own colour inside a white ring (a yellow border made picked tiles look like yellow tiles) */
 #rack .tl.sel{transform:translateY(-3px);background:color-mix(in srgb,currentColor 38%,#0b0720);box-shadow:0 0 0 2px #07030f,0 0 0 4px #fff,0 0 10px #fff;z-index:1}
 #rack .tl.dbl::before{content:"";position:absolute;left:5px;right:5px;bottom:3px;height:2px;background:var(--yel);box-shadow:0 0 4px var(--yel)}
 #rack .tl.new{animation:pop .5s}
+/* The tile you drew this turn: a green ring (your colour; no tile is green) spreading out from it, until you discard; a plain green outline with reduced motion (a picked tile shows its white ring instead) */
+#rack .tl.drw:not(.sel){z-index:1;animation:drw 1.1s ease-out infinite}
+#rack .tl.drw.new:not(.sel){animation:pop .5s,drw 1.1s ease-out infinite}
+@media (prefers-reduced-motion:reduce){#rack .tl.drw:not(.sel){outline:2px solid var(--dc)}}
+@keyframes drw{0%{box-shadow:0 0 0 0 var(--dc)}100%{box-shadow:0 0 0 9px transparent}}
 @keyframes pop{0%{filter:brightness(2.2)}100%{filter:none}}
 .res{margin:auto 0;width:100%;text-align:center}
 .short .res table{font-size:17px;margin:0 auto}.short .res p{font-size:16px;margin:1px 0}.short .res h2{margin:0 0 2px}.short .res td{padding:1px 8px}
@@ -570,7 +575,7 @@ function render(){
  if(hitMeld>=0&&tb.children[hitMeld])tb.children[hitMeld].scrollIntoView({block:'nearest'});hitMeld=-1;
  const rk=$('rack');rk.innerHTML='';
  const dbs=ph==='dbl'?dblTiles(me.hand):[];
- sorted(me.hand).forEach(id=>{const e=tileEl(id,true);if(sel.has(id))e.classList.add('sel');if(dbs.includes(id))e.classList.add('dbl');if(newIds.includes(id))e.classList.add('new');e.onclick=()=>tapTile(id);rk.appendChild(e)});
+ sorted(me.hand).forEach(id=>{const e=tileEl(id,true);if(sel.has(id))e.classList.add('sel');if(dbs.includes(id))e.classList.add('dbl');if(newIds.includes(id))e.classList.add('new');if(id===G.drew&&G.cur===0&&G.phase==='play')e.classList.add('drw');e.onclick=()=>tapTile(id);rk.appendChild(e)});
  newIds=[];
  const a=$('acts');a.innerHTML='';
  if(ph==='over'){a.appendChild(G.over?btn('New game',()=>{newGame();showPanel('')}):btn('Next round',dealRound))}
