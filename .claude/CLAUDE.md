@@ -4,7 +4,7 @@ A phone-first pack of neon arcade games (Knucklebones, Othello, Water Sort, Sudo
 
 ## Layout
 - `index.html`: the packed game pack (cover page + all five games). Built, don't hand-edit.
-- `icon.png`, `icon-maskable.png`, `sw.js`, `manifest.json`: home-screen icon (iPhone and default), Android icon (any launcher shape), offline support, app manifest (`start_url`/`scope` `./`, needed for Chrome to treat the site as an installable app).
+- `icon.png` (512px), `icon-maskable.png`, `sw.js`, `manifest.json`: home-screen icon (iPhone and default), Android icon (any launcher shape), offline support, app manifest (`start_url`/`scope` `./`, needed for Chrome to treat the site as an installable app).
 - `favicon.png` (48px), `favicon-192.png`: browser-tab / favourites icon for desktop, made from `icon.png` by `icons/favicon.py`.
 - `games/`: editable sources: `Knucklebones.html`, `Othello.html`, `Water_Sort.html`, `Sudoku.html`, `Remi.html` (each a standalone page) and `build.py` (the cover page and the packer).
 - `icons/icon_template.py`: generates the 1024×1024 neon app icons (presets per game).
@@ -29,7 +29,7 @@ A phone-first pack of neon arcade games (Knucklebones, Othello, Water Sort, Sudo
 - Tap the cover title for the share pop-up: QR code, home-screen steps (iPhone / Android), Copy link.
 - Same button sizes in every game: settings buttons 64px (54px on narrow phones), double-width 134px; action buttons like Undo 6px 10px padding.
 - Confirmations use "Tap again".
-- Colour-blind help is an optional **Accessibility** switch in Settings (off by default, saved): Water Sort puts a shape on every liquid colour (`.sy.s0`–`.sy.s8`), Remi a mark bottom-left on every tile (clear of the atu-twin dot top-right; the doubles bar sits above it) (red one bar, yellow two, blue three, white none). Check colour changes with `tests/colour_blind_check.py`.
+- Colour-blind help is an optional **Accessibility** switch in Settings (off by default, saved): Water Sort puts a shape on every liquid colour (`.sy.s0`–`.sy.s8`), Remi a mark bottom-left on every tile (clear of the atu-twin dot top-right; the doubles bar sits above it) (red one bar, yellow two, blue three, white none); Sudoku a bar under the numbers you entered (saved as `sdk-sym`). Check colour changes with `tests/colour_blind_check.py`.
 - Games and the cover stay upright in portrait when a phone is turned sideways (touch screens, short side under 600px).
 - Cover cards, top to bottom: Knucklebones green, Othello magenta, Water Sort cyan, Sudoku orange (`#ff9e2c`), Remi soft red (`#e8566a`). Two-line descriptions, a square icon as tall as the text (62px), a player-count flag tab top-right ("1–2P" / "1P").
 - The URL never changes (no `#game`), so bookmarks and the home-screen app always open on the cover.
@@ -37,5 +37,5 @@ A phone-first pack of neon arcade games (Knucklebones, Othello, Water Sort, Sudo
 ## Testing
 Test every change on a small (320px) and a standard phone width before handing it back, including a landscape touch viewport and the 2-player flipped modes. Play each changed game to the end and check the browser console for errors.
 To simulate the user's iPhone 12 home-screen app in headless Chrome: viewport 390×797, screen 390×844, `window.__SAFE={t:47,b:34,l:0,r:0}` on the cover (init script, top window only), and inject `.bar{padding-bottom:34px}` into each game. Real-phone clipping can't be reproduced; try layout ideas on the test page first (https://github.com/Need4INK/iPhone12_screen_test) and ask for a screenshot after deploying.
-Ready-made checks live in `tests/` (see `tests/README.md`): `layout_compare.py` (template positions vs the last commit, all sizes and flipped modes), `resume_check.py`, `remi_check.py` (rule check auto-play), `install_check.py` (Android installability and offline), `icon_preview.py`. Deep checks (run after bigger changes): `save_fuzz.py` (damaged saved data), `referee.py` and `puzzle_check.py` (independent rule and puzzle checks), `monkey.py` (random fast taps and reloads), `exit_check.py`, `a11y_check.py`, `colour_blind_check.py`.
-- Saved data is never trusted: each game checks a saved game before using it and starts fresh if it is damaged; keep that when adding saved fields. Run them from the repo root after rebuilding.
+Ready-made checks live in `tests/` (see `tests/README.md`): `layout_compare.py` (template positions vs the last commit, all sizes and flipped modes), `resume_check.py`, `remi_check.py` (rule check auto-play), `install_check.py` (Android installability and offline), `icon_preview.py`. Deep checks (run after bigger changes): `save_fuzz.py` (damaged saved data), `referee.py` and `puzzle_check.py` (independent rule and puzzle checks), `monkey.py` (random fast taps and reloads), `exit_check.py`, `a11y_check.py`, `colour_blind_check.py`. Run them from the repo root after rebuilding.
+- Saved data is never trusted: each game checks a saved game before using it and starts fresh if it is damaged; keep that when adding saved fields.
