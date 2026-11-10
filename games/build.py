@@ -2,7 +2,7 @@
 
 Usage:  python3 build.py Knucklebones.html Othello.html Water_Sort.html Sudoku.html Remi.html Neon-Arcade.html
 
-Each game stays a normal standalone page. This script only adds the yellow Menu button
+Each game stays a normal standalone page. This script only adds the green Exit button
 to each game's bottom bar and wraps all five in the cover page (cards, flicker title,
 portrait lock, offline service-worker registration). Publish the output next to
 sw.js, manifest.json and icon.png.
@@ -16,14 +16,14 @@ rem = open(sys.argv[5], encoding='utf-8').read()
 out = sys.argv[6]
 
 MENU_CSS = '.bar .mnu{color:#39ff7a!important;text-shadow:0 0 6px #39ff7a!important}'
-# Menu button in each game's bottom bar: closes any open panel (games close it on Escape), then shows the cover.
+# Exit button in each game's bottom bar: closes any open panel (games close it on Escape), then shows the cover.
 MENU_BTN = '<button type="button" class="mnu" onclick="try{document.dispatchEvent(new KeyboardEvent(\'keydown\',{key:\'Escape\'}))}catch(e){}try{parent.kbShowCover()}catch(e){}">Exit</button>'
 CENTRE = '.bar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}#bRules{justify-self:start}#bar .mnu{justify-self:center}#bSet{justify-self:end}'
 
 # Knucklebones: bar is already a 3-column grid, middle column is free
 kb = kb.replace('</style>', '#bar .mnu{grid-column:2;justify-self:center}' + MENU_CSS + '</style>', 1)
 kb = kb.replace('aria-controls="panel">Rules</button>', 'aria-controls="panel">Rules</button>' + MENU_BTN, 1)
-# Othello, Water Sort, Sudoku and Remi: turn the two-button bar into three columns so Menu sits exactly in the middle
+# Othello, Water Sort, Sudoku and Remi: turn the two-button bar into three columns so Exit sits exactly in the middle
 for name in ('oth', 'ws', 'sdk', 'rem'):
     g = globals()[name]
     g = g.replace('</style>', CENTRE + MENU_CSS + '</style>', 1)
@@ -358,7 +358,7 @@ function openGame(g,push){
 function showCover(){
  Object.keys(frames).forEach(function(k){frames[k].hidden=true});
  cover.hidden=false;current=null}
-// Called by the Menu button inside each game. Games stay loaded, so a match in progress is kept.
+// Called by the Exit button inside each game. Games stay loaded, so a match in progress is kept.
 // Share pop-up on the title
 (function(){var sh=document.getElementById('share'),t=document.getElementById('logoT'),sb=document.getElementById('shShare'),URL='https://need4ink.github.io/neon_arcade_90s/',tm=null;
  function open(){sh.hidden=false;sb.textContent='Copy link';document.getElementById('shUrl').hidden=true;fitLines();setTimeout(function(){document.getElementById('shClose').focus()},0)}
