@@ -52,6 +52,7 @@ const fullG=g=>g.every(a=>a.length>=3);
 window.__game=async function(md,df,nc){mode=md;S.diff=df;NC=nc;const s0=J(S);start();await __sleep(3);
  if(p.length!==nc||c.length!==nc||p.concat(c).some(a=>a.length))V.push('start not empty');let n=0,idle=0;
  while(!over&&n++<400){
+  {let h=0;while(window.hide&&h++<400)await __sleep(3)} // wait for the hand-over between turns
   if(md==='cpu'&&turn!=='p'){await __sleep(3);if(++idle>4000){V.push('stalled on CPU turn');break}continue}idle=0;
   const side=turn,me=side==='p'?p:c,opp=side==='p'?c:p,meB=cp(me),oppB=cp(opp),d=die,el=document.getElementById(side==='p'?'pg':'cg');
   if(!(d>=1&&d<=6&&d===Math.floor(d)))V.push('bad die '+d);__dice.push(d);

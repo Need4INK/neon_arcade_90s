@@ -60,7 +60,10 @@ main{max-width:420px;height:100%;margin:0 auto;padding:4px 14px 36px;display:fle
 .col:focus-visible,.diff button:focus-visible,button.b:focus-visible{outline:3px solid var(--yel);outline-offset:2px}
 .mid{display:flex;align-items:center;justify-content:center;gap:14px;margin:8px 0;min-height:56px;flex:none}
 .die{width:52px;height:52px;border-radius:6px;background:var(--die);border:2px solid var(--yel);box-shadow:0 0 10px rgba(255,233,77,.6),inset 0 0 8px rgba(255,233,77,.25);display:flex;align-items:center;justify-content:center;font:400 22px var(--px);color:var(--yel)}
+.die{transition:border-color .2s,box-shadow .2s}
 .die .pips{height:36px}
+.die.roll .pips{animation:dieRoll .3s ease-out}
+@keyframes dieRoll{0%{transform:rotate(-90deg) scale(.4);opacity:0}100%{transform:none;opacity:1}}
 .die .pips i.on{background:#fff6b0;box-shadow:0 0 6px var(--yel)}
 .die.tp{border-color:var(--cy);box-shadow:0 0 10px rgba(25,243,255,.6),inset 0 0 8px rgba(25,243,255,.25)}
 .die.tp .pips i.on{background:#c7fcff;box-shadow:0 0 6px var(--cy)}
@@ -181,6 +184,11 @@ body:not(.flip) .side{flex-grow:8;max-height:360px}
 </div>
 <script>
 var p,c,die,turn,over,hit,mode='cpu',gid=0,NC=3;
+// Hand-over between turns: the placed die leaves the box at once (hide), the empty box changes colour (show = side whose colour it wears), then the next die rolls in (rolled)
+var hide=false,show=null,rolled=false;
+function handover(next,m,m2,then){var g=gid;hide=true;render(m);
+  setTimeout(function(){if(g!==gid)return;show=next;paintDie();
+    setTimeout(function(){if(g!==gid)return;hide=false;show=null;hit=null;rolled=true;render(m2||m);rolled=false;if(then)then()},next==='c'&&mode==='cpu'?500:250)},200)}
 function blank(){var g=[];for(var i=0;i<NC;i++)g.push([]);return g}
 function cols(){var r=[];for(var i=0;i<NC;i++)r.push(i);return r}
 function colScore(a){var s=0,n={};a.forEach(function(v){n[v]=(n[v]||0)+1});for(var v in n)s+=v*n[v]*n[v];return s}
@@ -237,7 +245,7 @@ function showBest(){
 function pips(v){var m={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]}[v],h='<div class="pips">';for(var i=0;i<9;i++)h+='<i'+(m.indexOf(i)>-1?' class="on"':'')+'></i>';return h+'</div>'}
 function roll(){return 1+Math.floor(Math.random()*6)}
 function full(g){return g.every(function(a){return a.length>=3})}
-function start(){gid++;document.body.classList.toggle('c4',NC===4);p=blank();c=blank();turn='p';over=false;hit=null;die=roll();render(mode==='2p'?'Player 1: your turn.':'Your turn: tap a column.')}
+function start(){gid++;document.body.classList.toggle('c4',NC===4);p=blank();c=blank();turn='p';over=false;hit=null;hide=false;show=null;die=roll();render(mode==='2p'?'Player 1: your turn.':'Your turn: tap a column.')}
 function place(me,opp,col,v){me[col].push(v);var b=opp[col].length;opp[col]=opp[col].filter(function(x){return x!==v});return b-opp[col].length}
 function without(a,v){return a.filter(function(x){return x!==v})}
 // Hard: expectimax search. Values are CPU total minus player total, averaged over each die roll,
@@ -295,23 +303,26 @@ function wave(x,y,tie){[x,y].forEach(function(id){if(!id)return;var g=document.g
   [].forEach.call(g.querySelectorAll('.col'),function(col,i){[].forEach.call(col.querySelectorAll('.cell'),function(c,j){c.style.animationDelay=(i+j)*45+'ms';c.classList.add('wv')})})})}
 function play(col,side){
   side=side||'p';var me=side==='p'?p:c,op=side==='p'?c:p,other=side==='p'?'c':'p';
-  if(over||turn!==side||me[col].length>=3||(mode==='cpu'&&side!=='p'))return;
+  if(over||hide||turn!==side||me[col].length>=3||(mode==='cpu'&&side!=='p'))return;
+  show=side;
   var idx=me[col].length;
   var k=place(me,op,col,die);
   hit={placed:{side:side,col:col,idx:idx},killed:k?{side:other,col:col}:null};
   sfx('place');if(k)sfx('crunch',80);
   if(end())return;
-  if(mode==='2p'){turn=other;die=roll();render((k?'Destroyed '+k+(k>1?' dice':' die')+'! ':'')+'Player '+(other==='p'?1:2)+': your turn.');return}
-  turn='c';render(k?'You destroyed '+k+(k>1?' dice':' die')+'.':'CPU is rolling…');cpuGo()}
-function cpuGo(){var g=gid;setTimeout(function(){if(g!==gid)return;die=roll();hit=null;render('CPU rolled a '+die+'.');
-    setTimeout(function(){if(g!==gid)return;var k2=cpuMove();sfx('opp');if(k2)sfx('lose',80);if(end())return;
-      turn='p';die=roll();render(k2?'Lost '+k2+(k2>1?' dice':' die')+'! Your turn.':'Your turn: tap a column.')},800)},700)}
+  turn=other;die=roll();
+  if(mode==='2p'){handover(other,(k?'Destroyed '+k+(k>1?' dice':' die')+'! ':'')+'Player '+(other==='p'?1:2)+': your turn.');return}
+  handover('c',k?'You destroyed '+k+(k>1?' dice':' die')+'.':'CPU is rolling…','CPU rolled a '+die+'.',cpuPlace)}
+// CPU turn after a reload: roll straight in
+function cpuGo(){var g=gid;setTimeout(function(){if(g!==gid)return;die=roll();hit=null;rolled=true;render('CPU rolled a '+die+'.');rolled=false;cpuPlace()},700)}
+function cpuPlace(){var g=gid;setTimeout(function(){if(g!==gid)return;show='c';var k2=cpuMove();sfx('opp');if(k2)sfx('lose',80);if(end())return;
+      turn='p';die=roll();handover('p',k2?'Lost '+k2+(k2>1?' dice':' die')+'! Your turn.':'Your turn: tap a column.')},800)}
 function grid(el,g,mine){
   var flipped=!mine&&document.body.classList.contains('flip');
   el.innerHTML='';
   g.forEach(function(a,i){
     var btn=mine||mode==='2p',d=document.createElement(btn?'button':'div');d.className='col'+(mine||flipped?'':' rev');
-    var side=mine?'p':'c',can=(mode==='2p'?turn===side:mine&&turn==='p')&&!over&&a.length<3;
+    var side=mine?'p':'c',can=(mode==='2p'?turn===side:mine&&turn==='p')&&!over&&!hide&&a.length<3;
     if(hit&&hit.killed&&hit.killed.side===side&&hit.killed.col===i)d.className+=' hit';
     if(btn){
       d.type='button';d.disabled=!can;
@@ -332,11 +343,13 @@ function grid(el,g,mine){
     if(mine||flipped)d.appendChild(s);else d.insertBefore(s,d.firstChild);
     el.appendChild(d)});
   if(!mine&&document.body.classList.contains('flip'))[].slice.call(el.children).reverse().forEach(function(k){el.appendChild(k)})}
-function render(m){renderDiff();document.body.classList.toggle('p2turn',mode==='2p'&&turn==='c'&&!over);
+function paintDie(){var ds=show||turn,dv=document.getElementById('die');document.body.classList.toggle('p2turn',mode==='2p'&&ds==='c'&&!over);
+  dv.className='die'+(over?'':ds==='c'?' tc':' tp')+(hide&&!over?' empty':'')+(rolled?' roll':'');dv.innerHTML=over||hide?'':pips(die);dv.hidden=!!over}
+function render(m){renderDiff();paintDie();
   grid(document.getElementById('pg'),p,true);grid(document.getElementById('cg'),c,false);
   document.getElementById('ps').textContent=total(p);document.getElementById('cs').textContent=total(c);
-  var dv=document.getElementById('die'),ms=document.getElementById('msg');
-  showBest();dv.className='die'+(over?'':turn==='c'?' tc':' tp');dv.innerHTML=over?'':pips(die);dv.hidden=!!over;ms.textContent='';var t=document.createElement('span');t.className='t';t.textContent=m||'';ms.appendChild(t);
+  var ms=document.getElementById('msg');
+  showBest();ms.textContent='';var t=document.createElement('span');t.className='t';t.textContent=m||'';ms.appendChild(t);
   var m2=document.getElementById('msg2'),two=over&&document.body.classList.contains('flip');m2.hidden=!two;m2.textContent='';ms.parentNode.classList.toggle('two',two);
   if(two){m=m.replace(/^Player (\d)/,'P$1');t.textContent=m}
   if(over)[ms].concat(two?[m2]:[]).forEach(function(box){if(box===m2){var t2=document.createElement('span');t2.className='t';t2.textContent=m||'';box.appendChild(t2)}
@@ -348,7 +361,7 @@ function saveG(m){try{localStorage.setItem('kb-stats',JSON.stringify(S));
 function loadG(){try{var g=JSON.parse(localStorage.getItem('kb-game'));
   var okGrid=function(x){return Array.isArray(x)&&x.length===g.NC&&x.every(function(a){return Array.isArray(a)&&a.length<=3&&a.every(function(v){return v===Math.floor(v)&&v>=1&&v<=6})})};
   if(!g||g.over||(g.NC!==3&&g.NC!==4)||!okGrid(g.p)||!okGrid(g.c)||!(g.die>=1&&g.die<=6)||(g.turn!=='p'&&g.turn!=='c')||!g.p.concat(g.c).some(function(a){return a.length}))return false; // a damaged save starts a fresh game
-  gid++;p=g.p;c=g.c;die=g.die;turn=g.turn;over=false;hit=null;mode=g.mode==='2p'?'2p':'cpu';NC=g.NC===4?4:3;
+  gid++;p=g.p;c=g.c;die=g.die;turn=g.turn;over=false;hit=null;hide=false;show=null;mode=g.mode==='2p'?'2p':'cpu';NC=g.NC===4?4:3;
   document.body.classList.toggle('c4',NC===4);document.body.classList.toggle('flip',mode==='2p'&&!!g.flip);
   if(mode==='cpu'&&turn==='c'){render('CPU is rolling…');cpuGo()}else render(g.m||'Your turn: tap a column.');return true}catch(e){return false}}
 var panel=document.getElementById('panel'),bar=document.getElementById('bar'),pR=document.getElementById('pRules'),pS=document.getElementById('pSet'),bR=document.getElementById('bRules'),bS=document.getElementById('bSet');
