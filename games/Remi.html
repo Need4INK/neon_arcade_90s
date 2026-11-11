@@ -507,6 +507,7 @@ function hTake(i){if(G.phase!=='draw')return;const n=G.disc.length,P=G.pl[0];
  if(T.start<=2)return bad('1–2 tiles: you must draw');
  if(!P.opened)return bad('Open first: until then, draw');
  if(i<n-1&&T.start<4)return bad('3 tiles: only the last');
+ if(!canUse(i))return bad('No new formation with it: draw again');
  T.snap=snap();const got=G.disc.splice(i);P.hand.push(...got);T.must.push(got[0]);T.take=got[0];newIds=got;sel.clear();sel.add(got[0]);
  G.phase='play';sfx('draw');say('Lay '+tname(got[0])+' in a new formation'+(got.length>1?' (+'+(got.length-1)+')':''));render()}
 function hLay(){if(G.phase!=='play')return;const P=G.pl[0],ids=[...sel],h=P.hand;
@@ -559,9 +560,12 @@ function tileEl(id,btn){const t=TILES[id],d=document.createElement(btn?'button':
 function sorted(h){return h.slice().sort((a,b)=>{const A=TILES[a],B=TILES[b];if(isJ(a)!==isJ(b))return isJ(a)-isJ(b);
  return sortBy==='col'?(A.c-B.c||A.n-B.n):(A.n-B.n||A.c-B.c)})}
 function btn(label,fn,dis,cls){const b=document.createElement('button');b.type='button';b.className='b'+(cls?' '+cls:'');b.textContent=label;b.disabled=!!dis;b.onclick=fn;return b}
+// Taken discard must start a new formation this turn: allow taking only if some 3-tile formation with it exists
+function canUse(i){const h=G.pl[0].hand.concat(G.disc.slice(i)),d=G.disc[i],o=h.filter(x=>x!==d);if(h.length<4)return false;
+ for(let a=0;a<o.length;a++)for(let b=a+1;b<o.length;b++)if(analyze([d,o[a],o[b]]))return true;return false}
 function canTake(i){const n=G.disc.length,P=G.pl[0];if(G.phase!=='draw'||i===0||i>=n||T.start<=2)return false;
  if(P.board)return i===n-1&&canOpen();
- if(!P.opened)return false;return i===n-1||T.start>=4}
+ if(!P.opened)return false;return (i===n-1||T.start>=4)&&canUse(i)}
 function render(){
  if(!G)return;const me=G.pl[0],ph=G.phase;
  const ch=$('chips');ch.innerHTML='';
