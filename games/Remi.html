@@ -199,7 +199,7 @@ main>h1{flex:1 1 auto;max-height:none}
 <p><b>Joly swap:</b> place the tile a joly stands for and take the joly; you must use it this turn, and each joly swaps only once. For a joly in a set of 2, add both missing colours.</p>
 <p><b>Few tiles:</b> with 3 tiles you can only take the last discard. With 1–2 you must draw and can only add to formations. Players announce when they have 3 or fewer.</p>
 <p><b>Closing:</b> lay down everything and discard your last tile. If the pile runs out, the discards (all but the first and the last) are shuffled into a new pile and play goes on (house rule); with nothing to reshuffle the round ends with no closing bonus.</p>
-<p><b>Scoring:</b> 2–9 = 5, 10–13 = 10, 1 = 25, joly = 50, closing +50, atu +50. Tiles you laid or added count <b>+</b>, tiles in hand <b>−</b>. The counter above your tiles shows both (laid − lost) if someone else closed right now. Not opened when someone closes: −100 (−50 if you hold the atu's twin). Closing with a 1 or joly doubles the closer's score (x4 in a double game).</p>
+<p><b>Scoring:</b> 2–9 = 5, 10–13 = 10, 1 = 25, joly = 50, closing +50, atu +50. Tiles you laid or added count <b>+</b>, tiles in hand <b>−</b>. The counter above your tiles shows both (laid − lost) if someone else closed right now, and stays on the round results. Not opened when someone closes: −100 (−50 if you hold the atu's twin). Closing with a 1 or joly doubles the closer's score (x4 in a double game).</p>
 <p><b>Game:</b> first to the target (500, 750 or 1000 in Settings) wins.</p>
 <p><b>Doubles swap:</b> after the deal you may swap one tile of a double (two identical tiles) for one of a CPU's double of the same kind: small (2–9), big (10–13) or key (1). Select it and tap <b>Swap</b>, then <b>Play</b>. CPUs swap among themselves too. Can be turned off in Settings.</p>
 <p><b>Board game</b> (joc pe tabla): in your first 3 turns, before opening, tap <b>Board</b> (then Tap again). You keep everything in hand: no laying down, no adding, no joly swaps, and you take only the last discard (no need to use it). Close by discarding your 15th tile when the other 14 make a board hand:</p>
@@ -581,10 +581,12 @@ function render(){
   b.style.setProperty('--oc',OWN[md.o]);b.setAttribute('aria-label',NAMES[md.o]+' formation: '+md.t.map(tname).join(', '));
   md.t.forEach(id=>{const e=tileEl(id);if(isJ(id)&&G.jl[id])e.style.opacity='.55';b.appendChild(e)});b.onclick=()=>hAdd(i);tb.appendChild(b)});
  if(hitMeld>=0&&tb.children[hitMeld])tb.children[hitMeld].scrollIntoView({block:'nearest'});hitMeld=-1;
- const cn=$('cnt');if(ph==='over'||ph==='dbl'){cn.innerHTML='';cn.removeAttribute('aria-label')}
+ const cn=$('cnt');if(ph==='dbl'||(ph==='over'&&!G.res)){cn.innerHTML='';cn.removeAttribute('aria-label')}
  else{const op=me.opened||(G.cur===0&&ph==='play'&&T&&okOpen()),k=G.dbl?2:1;let xx=G.atuBy===0?50:0,yy=100;
   if(op){G.own.forEach((o,id)=>{if(o===0)xx+=val(id)});yy=me.hand.reduce((a,id)=>a+val(id),0)}xx*=k;yy*=k;
-  cn.innerHTML='<b>'+xx+'</b><i>-'+yy+'</i>';cn.setAttribute('aria-label','This round: '+xx+' points laid, minus '+yy+' if someone else closes now')}
+  // On the round results the counter stays: what you lost (tiles left in hand, or the not-opened penalty) and the rest of your round score
+  if(ph==='over'){const r=G.res;yy=r.closer===0?0:(me.opened||r.closer<0?me.hand.reduce((a,id)=>a+val(id),0):100)*k;xx=r.pen[0]+yy}
+  cn.innerHTML='<b>'+xx+'</b><i>-'+yy+'</i>';cn.setAttribute('aria-label',ph==='over'?'This round: '+xx+' points, minus '+yy:'This round: '+xx+' points laid, minus '+yy+' if someone else closes now')}
  const rk=$('rack');rk.innerHTML='';
  const dbs=ph==='dbl'?dblTiles(me.hand):[];
  sorted(me.hand).forEach(id=>{const e=tileEl(id,true);if(sel.has(id))e.classList.add('sel');if(dbs.includes(id))e.classList.add('dbl');if(newIds.includes(id))e.classList.add('new');if(id===G.drew&&G.cur===0&&G.phase==='play')e.classList.add('drw');e.onclick=()=>tapTile(id);rk.appendChild(e)});
