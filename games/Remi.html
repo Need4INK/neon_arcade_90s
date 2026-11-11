@@ -74,7 +74,7 @@ body.sym #rack .tl.dbl::before{bottom:7px}
 #rack .tl.sel{transform:translateY(-3px);background:color-mix(in srgb,currentColor 38%,#0b0720);box-shadow:0 0 0 2px #07030f,0 0 0 4px #fff,0 0 10px #fff;z-index:1}
 #rack .tl.dbl::before{content:"";position:absolute;left:5px;right:5px;bottom:3px;height:2px;background:var(--yel);box-shadow:0 0 4px var(--yel)}
 #rack .tl.new{animation:pop .5s}
-/* The tile you drew this turn: a green ring (your colour; no tile is green) spreading out from it, until you discard; a plain green outline with reduced motion (a picked tile shows its white ring instead) */
+/* Tiles that just came into your hand (drawn, taken, joly back, doubles swap): a green ring (your colour; no tile is green) spreading out from it, until you discard; a plain green outline with reduced motion (a picked tile shows its white ring instead) */
 #rack .tl.drw:not(.sel){z-index:1;animation:drw 1.1s ease-out infinite}
 #rack .tl.drw.new:not(.sel){animation:pop .5s,drw 1.1s ease-out infinite}
 @media (prefers-reduced-motion:reduce){#rack .tl.drw:not(.sel){outline:2px solid var(--dc)}}
@@ -238,7 +238,7 @@ const dbl=id=>isJ(id)||TILES[id].n===1;
 const tname=id=>isJ(id)?'joly':CNAME[TILES[id].c]+' '+TILES[id].n;
 const rm=(arr,ids)=>ids.forEach(id=>{const i=arr.indexOf(id);if(i>=0)arr.splice(i,1)});
 
-let LIMIT=1000,G=null,T=null,lvl=1,spd=1,swp=true,sym=false,boardArm=false,boardT=null,sortBy='col',sel=new Set(),token=0,newIds=[],hitMeld=-1;
+let LIMIT=1000,G=null,T=null,lvl=1,spd=1,swp=true,sym=false,boardArm=false,boardT=null,sortBy='col',sel=new Set(),token=0,newIds=[],fresh=[],hitMeld=-1;
 try{const s=JSON.parse(localStorage.getItem('remi_set')||'{}');if(s.lvl!=null)lvl=s.lvl;if(s.spd!=null)spd=s.spd;if(s.sortBy)sortBy=s.sortBy;if(TARGETS.includes(s.limit))LIMIT=s.limit;if(s.swp===false)swp=false;if(s.sym)sym=true}catch(e){}
 document.body.classList.toggle('sym',sym);
 function saveSet(){try{localStorage.setItem('remi_set',JSON.stringify({lvl,spd,sortBy,limit:LIMIT,swp,sym}))}catch(e){}}
@@ -435,7 +435,7 @@ function refill(){if(G.pile.length)return true;if(G.disc.length<3)return false;
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function doubles(h){let n=0;const s=new Set(h);h.forEach(id=>{if(id<52&&s.has(id+52))n++});if(s.has(104)&&s.has(105))n++;return n}
 function newGame(){token++;G={pl:[0,1,2,3].map(()=>({hand:[],opened:false,score:0})),round:0,starter:0,over:false};dealRound()}
-function dealRound(){token++;G.round++;let note='';
+function dealRound(){token++;G.round++;fresh=[];let note='';
  for(let tries=0;tries<30;tries++){const ids=shuffle([...Array(106).keys()]);
   G.pl.forEach(P=>{P.hand=[];P.opened=false;P.board=false});
   for(let i=0;i<4;i++){const p=(G.starter+i)%4;G.pl[p].hand=ids.splice(0,i?14:15)}
@@ -457,14 +457,14 @@ function hSwap(){if(G.phase!=='dbl')return;const id=[...sel][0];
  const k=dkind(id),ps=shuffle([1,2,3]).filter(p=>dblTiles(G.pl[p].hand,k).length);
  if(!ps.length)return bad('No CPU has a '+k+' double · tap Play');
  const p=ps[0],y=pickR(dblTiles(G.pl[p].hand,k));swapD(0,p,id,y);
- G.atuBy=G.pl.findIndex(P=>P.hand.includes(twin(G.atu)));sel.clear();newIds=[y];sfx('draw');say('Gave '+tname(id)+' to '+NAMES[p]+', got '+tname(y));save();render()}
+ G.atuBy=G.pl.findIndex(P=>P.hand.includes(twin(G.atu)));sel.clear();newIds=[y];fresh.push(y);sfx('draw');say('Gave '+tname(id)+' to '+NAMES[p]+', got '+tname(y));save();render()}
 function nextTurn(){G.cur=(G.cur+1)%4;G.tn++;startTurn()}
 function startTurn(){sel.clear();const P=G.pl[G.cur];
  if(G.tn>0&&!refill()){endRound(-1,-1,'The pile ran out');return}
- if(G.cur===0&&G.phase==='play'&&G.drew!=null&&G.tn>0){const id=G.drew;T={must:[],take:null,startOpened:P.opened,start:P.hand.length-1,staged:0,runs:0,sets:0,ones:false,snap:null};T.snap=snap();newIds=[id];
+ if(G.cur===0&&G.phase==='play'&&G.drew!=null&&G.tn>0){const id=G.drew;T={must:[],take:null,startOpened:P.opened,start:P.hand.length-1,staged:0,runs:0,sets:0,ones:false,snap:null};T.snap=snap();newIds=[id];fresh=[id];
   say(drewMsg(false));render();return}
  delete G.drew;
- if(G.cur===0){G.phase=G.tn===0?'play':'draw';T={must:[],take:null,startOpened:P.opened,start:P.hand.length,staged:0,runs:0,sets:0,ones:false,snap:null};
+ if(G.cur===0){if(G.tn>0)fresh=[];G.phase=G.tn===0?'play':'draw';T={must:[],take:null,startOpened:P.opened,start:P.hand.length,staged:0,runs:0,sets:0,ones:false,snap:null};
   if(G.phase==='play')T.snap=snap();save();
   if(G.tn===0)say('You start: discard one tile');
   else if(T.start<=2)say('Draw, then add to formations');
@@ -496,19 +496,19 @@ function boardReady(){return G.pl[0].board&&boardOuts(G.pl[0].hand).length>0}
 function drewMsg(re){const P=G.pl[0];if(boardReady())return 'Board ready: discard your spare tile';if(P.board)return 'Board · '+boardProg(P.hand);
  return (re?'Discards reshuffled · ':'')+(T.start<=2?(re?'add or discard':'Add to formations or discard'):(re?'lay down or discard':'Lay down or discard'))}
 function hDraw(){if(G.phase!=='draw')return;const re=!G.pile.length;if(!refill()){endRound(-1,-1,'The pile ran out');return}
- const id=G.pile.pop();G.pl[0].hand.push(id);newIds=[id];G.phase='play';G.drew=id;T.snap=snap();save();sfx('draw');say(drewMsg(re));render()}
+ const id=G.pile.pop();G.pl[0].hand.push(id);newIds=[id];fresh.push(id);G.phase='play';G.drew=id;T.snap=snap();save();sfx('draw');say(drewMsg(re));render()}
 function hBoard(){if(!canBoard(0)||!(G.phase==='draw'||G.phase==='play')||T.runs||T.sets)return;
  if(!boardArm){boardArm=true;clearTimeout(boardT);boardT=setTimeout(()=>{boardArm=false;render()},3000);render();return}
  clearTimeout(boardT);boardArm=false;G.pl[0].board=true;T.must=[];sfx('lay');say('Board game: keep all your tiles in hand');if(G.phase==='draw')save();render()}
 function hTake(i){if(G.phase!=='draw')return;const n=G.disc.length,P=G.pl[0];
  if(i===0)return bad('First discard is out of play');
  if(P.board){if(i<n-1)return bad('Board game: only the last');if(!canOpen())return bad('Not in round 1: draw');
-  T.snap=snap();const got=G.disc.splice(i);P.hand.push(...got);newIds=got;sel.clear();G.phase='play';sfx('draw');say(boardReady()?'Board ready: discard your spare tile':'You take '+tname(got[0]));render();return}
+  T.snap=snap();const got=G.disc.splice(i);P.hand.push(...got);newIds=got;fresh.push(...got);sel.clear();G.phase='play';sfx('draw');say(boardReady()?'Board ready: discard your spare tile':'You take '+tname(got[0]));render();return}
  if(T.start<=2)return bad('1–2 tiles: you must draw');
  if(!P.opened)return bad('Open first: until then, draw');
  if(i<n-1&&T.start<4)return bad('3 tiles: only the last');
  if(!canUse(i))return bad('No new formation with it: draw again');
- T.snap=snap();const got=G.disc.splice(i);P.hand.push(...got);T.must.push(got[0]);T.take=got[0];newIds=got;sel.clear();sel.add(got[0]);
+ T.snap=snap();const got=G.disc.splice(i);P.hand.push(...got);T.must.push(got[0]);T.take=got[0];newIds=got;fresh.push(...got);sel.clear();sel.add(got[0]);
  G.phase='play';sfx('draw');say('Lay '+tname(got[0])+' in a new formation'+(got.length>1?' (+'+(got.length-1)+')':''));render()}
 function hLay(){if(G.phase!=='play')return;const P=G.pl[0],ids=[...sel],h=P.hand;
  if(P.board)return bad('Board game: no laying down');
@@ -523,7 +523,7 @@ function hAdd(mi){if(G.phase==='over'||G.phase==='dbl')return;if(G.phase!=='play
  const ids=[...sel],m=G.melds[mi],h=P.hand;
  if(T.take!=null&&ids.includes(T.take))return bad('Lay '+tname(T.take)+' in a new formation');
  const j=trySwap(m,ids);
- if(j>=0){rm(h,ids);h.push(j);place(0,ids);T.must.push(j);newIds=[j];sel.clear();hitMeld=mi;sfx('lay');say('Joly is yours: use it this turn, or Undo');render();return}
+ if(j>=0){rm(h,ids);h.push(j);place(0,ids);T.must.push(j);newIds=[j];fresh.push(j);sel.clear();hitMeld=mi;sfx('lay');say('Joly is yours: use it this turn, or Undo');render();return}
  if(ids.some(isJ)&&m.o!==0)return bad('Joly only on your formations');
  const a=analyze(m.t.concat(ids));
  if(a){if(h.length-ids.length<1)return bad('Keep one tile to discard');m.t=a.seq.map(s=>s.id);rm(h,ids);place(0,ids);sel.clear();hitMeld=mi;sfx('lay');say('Added');render();return}
@@ -594,7 +594,7 @@ function render(){
   cn.innerHTML='<b>'+xx+'</b><i>-'+yy+'</i>';cn.setAttribute('aria-label',ph==='over'?'This round: '+xx+' points, minus '+yy:'This round: '+xx+' points laid, minus '+yy+' if someone else closes now')}
  const rk=$('rack');rk.innerHTML='';
  const dbs=ph==='dbl'?dblTiles(me.hand):[];
- sorted(me.hand).forEach(id=>{const e=tileEl(id,true);if(sel.has(id))e.classList.add('sel');if(dbs.includes(id))e.classList.add('dbl');if(newIds.includes(id))e.classList.add('new');if(id===G.drew&&G.cur===0&&G.phase==='play')e.classList.add('drw');e.onclick=()=>tapTile(id);rk.appendChild(e)});
+ sorted(me.hand).forEach(id=>{const e=tileEl(id,true);if(sel.has(id))e.classList.add('sel');if(dbs.includes(id))e.classList.add('dbl');if(newIds.includes(id))e.classList.add('new');if(fresh.includes(id)&&G.cur===0&&(G.phase==='play'||G.phase==='dbl'))e.classList.add('drw');e.onclick=()=>tapTile(id);rk.appendChild(e)});
  newIds=[];
  const a=$('acts');a.innerHTML='';
  if(ph==='over'){a.appendChild(G.over?btn('New game',()=>{newGame();showPanel('')}):btn('Next round',dealRound))}
