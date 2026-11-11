@@ -464,7 +464,7 @@ function startTurn(){sel.clear();const P=G.pl[G.cur];
  if(G.cur===0&&G.phase==='play'&&G.drew!=null&&G.tn>0){const id=G.drew;T={must:[],take:null,startOpened:P.opened,start:P.hand.length-1,staged:0,runs:0,sets:0,ones:false,snap:null};T.snap=snap();newIds=[id];fresh=[id];
   say(drewMsg(false));render();return}
  delete G.drew;
- if(G.cur===0){if(G.tn>0)fresh=[];G.phase=G.tn===0?'play':'draw';T={must:[],take:null,startOpened:P.opened,start:P.hand.length,staged:0,runs:0,sets:0,ones:false,snap:null};
+ if(G.cur===0){if(G.tn>3)fresh=[];G.phase=G.tn===0?'play':'draw';T={must:[],take:null,startOpened:P.opened,start:P.hand.length,staged:0,runs:0,sets:0,ones:false,snap:null};
   if(G.phase==='play')T.snap=snap();save();
   if(G.tn===0)say('You start: discard one tile');
   else if(T.start<=2)say('Draw, then add to formations');
@@ -594,7 +594,7 @@ function render(){
   cn.innerHTML='<b>'+xx+'</b><i>-'+yy+'</i>';cn.setAttribute('aria-label',ph==='over'?'This round: '+xx+' points, minus '+yy:'This round: '+xx+' points laid, minus '+yy+' if someone else closes now')}
  const rk=$('rack');rk.innerHTML='';
  const dbs=ph==='dbl'?dblTiles(me.hand):[];
- sorted(me.hand).forEach(id=>{const e=tileEl(id,true);if(sel.has(id))e.classList.add('sel');if(dbs.includes(id))e.classList.add('dbl');if(newIds.includes(id))e.classList.add('new');if(fresh.includes(id)&&G.cur===0&&(G.phase==='play'||G.phase==='dbl'))e.classList.add('drw');e.onclick=()=>tapTile(id);rk.appendChild(e)});
+ sorted(me.hand).forEach(id=>{const e=tileEl(id,true);if(sel.has(id))e.classList.add('sel');if(dbs.includes(id))e.classList.add('dbl');if(newIds.includes(id))e.classList.add('new');if(fresh.includes(id)&&(G.phase==='dbl'||G.cur===0&&G.phase==='play'))e.classList.add('drw');e.onclick=()=>tapTile(id);rk.appendChild(e)});
  newIds=[];
  const a=$('acts');a.innerHTML='';
  if(ph==='over'){a.appendChild(G.over?btn('New game',()=>{newGame();showPanel('')}):btn('Next round',dealRound))}
