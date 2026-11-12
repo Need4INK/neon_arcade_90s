@@ -64,9 +64,10 @@ STAGE = ('<style>html.stg #app{position:fixed!important;left:0!important;top:0!i
          '<script>(function(){var de=document.documentElement;de.classList.add("stg");' + NACALC +
          # Remi's Medias landscape layout (html.lnd) is a 750 x 390 block, turned a quarter only when the screen is upright
          'function st(){var L=de.classList.contains("lnd"),W=innerWidth,H=innerHeight,rot=L?W<H:W>H&&H<600&&matchMedia("(pointer:coarse)").matches,a=0;'
-         'NA_W=L?750:390;NA_H=L?390:797;de.style.setProperty("--stw",NA_W+"px");'
+         'var s={t:0,r:0,b:0,l:0};try{s=parent.__safe()}catch(e){}'
+         'NA_W=L?750:390;NA_H=797;if(L){var cw=rot?H-s.t-s.b:W-s.l-s.r,ch=rot?W-s.l-s.r:H-s.t;NA_H=Math.max(390,Math.min(560,Math.round(750*ch/cw)))}de.style.setProperty("--stw",NA_W+"px");'
          'if(rot&&!L){a=screen.orientation&&typeof screen.orientation.angle==="number"?screen.orientation.angle:(window.orientation===-90?270:90)}'
-         'var s={t:0,r:0,b:0,l:0};try{s=parent.__safe()}catch(e){}var r=naCalc(s,W,L&&rot?H-s.b:H,rot,a===270);'
+         'var r=naCalc(s,W,L&&rot?H-s.b:H,rot,a===270);'
          'de.style.setProperty("--sh",r.sh+"px");de.style.setProperty("--st",r.st)}'
          'window.naSt=st;st();addEventListener("resize",st);addEventListener("orientationchange",function(){setTimeout(st,90)});'
          # the stage is never short, so drop the games' short-screen classes
