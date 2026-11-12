@@ -199,14 +199,10 @@ html.sk-m .meld.tgt{border-style:dashed;padding:2px}
 html.sk-m .tl{padding:calc(var(--tw) * .16) 0 0;flex-direction:column;justify-content:flex-start;font:700 calc(var(--tw) * .66)/1 var(--sans);letter-spacing:-.04em;
  border:1px solid #d9d1bf;border-radius:calc(var(--tw) * .14);background:linear-gradient(160deg,#fffefa,#f6f1e6 70%,#e6dfd0);
  box-shadow:inset 0 1px 1px #fff,inset 0 -2px 3px #55452a22,0 4px 7px #0005}
-/* Engraved number with a true inner shadow, drawn as vector SVG (no filter, so it stays sharp when zoomed and draws the same
-   in Safari). Glyphs #rn1-#rn13 and their clip paths #rc1-#rc13 sit in the hidden <svg> at the top of <body>. Layers: white lip
-   (glyph shifted down), the glyph, then inside the glyph's clip a deeper shade covered by two copies of the glyph shifted down,
-   so only a soft deeper band along the top edges shows. */
-html.sk-m .tl .nm{display:block;width:1.5em;height:1em;overflow:visible;flex:none}
-.rnt{font:700 100px/1 var(--sans);letter-spacing:-.04em}
-html.sk-m .tl .nm use{fill:currentColor}html.sk-m .tl .nm .lp{fill:#fff}
-html.sk-m .tl .nm .sh{fill:#7a1a20;fill:color-mix(in srgb,currentColor 55%,#000)}
+/* Engraved number with a true inner shadow, drawn once per number and colour on a canvas at 10x size (numImg) and shown as an
+   <img>, so it stays sharp when zoomed. SVG text clip paths and filters are drawn by Safari as fixed-size images (blurry when
+   zoomed), and overlays/blending drew a black outline there. */
+html.sk-m .tl .nm{display:block;width:1.5em;height:1em;flex:none;pointer-events:none;-webkit-user-drag:none;user-select:none}
 html.sk-m .tl .dt{position:absolute;left:50%;bottom:calc(var(--tw) * .08);transform:translateX(-50%);width:calc(var(--tw) * .54);height:calc(var(--tw) * .33);border-radius:50%;
  background:#e9e2d2;box-shadow:inset 0 1px 1.5px #0003,0 .5px 0 #fff}
 html.sk-m .tl .dt::before{content:"";position:absolute;left:50%;top:18%;transform:translateX(-50%);width:max(2px,calc(var(--tw) * .12));height:max(2px,calc(var(--tw) * .12));border-radius:50%;background:currentColor}
@@ -280,7 +276,6 @@ html.lnd.sk-m body:not(.flip) #pSet .note{grid-column:1/-1}
 </style>
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><text id="rn1" class="rnt" x="75" y="86" text-anchor="middle">1</text><clipPath id="rc1"><use href="#rn1"/></clipPath><text id="rn2" class="rnt" x="75" y="86" text-anchor="middle">2</text><clipPath id="rc2"><use href="#rn2"/></clipPath><text id="rn3" class="rnt" x="75" y="86" text-anchor="middle">3</text><clipPath id="rc3"><use href="#rn3"/></clipPath><text id="rn4" class="rnt" x="75" y="86" text-anchor="middle">4</text><clipPath id="rc4"><use href="#rn4"/></clipPath><text id="rn5" class="rnt" x="75" y="86" text-anchor="middle">5</text><clipPath id="rc5"><use href="#rn5"/></clipPath><text id="rn6" class="rnt" x="75" y="86" text-anchor="middle">6</text><clipPath id="rc6"><use href="#rn6"/></clipPath><text id="rn7" class="rnt" x="75" y="86" text-anchor="middle">7</text><clipPath id="rc7"><use href="#rn7"/></clipPath><text id="rn8" class="rnt" x="75" y="86" text-anchor="middle">8</text><clipPath id="rc8"><use href="#rn8"/></clipPath><text id="rn9" class="rnt" x="75" y="86" text-anchor="middle">9</text><clipPath id="rc9"><use href="#rn9"/></clipPath><text id="rn10" class="rnt" x="75" y="86" text-anchor="middle">10</text><clipPath id="rc10"><use href="#rn10"/></clipPath><text id="rn11" class="rnt" x="75" y="86" text-anchor="middle">11</text><clipPath id="rc11"><use href="#rn11"/></clipPath><text id="rn12" class="rnt" x="75" y="86" text-anchor="middle">12</text><clipPath id="rc12"><use href="#rn12"/></clipPath><text id="rn13" class="rnt" x="75" y="86" text-anchor="middle">13</text><clipPath id="rc13"><use href="#rn13"/></clipPath></defs></svg>
 <div id="app">
 <main>
 <h1>Remi</h1>
@@ -678,8 +673,22 @@ function boardProg(h){const {cnt,J}=bCnt(h);let pr=0,sg=0;cnt.forEach(x=>{pr+=x>
  return 'Simplu '+si+'/14 · Duble '+pr+'/7 · Mono '+mo+'/14'}
 function say(m,b){msg=m;msgBad=!!b}
 const JOLY='<svg class="fc" viewBox="0 0 40 40" aria-hidden="true" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="20" r="16.5" stroke="#161616" stroke-width="2.2"/><path d="M13 9 Q20 5.6 27 9" stroke="#e3a600" stroke-width="2.6"/><path d="M8.6 17.2 Q12.4 14.4 16.6 18.2 Q13.6 21.6 10.8 20.4 Q9.2 19.4 8.6 17.2Z M31.4 17.2 Q27.6 14.4 23.4 18.2 Q26.4 21.6 29.2 20.4 Q30.8 19.4 31.4 17.2Z" fill="#8cc4ea" stroke="#1f6fc4" stroke-width="1.3"/><circle cx="12.9" cy="18.4" r="1.2" fill="#161616" stroke="none"/><circle cx="27.1" cy="18.4" r="1.2" fill="#161616" stroke="none"/><path d="M14.6 22.6 Q16.2 21.9 17.4 23.2 Q18.6 25.2 20 24.6 Q21.4 25.2 22.6 23.2 Q23.8 21.9 25.4 22.6" stroke="#bf1e2b" stroke-width="1.8"/><path d="M10.4 26.2 Q19.6 37.6 29.8 25.2 Q19.8 32.4 10.4 26.2Z" stroke="#bf1e2b" stroke-width="1.6"/></svg>'; // Medias joly face
+// Medias tile number: drawn on a canvas at 10x (box 150 x 100 units, 2 px a unit; font 100 units = 1em on the tile): white lip
+// below, the number, and a true inner shadow (a deeper shade left only where copies shifted down don't cover). Cached.
+const NUMC={};
+function numImg(n,col){const k=n+col;if(NUMC[k])return NUMC[k];const F=2,W=150*F,H=100*F,mk=()=>{const c=document.createElement('canvas');c.width=W;c.height=H;
+ const x=c.getContext('2d');x.scale(F,F);x.font='700 100px '+getComputedStyle(document.documentElement).getPropertyValue('--sans');x.textAlign='center';
+ try{x.letterSpacing='-4px'}catch(e){}return [c,x]},[c,x]=mk(),[o,y]=mk();
+ let r=0,g=0,b=0;const m=/rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(col)||/#(..)(..)(..)/.exec(col);
+ if(m){[r,g,b]=m.slice(1,4).map(v=>col[0]==='#'?parseInt(v,16):+v)}
+ x.fillStyle=col;x.fillText(n,75,86);
+ y.fillStyle='rgb('+Math.round(r*.55)+','+Math.round(g*.55)+','+Math.round(b*.55)+')';y.fillRect(0,0,150,100);
+ y.globalCompositeOperation='destination-out';y.globalAlpha=.5;y.fillText(n,75.6,87.8);y.globalAlpha=1;y.fillText(n,76.2,89.6);
+ x.globalCompositeOperation='source-atop';x.setTransform(1,0,0,1,0,0);x.drawImage(o,0,0);x.scale(F,F);
+ x.globalCompositeOperation='destination-over';x.fillStyle='#fff';x.fillText(n,75,88.5);
+ return NUMC[k]=c.toDataURL()}
 function tileEl(id,btn){const t=TILES[id],d=document.createElement(btn?'button':'div');if(btn)d.type='button';
- d.className='tl'+(t.n?'':' jk')+(G&&id===twin(G.atu)?' at':'');if(skin==='medias'){d.style.color=t.n?COL[t.c]:COL[id===104?0:3];if(t.n){const r='#rn'+t.n;d.insertAdjacentHTML('beforeend','<svg class="nm" viewBox="0 0 150 100" aria-hidden="true"><use href="'+r+'" class="lp" y="2.5"/><use href="'+r+'"/>'+'<g clip-path="url(#rc'+t.n+')"><rect class="sh" width="150" height="100"/><use href="'+r+'" x=".6" y="1.8" opacity=".5"/><use href="'+r+'" x="1.2" y="3.6"/></g></svg>')}else d.innerHTML=JOLY;
+ d.className='tl'+(t.n?'':' jk')+(G&&id===twin(G.atu)?' at':'');if(skin==='medias'){d.style.color=t.n?COL[t.c]:COL[id===104?0:3];if(t.n){const m=document.createElement('img');m.className='nm';m.alt='';m.draggable=false;m.src=numImg(t.n,d.style.color);d.appendChild(m)}else d.innerHTML=JOLY;
   const o=document.createElement('span');o.className='dt';d.appendChild(o)}
  else if(t.n){d.style.color=COL[t.c];d.textContent=t.n;const y=document.createElement('i');y.className='sy c'+t.c;d.appendChild(y)}else d.textContent='★';
  d.setAttribute('aria-label',tname(id));return d}
