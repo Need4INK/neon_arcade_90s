@@ -233,6 +233,7 @@ html.sk-m .panel b{color:#f1dfb8}
 html.sk-m .row{border-bottom-color:#cdb07533}
 html.sk-m .lab{font:600 13px var(--serif);color:#eee0c2}
 html.sk-m .seg button,html.sk-m .tg{font:13px/1 var(--serif);border-radius:7px;box-shadow:none}
+html.sk-m:not(.lnd){--sw:76px}@media (max-width:360px){html.sk-m:not(.lnd){--sw:64px}}
 html.sk-m .seg button[aria-pressed="true"],html.sk-m .tg[aria-checked="true"]{background:#c4a56a;color:#172319;box-shadow:inset 0 1px #ffffff55}
 html.sk-m .tg.dng.arm{color:#172319;box-shadow:none}
 @media (max-width:360px){html.sk-m .seg button{font-size:12px}}
@@ -251,7 +252,7 @@ html.lnd.sk-m body:not(.flip) .chip,html.lnd.sk-m body:not(.flip) #rack,html.lnd
 html.lnd.sk-m body:not(.flip) .chip{display:flex;flex-direction:column;justify-content:center;gap:3px}
 html.lnd.sk-m body:not(.flip) .chip b{font-size:15px}html.lnd.sk-m body:not(.flip) .chip span{font-size:21px}
 html.lnd.sk-m body:not(.flip) #table{grid-area:3/2/4/4;height:auto!important;min-height:0!important;max-height:none!important}
-html.lnd.sk-m body:not(.flip) #rack{grid-area:4/2;--tw:42px;width:100%;margin:0}
+html.lnd.sk-m body:not(.flip) #rack{grid-area:4/2;--tw:36px;width:100%;margin:0}
 html.lnd.sk-m body:not(.flip) #cnt{grid-area:4/3;align-self:start;padding:2px 2px 0}
 html.lnd.sk-m body:not(.flip) .acts{grid-area:4/3;align-self:end;display:grid;grid-template-columns:1fr 1fr;gap:6px}
 html.lnd.sk-m body:not(.flip) .acts button.b{font-size:14px;padding:9px 4px}
@@ -263,7 +264,7 @@ html.lnd.sk-m body:not(.flip) .bar .mnu{order:3;position:relative;flex:none;widt
 html.lnd.sk-m body:not(.flip) .bar .mnu::before,html.lnd.sk-m body:not(.flip) .bar .mnu::after{content:""!important;position:absolute;left:50%;top:50%;width:14px;height:2px;margin:-1px 0 0 -7px;border-radius:1px;background:currentColor;transform:rotate(45deg)}
 html.lnd.sk-m body:not(.flip) .bar .mnu::after{transform:rotate(-45deg)}
 html.lnd.sk-m .res{margin:auto 0}html.lnd.sk-m .res h2{font-size:15px;margin:0}html.lnd.sk-m .res p{margin:0 0 2px;font-size:14px}html.lnd.sk-m .res table{margin:0 auto;font-size:14px}html.lnd.sk-m .res td{padding:0 10px;line-height:1.05}html.lnd.sk-m .res h2,html.lnd.sk-m .res>p:first-of-type{display:inline-block;vertical-align:baseline;margin:0 6px}
-html.lnd.sk-m body:not(.flip) #sir{--tw:38px}
+html.lnd.sk-m body:not(.flip) #sir{--tw:32px}
 html.lnd.sk-m body:not(.flip) .panel{top:44px!important;bottom:auto!important;left:auto!important;right:8px!important;width:420px;margin:0;max-height:336px!important}
 html.lnd.sk-m body:not(.flip) .panel[data-p="settings"]{width:700px;max-width:calc(100% - 16px)!important;padding:4px 14px 8px}
 html.lnd.sk-m body:not(.flip) #pSet:not([hidden]){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:24px}
@@ -739,7 +740,7 @@ function renderRes(tb){const r=G.res,box=document.createElement('div');box.class
  [...box.querySelectorAll('tr')].forEach((t,i)=>[...t.children].forEach((c,j)=>c.style.animationDelay=(i+j)*45+'ms'));tb.appendChild(box)}
 // Fixed tile sizes; the table grows into the free space but never taller than it is wide
 function layout(){const t=$('table'),g=$('game'),rk=$('rack');
- if(document.documentElement.classList.contains('lnd')){rk.style.removeProperty('--tw');t.style.height='';document.documentElement.style.setProperty('--pw','42px');return}
+ if(document.documentElement.classList.contains('lnd')){rk.style.removeProperty('--tw');t.style.height='';document.documentElement.style.setProperty('--pw','34px');return}
  // The rack is as wide as the table; tiles sized so 10 fit a row (28-32px), else they wrap as usual
  if(rk.clientWidth){const cs=getComputedStyle(rk),inner=rk.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
   rk.style.setProperty('--tw',Math.max(28,Math.min(32,Math.floor((inner-9*(parseFloat(cs.columnGap)||4))/10)))+'px')}
@@ -759,7 +760,7 @@ function setSw(id,on){const b=$(id);b.setAttribute('aria-checked',on?'true':'fal
 function inGame(){return G&&!G.over&&(G.round>1||G.tn>0)}
 function sync(){const lock=inGame();seg($('sLvl'),['Easy','Norm','Hard'],lvl,i=>{lvl=i;saveSet()},lock);seg($('sSpd'),['Slow','Norm','Fast'],spd,i=>{spd=i;saveSet()});seg($('sTgt'),TARGETS.map(String),TARGETS.indexOf(LIMIT),i=>{LIMIT=TARGETS[i];saveSet();render()},lock);
  seg($('sSkin'),['Neon','Medias'],skin==='medias'?1:0,i=>{skin=i?'medias':'neon';applySkin();saveSet();fit();render()});
- seg($('sLay'),['Portrait','Landscape'],lay==='land'?1:0,i=>{lay=i?'land':'port';applySkin();saveSet();fit();render()});
+ seg($('sLay'),['Portrait','Landscape'],lay==='land'?1:0,i=>{const was=lay;lay=i?'land':'port';if(i&&was!=='land')showPanel('');applySkin();saveSet();fit();render()});
  setSw('tgSound',sndOn);setSw('tgCrt',!document.body.classList.contains('nocrt'));setSw('tgSwp',swp);setSw('tgSym',sym);$('recNote').textContent=recText();
  const b=$('btnNew');clearTimeout(armT);b.classList.remove('arm');b.textContent='New';
  $('note').textContent=(G?'Round '+G.round+' · first to '+LIMIT+' wins. ':'')+(lock?'CPU level and target are locked until this match ends or New.':'')}
