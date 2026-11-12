@@ -199,7 +199,10 @@ html.sk-m .meld.tgt{border-style:dashed;padding:2px}
 html.sk-m .tl{padding:calc(var(--tw) * .16) 0 0;flex-direction:column;justify-content:flex-start;font:700 calc(var(--tw) * .66)/1 var(--sans);letter-spacing:-.04em;
  border:1px solid #d9d1bf;border-radius:calc(var(--tw) * .14);background:linear-gradient(160deg,#fffefa,#f6f1e6 70%,#e6dfd0);
  box-shadow:inset 0 1px 1px #fff,inset 0 -2px 3px #55452a22,0 4px 7px #0005}
-html.sk-m .tl .nm{filter:url(#pit)}
+/* Engraved number: white lip below (text-shadow) and a dark inner edge top-left (a white copy shifted down over a dark copy, multiplied).
+   Plain text layers, so the number stays sharp when zoomed (an SVG filter is drawn as a fixed-size image). */
+html.sk-m .tl .nm{position:relative;text-shadow:0 .9px 0 #fff}
+html.sk-m .tl .nm::after{content:attr(data-n);position:absolute;left:.4px;top:1.3px;color:#fff;text-shadow:-.4px -1.3px 0 rgba(0,0,0,.42);mix-blend-mode:multiply;pointer-events:none}
 html.sk-m .tl .dt{position:absolute;left:50%;bottom:calc(var(--tw) * .08);transform:translateX(-50%);width:calc(var(--tw) * .54);height:calc(var(--tw) * .33);border-radius:50%;
  background:#e9e2d2;box-shadow:inset 0 1px 1.5px #0003,0 .5px 0 #fff}
 html.sk-m .tl .dt::before{content:"";position:absolute;left:50%;top:18%;transform:translateX(-50%);width:max(2px,calc(var(--tw) * .12));height:max(2px,calc(var(--tw) * .12));border-radius:50%;background:currentColor}
@@ -273,11 +276,6 @@ html.lnd.sk-m body:not(.flip) #pSet .note{grid-column:1/-1}
 </style>
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="pit" x="-15%" y="-15%" width="130%" height="140%" color-interpolation-filters="sRGB">
-<feOffset in="SourceAlpha" dx=".4" dy="1.3" result="o"/><feGaussianBlur in="o" stdDeviation=".7" result="ob"/>
-<feComposite in="SourceAlpha" in2="ob" operator="out" result="inner"/><feFlood flood-color="#000" flood-opacity=".6"/><feComposite in2="inner" operator="in" result="sh"/>
-<feOffset in="SourceAlpha" dy=".9" result="d"/><feComposite in="d" in2="SourceAlpha" operator="out" result="lipA"/><feFlood flood-color="#fff"/><feComposite in2="lipA" operator="in" result="lip"/>
-<feMerge><feMergeNode in="lip"/><feMergeNode in="SourceGraphic"/><feMergeNode in="sh"/></feMerge></filter></svg>
 <div id="app">
 <main>
 <h1>Remi</h1>
@@ -676,7 +674,7 @@ function boardProg(h){const {cnt,J}=bCnt(h);let pr=0,sg=0;cnt.forEach(x=>{pr+=x>
 function say(m,b){msg=m;msgBad=!!b}
 const JOLY='<svg class="fc" viewBox="0 0 40 40" aria-hidden="true" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="20" cy="20" r="16.5" stroke="#161616" stroke-width="2.2"/><path d="M13 9 Q20 5.6 27 9" stroke="#e3a600" stroke-width="2.6"/><path d="M8.6 17.2 Q12.4 14.4 16.6 18.2 Q13.6 21.6 10.8 20.4 Q9.2 19.4 8.6 17.2Z M31.4 17.2 Q27.6 14.4 23.4 18.2 Q26.4 21.6 29.2 20.4 Q30.8 19.4 31.4 17.2Z" fill="#8cc4ea" stroke="#1f6fc4" stroke-width="1.3"/><circle cx="12.9" cy="18.4" r="1.2" fill="#161616" stroke="none"/><circle cx="27.1" cy="18.4" r="1.2" fill="#161616" stroke="none"/><path d="M14.6 22.6 Q16.2 21.9 17.4 23.2 Q18.6 25.2 20 24.6 Q21.4 25.2 22.6 23.2 Q23.8 21.9 25.4 22.6" stroke="#bf1e2b" stroke-width="1.8"/><path d="M10.4 26.2 Q19.6 37.6 29.8 25.2 Q19.8 32.4 10.4 26.2Z" stroke="#bf1e2b" stroke-width="1.6"/></svg>'; // Medias joly face
 function tileEl(id,btn){const t=TILES[id],d=document.createElement(btn?'button':'div');if(btn)d.type='button';
- d.className='tl'+(t.n?'':' jk')+(G&&id===twin(G.atu)?' at':'');if(skin==='medias'){d.style.color=t.n?COL[t.c]:COL[id===104?0:3];if(t.n){const nm=document.createElement('span');nm.className='nm';nm.textContent=t.n;d.appendChild(nm)}else d.innerHTML=JOLY;
+ d.className='tl'+(t.n?'':' jk')+(G&&id===twin(G.atu)?' at':'');if(skin==='medias'){d.style.color=t.n?COL[t.c]:COL[id===104?0:3];if(t.n){const nm=document.createElement('span');nm.className='nm';nm.textContent=nm.dataset.n=t.n;d.appendChild(nm)}else d.innerHTML=JOLY;
   const o=document.createElement('span');o.className='dt';d.appendChild(o)}
  else if(t.n){d.style.color=COL[t.c];d.textContent=t.n;const y=document.createElement('i');y.className='sy c'+t.c;d.appendChild(y)}else d.textContent='★';
  d.setAttribute('aria-label',tname(id));return d}
