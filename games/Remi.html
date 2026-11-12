@@ -213,10 +213,10 @@ html.sk-m .meld .tl,html.sk-m #sir .tl{border-width:1px;box-shadow:none}
 html.sk-m #sir .tl.go{border-color:var(--yel);box-shadow:0 0 6px var(--yel)}
 /* Atu twin: the top-right corner filled dark green */
 html.sk-m .tl.at::after{top:0;right:0;width:calc(var(--tw) * .36);height:calc(var(--tw) * .36);border-radius:0 calc(var(--tw) * .13) 0 0;background:linear-gradient(45deg,transparent 50%,#1e7a3e 50%);box-shadow:none}
-/* Atu reminder: a plain tile, just the number (or the joly face) */
-html.sk-m #atu .tl{color:var(--ac)!important;border-color:#d9d1bf;background:linear-gradient(160deg,#fffefa,#f6f1e6 70%,#e6dfd0);justify-content:center;padding:0;box-shadow:inset 0 1px 1px #fff,0 2px 4px #0004}
-html.sk-m #atu .tl .dt{display:none}
-html.sk-m #atu .tl .fc{width:calc(var(--tw) * .8);height:calc(var(--tw) * .8)}
+/* Atu in Medias: the same tile as in the rack (number, oval, dot), striped and 60% see-through to show it's only a reminder
+   (its real tile is in the pile; user's pick "3" of A/D mixes) */
+html.sk-m #atu .tl{color:var(--ac)!important;opacity:.6;border-color:#d9d1bf;background:linear-gradient(160deg,#fffefa,#f6f1e6 70%,#e6dfd0);box-shadow:inset 0 1px 1px #fff,inset 0 -2px 3px #55452a22,0 4px 7px #0005}
+html.sk-m #atu .tl::before{content:"";position:absolute;inset:0;border-radius:inherit;background:repeating-linear-gradient(135deg,rgba(16,24,19,.13) 0 3px,transparent 3px 7px);pointer-events:none}
 html.sk-m #rack{--dc:#ffd23a;padding:8px 6px 5px;border:1px solid rgba(207,177,120,.35);border-radius:12px;background:linear-gradient(180deg,#ffffff0a,transparent),#07130c66;box-shadow:inset 0 4px 14px #0003,0 5px 14px #0002}
 html.sk-m #rack .tl.sel{background:linear-gradient(145deg,#fffdf6,#eee2c7);box-shadow:0 0 0 2px #173322,0 0 0 4px #e8cf91,0 9px 16px #0006}
 /* A double during the swap: dark green bar along the top edge */
