@@ -77,7 +77,10 @@ GAME_CSS = {
     'kb': 'html.stg body:not(.flip) .side{flex-grow:8}html.stg body:not(.flip) .ctl{margin:8px 0!important}'
           'html.stg body:not(.flip) .ctl[hidden]+.side.opp{margin-top:8px}html.stg body:not(.flip) .side.you{margin-bottom:8px}',
     'oth': 'html.stg body:not(.flip) .mid:not(#msg2){margin-bottom:0!important}html.stg .flip.tight #t1,html.stg .flip.tight #t2{display:flex!important}',
-    'ws': '', 'sdk': '', 'rem': '',
+    'ws': '', 'sdk': '',
+    # Remi: the game fills the game area, 8pt clear of the banner and the bar; the table takes all the room left (it scrolls if it needs more)
+    'rem': 'html.stg #game{flex:1 1 auto!important;min-height:0;margin:8px 0;justify-content:flex-start}'
+           'html.stg #table{flex:1 1 0!important;height:auto!important;min-height:96px}',
 }
 for name in ('kb', 'oth', 'ws', 'sdk', 'rem'):
     g = globals()[name]
