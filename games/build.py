@@ -38,7 +38,7 @@ NACALC = ("var NA_W=390,NA_H=797;function naCalc(s,W,H,rot,r270){var w=W-s.l-s.r
           "k=Math.min(cw/NA_W,ch/NA_H),sh=NA_H,a=rot?(r270?90:-90):0;return {k:k,sh:sh,a:a,"
           "st:'translate('+(s.l+w/2)+'px,'+(s.t+h/2)+'px) rotate('+a+'deg) scale('+k+') translate('+(-NA_W/2)+'px,'+(-sh/2)+'px)'}}")
 STAGE = ('<style>html.stg #app{position:fixed!important;left:0!important;top:0!important;right:auto!important;bottom:auto!important;'
-         'width:390px!important;height:var(--sh)!important;margin:0!important;transform-origin:0 0!important;transform:var(--st)!important}'
+         'width:var(--stw,390px)!important;height:var(--sh)!important;margin:0!important;transform-origin:0 0!important;transform:var(--st)!important}'
          # one background for the whole screen: on the html (some games only painted the body, which iOS can leave short)
          'html.stg{padding:0!important;height:100%!important;background:linear-gradient(#07030f,rgba(7,3,15,0) 64px),radial-gradient(120% 55% at 50% 0%,rgba(255,43,214,.18),transparent 60%),radial-gradient(120% 45% at 50% 100%,rgba(25,243,255,.13),transparent 60%),#07030f!important}'
          'html.stg body{background:transparent!important}html.stg.rot #app,html.stg #app{background:transparent!important;padding:0!important}'
@@ -62,11 +62,13 @@ STAGE = ('<style>html.stg #app{position:fixed!important;left:0!important;top:0!i
          "html.stg body.flip .bar{position:absolute!important;left:0!important;right:0!important;top:auto!important;bottom:30px!important;height:36px!important;margin:0!important;padding:0 14px!important;max-width:none!important}"
          "</style>\n"
          '<script>(function(){var de=document.documentElement;de.classList.add("stg");' + NACALC +
-         'function st(){var W=innerWidth,H=innerHeight,rot=W>H&&H<600&&matchMedia("(pointer:coarse)").matches,a=0;'
-         'if(rot){a=screen.orientation&&typeof screen.orientation.angle==="number"?screen.orientation.angle:(window.orientation===-90?270:90)}'
-         'var s={t:0,r:0,b:0,l:0};try{s=parent.__safe()}catch(e){}var r=naCalc(s,W,H,rot,a===270);'
+         # Remi's Medias landscape layout (html.lnd) is a 750 x 390 block, turned a quarter only when the screen is upright
+         'function st(){var L=de.classList.contains("lnd"),W=innerWidth,H=innerHeight,rot=L?W<H:W>H&&H<600&&matchMedia("(pointer:coarse)").matches,a=0;'
+         'NA_W=L?750:390;NA_H=L?390:797;de.style.setProperty("--stw",NA_W+"px");'
+         'if(rot&&!L){a=screen.orientation&&typeof screen.orientation.angle==="number"?screen.orientation.angle:(window.orientation===-90?270:90)}'
+         'var s={t:0,r:0,b:0,l:0};try{s=parent.__safe()}catch(e){}var r=naCalc(s,W,L&&rot?H-s.b:H,rot,a===270);'
          'de.style.setProperty("--sh",r.sh+"px");de.style.setProperty("--st",r.st)}'
-         'st();addEventListener("resize",st);addEventListener("orientationchange",function(){setTimeout(st,90)});'
+         'window.naSt=st;st();addEventListener("resize",st);addEventListener("orientationchange",function(){setTimeout(st,90)});'
          # the stage is never short, so drop the games' short-screen classes
          'try{new MutationObserver(function(){if(de.classList.contains("short"))de.classList.remove("short");if(de.classList.contains("tiny"))de.classList.remove("tiny")}).observe(de,{attributes:true,attributeFilter:["class"]})}catch(e){}'
          '})()</script>\n')
