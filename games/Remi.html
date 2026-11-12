@@ -307,7 +307,7 @@ html.lnd.sk-m body:not(.flip) .panel{top:44px!important;bottom:auto!important;le
 <p>Simplu: runs and sets, <b>500</b> · Bete: 2 sets of 4 + 2 sets of 3, <b>700</b> · Mozaic: 1 to 13 to 1, no two neighbours the same colour, the first 4 all different, the two 1s different, <b>1000</b> · Bicolor: two runs in two colours, <b>1200</b> · Duble: 7 doubles, <b>1300</b> · Monocolor: 1 to 13 to 1 in one colour, <b>1500</b>. Jolys fill in anywhere. The board score replaces your tile count and closing bonus; atu and doubling still count. If someone else closes first: −100.</p>
 <p><b>Player cards:</b> ✓ opened · <b>A</b> holds the atu's twin (+50) · <b>B</b> playing a board game. CPU cards show tiles in hand (14▮) then the score; it turns <span class="sn">magenta</span><span class="sm">red</span> at 3 tiles or fewer.</p>
 <p><b>Skin</b> (Settings): Neon or Medias (a tabletop with tiles like a real set). Only the look changes; your game carries on.</p>
-<p class="sm"><b>Layout</b> (Settings): Portrait, or Landscape for wide screens: turn your phone sideways (it stays sideways even if your phone is held upright); Exit is the ✕ top right.</p>
+<p class="sm"><b>Layout</b> (Settings): Portrait, or Landscape for wide screens: turn your phone sideways (it stays sideways even if your phone is held upright); the ✕ top right switches back to Neon (upright), where Exit takes you to the cover.</p>
 <p class="sn"><b>Accessibility</b> (Settings): a mark in the bottom-left corner of every tile, if some colours look alike to you: red one bar, yellow two, blue three, white none.</p>
 <p><b>Controls:</b> tap tiles to select, <b>Lay down</b> makes a formation, tap a formation to add the selected tiles or swap a joly. <b>Undo</b> takes back your turn.</p></div>
 <div id="pSet" hidden>
@@ -349,7 +349,7 @@ let LIMIT=1000,G=null,T=null,lvl=1,spd=1,swp=true,sym=false,boardArm=false,board
 try{const s=JSON.parse(localStorage.getItem('remi_set')||'{}');if(s.lvl!=null)lvl=s.lvl;if(s.spd!=null)spd=s.spd;if(s.sortBy)sortBy=s.sortBy;if(TARGETS.includes(s.limit))LIMIT=s.limit;if(s.swp===false)swp=false;if(s.sym)sym=true;if(s.skin==='medias')skin='medias';if(s.lay==='land')lay='land'}catch(e){}
 document.body.classList.toggle('sym',sym);
 function applySkin(){const k=SKINS[skin];COL=k.COL;CNAME=k.CNAME;OWN=k.OWN;document.documentElement.classList.toggle('sk-m',skin==='medias');
- document.documentElement.classList.toggle('lnd',skin==='medias'&&lay==='land');try{if(window.naSt)naSt()}catch(e){}
+ document.documentElement.classList.toggle('lnd',skin==='medias'&&lay==='land');{const x=document.querySelector('#bar .mnu');if(x){if(skin==='medias'&&lay==='land')x.setAttribute('aria-label','Back to Neon');else x.removeAttribute('aria-label')}}try{if(window.naSt)naSt()}catch(e){}
  const tc=document.querySelector('meta[name=theme-color]');if(tc)tc.content=k.bg}
 applySkin();
 function saveSet(){try{localStorage.setItem('remi_set',JSON.stringify({lvl,spd,sortBy,limit:LIMIT,swp,sym,skin,lay}))}catch(e){}}
@@ -763,6 +763,9 @@ $('tgCrt').onclick=function(){document.body.classList.toggle('nocrt');sync()};
 $('tgSym').onclick=function(){sym=!sym;document.body.classList.toggle('sym',sym);saveSet();sync()};
 $('tgSwp').onclick=function(){swp=!swp;saveSet();sync();if(G&&G.phase==='dbl')render()};
 $('sPile').onclick=hDraw;
+// Landscape's ✕ (the build's Exit, restyled) switches back to Neon upright instead of leaving the game
+document.addEventListener('click',e=>{const x=e.target.closest&&e.target.closest('#bar .mnu');if(!x||!document.documentElement.classList.contains('lnd'))return;
+ e.stopPropagation();e.preventDefault();showPanel('');skin='neon';applySkin();saveSet();fit();render()},true);
 bR.onclick=()=>showPanel('rules');bS.onclick=()=>showPanel('settings');
 document.addEventListener('click',e=>{if(!panel.hidden&&!panel.contains(e.target)&&!bar.contains(e.target)){e.stopPropagation();e.preventDefault();showPanel('')}},true);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden)showPanel('')});
