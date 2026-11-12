@@ -239,14 +239,15 @@ html.sk-m .tg.dng.arm{color:#172319;box-shadow:none}
 /* ---- Medias landscape layout (Settings > Layout, Medias only): a 750 x 390 block. Top bar: title, message, Rules / Settings / X (Exit).
    Left: pile + atu, then the player cards. Centre: discard row, table, two-row rack (8 a row); right of the rack: counter and actions. */
 html.lnd.sk-m{--mw:26px}
-html.lnd.sk-m body:not(.flip) main{display:grid!important;grid-template-columns:128px 378px minmax(0,1fr);grid-template-rows:38px 50px minmax(0,1fr) auto;gap:6px;padding:0 8px 10px!important;max-width:none!important;max-height:none!important;width:100%!important;height:100%!important;margin:0!important}
+html.lnd.sk-m body:not(.flip) main{display:grid!important;grid-template-columns:128px 378px minmax(0,1fr);grid-template-rows:38px auto minmax(0,1fr) auto;gap:6px;padding:0 8px 10px!important;max-width:none!important;max-height:none!important;width:100%!important;height:100%!important;margin:0!important}
 html.lnd.sk-m body:not(.flip) main::before{content:"";display:block;grid-area:1/1/2/4;margin:0 -1000px;background:#0a160f;border-bottom:1px solid rgba(206,177,122,.45)}
 html.lnd.sk-m body:not(.flip) main>h1:not(#t2){grid-area:1/1;z-index:1;display:flex!important;height:38px!important;margin:0!important;padding:0 0 0 4px;justify-content:flex-start!important;align-items:center;font-size:18px!important;letter-spacing:.14em}
 html.lnd.sk-m body:not(.flip) #game,html.lnd.sk-m body:not(.flip) .mid{display:contents}
 html.lnd.sk-m body:not(.flip) .msg{grid-area:1/2;z-index:1;align-self:center}
 html.lnd.sk-m body:not(.flip) .pa{grid-area:2/1;align-self:end;justify-content:center;gap:16px}
 html.lnd.sk-m body:not(.flip) .sirw{grid-area:2/2/3/4;align-self:end}
-html.lnd.sk-m body:not(.flip) .chips{grid-area:3/1/5/2;grid-template-columns:1fr;grid-template-rows:repeat(4,minmax(0,84px));align-content:space-evenly;gap:6px}
+html.lnd.sk-m body:not(.flip) .chips{grid-area:3/1/5/2;grid-template-columns:1fr;grid-template-rows:repeat(4,minmax(0,1fr));gap:6px}
+html.lnd.sk-m body:not(.flip) .chip,html.lnd.sk-m body:not(.flip) #rack,html.lnd.sk-m body:not(.flip) #table{border-radius:14px}
 html.lnd.sk-m body:not(.flip) .chip{display:flex;flex-direction:column;justify-content:center;gap:3px}
 html.lnd.sk-m body:not(.flip) .chip b{font-size:15px}html.lnd.sk-m body:not(.flip) .chip span{font-size:21px}
 html.lnd.sk-m body:not(.flip) #table{grid-area:3/2/4/4;height:auto!important;min-height:0!important;max-height:none!important}
@@ -261,7 +262,8 @@ html.lnd.sk-m body:not(.flip) .bar button[aria-expanded="true"]::after{content:n
 html.lnd.sk-m body:not(.flip) .bar .mnu{order:3;position:relative;flex:none;width:30px;height:30px;padding:0!important;border-radius:50%;font-size:0!important;color:#f4ecd9!important}
 html.lnd.sk-m body:not(.flip) .bar .mnu::before,html.lnd.sk-m body:not(.flip) .bar .mnu::after{content:""!important;position:absolute;left:50%;top:50%;width:14px;height:2px;margin:-1px 0 0 -7px;border-radius:1px;background:currentColor;transform:rotate(45deg)}
 html.lnd.sk-m body:not(.flip) .bar .mnu::after{transform:rotate(-45deg)}
-html.lnd.sk-m .res{margin:auto 0}html.lnd.sk-m .res h2{font-size:17px;margin:0}html.lnd.sk-m .res p{margin:0 0 2px;font-size:14px}html.lnd.sk-m .res table{margin:0 auto;font-size:15px}html.lnd.sk-m .res td{padding:0 10px;line-height:1.2}html.lnd.sk-m .res h2,html.lnd.sk-m .res>p:first-of-type{display:inline-block;vertical-align:baseline;margin:0 6px}
+html.lnd.sk-m .res{margin:auto 0}html.lnd.sk-m .res h2{font-size:15px;margin:0}html.lnd.sk-m .res p{margin:0 0 2px;font-size:14px}html.lnd.sk-m .res table{margin:0 auto;font-size:14px}html.lnd.sk-m .res td{padding:0 10px;line-height:1.05}html.lnd.sk-m .res h2,html.lnd.sk-m .res>p:first-of-type{display:inline-block;vertical-align:baseline;margin:0 6px}
+html.lnd.sk-m body:not(.flip) #sir{--tw:38px}
 html.lnd.sk-m body:not(.flip) .panel{top:44px!important;bottom:auto!important;left:auto!important;right:8px!important;width:420px;margin:0;max-height:336px!important}
 html.lnd.sk-m body:not(.flip) .panel[data-p="settings"]{width:700px;max-width:calc(100% - 16px)!important;padding:4px 14px 8px}
 html.lnd.sk-m body:not(.flip) #pSet:not([hidden]){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:24px}
@@ -737,7 +739,7 @@ function renderRes(tb){const r=G.res,box=document.createElement('div');box.class
  [...box.querySelectorAll('tr')].forEach((t,i)=>[...t.children].forEach((c,j)=>c.style.animationDelay=(i+j)*45+'ms'));tb.appendChild(box)}
 // Fixed tile sizes; the table grows into the free space but never taller than it is wide
 function layout(){const t=$('table'),g=$('game'),rk=$('rack');
- if(document.documentElement.classList.contains('lnd')){rk.style.removeProperty('--tw');t.style.height='';document.documentElement.style.setProperty('--pw','30px');return}
+ if(document.documentElement.classList.contains('lnd')){rk.style.removeProperty('--tw');t.style.height='';document.documentElement.style.setProperty('--pw','42px');return}
  // The rack is as wide as the table; tiles sized so 10 fit a row (28-32px), else they wrap as usual
  if(rk.clientWidth){const cs=getComputedStyle(rk),inner=rk.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
   rk.style.setProperty('--tw',Math.max(28,Math.min(32,Math.floor((inner-9*(parseFloat(cs.columnGap)||4))/10)))+'px')}
