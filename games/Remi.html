@@ -85,6 +85,8 @@ button.b.cy:active{background:var(--cy);color:#07030f}
 .sirw{flex:1 1 0;min-width:0;cursor:default}
 #sir{--tw:var(--mw);width:100%;height:calc(var(--tw) * 1.32 + 10px);display:flex;gap:2px;overflow-x:auto;overflow-y:hidden;padding:4px;border:1px dashed var(--line);border-radius:4px;scrollbar-width:none}
 #sir::-webkit-scrollbar{display:none}
+/* mouse: a table, discard row or rack that holds more than fits can be dragged (see mouseScroll) */
+.pan{cursor:grab}.pan.drag,.pan.drag *{cursor:grabbing!important}
 #sir .tl{border-width:1px;box-shadow:none}
 #sir .tl.dead{opacity:.3;cursor:default}
 #sir .tl.go{border-color:var(--yel);box-shadow:0 0 6px var(--yel)}
@@ -260,7 +262,7 @@ button.b:disabled{opacity:.35}
 <p><b>Skin</b> (Settings): Neon or Medias (a tabletop with tiles like a real set). Only the look changes; your game carries on. Remi always opens in Neon.</p>
 <p class="sm"><b>Layout</b> (Settings): Portrait, or Landscape for wide screens: turn your phone sideways (it stays sideways even if your phone is held upright); the ✕ top right takes you to the cover.</p>
 <p class="sn"><b>Accessibility</b> (Settings): a mark in the bottom-left corner of every tile, if some colours look alike to you: red one bar, yellow two, blue three, white none.</p>
-<p><b>Controls:</b> tap tiles to select, <b>Lay down</b> makes a formation, tap a formation to add the selected tiles or swap a joly. <b>Undo</b> takes back your turn.</p></div>
+<p><b>Controls:</b> tap tiles to select, <b>Lay down</b> makes a formation, tap a formation to add the selected tiles or swap a joly. <b>Undo</b> takes back your turn. With a mouse, drag the discards, the table or your tiles (or turn the wheel) when they hold more than fits.</p></div>
 <div id="pSet" hidden>
 <div class="row"><span class="lab">CPU level</span><div class="seg" id="sLvl" role="group" aria-label="CPU level"></div></div>
 <div class="row"><span class="lab">CPU speed</span><div class="seg" id="sSpd" role="group" aria-label="CPU speed"></div></div>
@@ -729,6 +731,22 @@ naSync=sync;
 // ---- fit: the stage (build.py) scales and turns the page; the game only sizes its own parts
 function fit(){layout()}
 fit();addEventListener('resize',fit);
+
+// ---- mouse: touch screens slide the discard row, a wide rack and the table by themselves; a mouse had no way to move
+// a row sideways. The wheel now slides the two rows, and all three areas can be dragged. A drag never counts as a tap.
+function mouseScroll(el,side){
+ const more=()=>el.scrollWidth>el.clientWidth+1||el.scrollHeight>el.clientHeight+1;let st=null;
+ el.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')el.classList.toggle('pan',more())});
+ if(side)el.addEventListener('wheel',e=>{if(el.scrollWidth<=el.clientWidth+1)return;const d=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY;if(!d)return;
+  el.scrollLeft+=d*(e.deltaMode===1?32:e.deltaMode===2?el.clientWidth:1);e.preventDefault()},{passive:false});
+ el.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse'||e.button!==0||!more())return;
+  st={x:e.clientX,y:e.clientY,l:el.scrollLeft,t:el.scrollTop,k:el.getBoundingClientRect().width/el.offsetWidth||1,drag:false}});
+ addEventListener('pointermove',e=>{if(!st)return;const dx=e.clientX-st.x,dy=e.clientY-st.y;if(!st.drag&&Math.abs(dx)+Math.abs(dy)<5)return;
+  st.drag=true;el.classList.add('pan','drag');el.scrollLeft=st.l-dx/st.k;el.scrollTop=st.t-dy/st.k});
+ const end=()=>{if(!st)return;const d=st.drag;st=null;el.classList.remove('drag');if(!d)return;
+  const stop=e=>{e.stopPropagation();e.preventDefault()};el.addEventListener('click',stop,true);setTimeout(()=>el.removeEventListener('click',stop,true),0)};
+ addEventListener('pointerup',end);addEventListener('pointercancel',end)}
+mouseScroll($('table'),false);mouseScroll($('sir'),true);mouseScroll($('rack'),true);
 
 // ---- start: resume a saved game if there is one
 // The saved game is used only if every tile id is real and no tile appears twice
