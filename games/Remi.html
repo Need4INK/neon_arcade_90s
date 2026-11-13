@@ -9,22 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%80%84%3C/text%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#07030f;--panel:#10072a;--line:#2e1d66;--ink:#eaf6ff;--mut:#9a8bd6;--mag:#ff2bd6;--cy:#19f3ff;--yel:#ffe94d;--grn:#39ff7a;--or:#ff9e2c;
---px:"Press Start 2P","Courier New",monospace;--vt:"VT323","Courier New",monospace;
---sw:64px;--sg:6px;--tw:32px;--mw:21px;--pw:30px;
-box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html{height:100vh;height:100dvh;overflow:hidden;background:var(--bg)}
-html,body{margin:0;color:var(--ink);font-family:var(--vt);font-size:18px}
-body{height:100%;touch-action:manipulation;overscroll-behavior:none;user-select:none;-webkit-user-select:none;
- background:radial-gradient(120% 55% at 50% 0%,rgba(255,43,214,.18),transparent 60%),radial-gradient(120% 45% at 50% 100%,rgba(25,243,255,.13),transparent 60%),#07030f}
-body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9;background:repeating-linear-gradient(to bottom,transparent 0 2px,rgba(0,0,0,.16) 2px 3px)}
-body.nocrt::after{display:none}
-#app{height:100%}
-main{max-width:420px;height:100%;margin:0 auto;padding:4px 14px 40px;display:flex;flex-direction:column}
-h1{font:400 20px/1 var(--px);text-transform:uppercase;letter-spacing:2px;margin:12px 0 8px;text-align:center;color:#fff;flex:none;
- text-shadow:0 0 4px #fff,0 0 10px var(--mag),0 0 22px var(--mag),0 0 42px var(--mag);animation:powerOn 1.1s steps(1) 1}
-@keyframes powerOn{0%{opacity:0}8%{opacity:1}12%{opacity:.2}18%{opacity:1}24%{opacity:.4}30%,100%{opacity:1}}
+:root{--tw:32px;--mw:21px;--pw:30px}
 #game{flex:1 1 auto;min-height:0;justify-content:center;display:flex;flex-direction:column;gap:6px;padding:2px 0 4px}
 .chips{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;flex:none}
 .chip{background:var(--panel);border:2px solid var(--oc);border-radius:5px;padding:5px 2px 3px;text-align:center;opacity:.6;transition:opacity .2s,box-shadow .2s}
@@ -83,7 +68,6 @@ body.sym #rack .tl.dbl::before{bottom:7px}
 @keyframes drw{0%{box-shadow:0 0 0 0 var(--dc)}100%{box-shadow:0 0 0 9px transparent}}
 @keyframes pop{0%{filter:brightness(2.2)}100%{filter:none}}
 .res{margin:auto 0;width:100%;text-align:center}
-.short .res table{font-size:17px;margin:0 auto}.short .res p{font-size:16px;margin:1px 0}.short .res h2{margin:0 0 2px}.short .res td{padding:1px 8px}
 .res h2{font:400 11px/1.4 var(--px);color:var(--yel);margin:4px 0;text-shadow:0 0 8px var(--yel)}
 .res p{margin:4px 0;color:var(--mut)}
 .res table{margin:6px auto;border-collapse:collapse;font-size:19px}
@@ -94,43 +78,9 @@ body.sym #rack .tl.dbl::before{bottom:7px}
 .res.wv td{animation:remWave .7s ease-out both}
 @keyframes remWave{35%{background:var(--wc)}}
 .acts{display:flex;justify-content:center;gap:8px;flex:none}
-button.b{background:transparent;color:var(--yel);border:2px solid var(--yel);border-radius:4px;padding:6px 10px;margin:0;font:400 10px/1.2 var(--px);cursor:pointer;text-shadow:0 0 8px var(--yel);box-shadow:0 0 10px rgba(255,233,77,.5)}
-button.b:active{background:var(--yel);color:#07030f;text-shadow:none}
-button.b:disabled{opacity:.35;cursor:default}
 button.b.cy{color:var(--cy);border-color:var(--cy);text-shadow:0 0 8px var(--cy);box-shadow:0 0 10px rgba(25,243,255,.4)}
 button.b.cy:active{background:var(--cy);color:#07030f}
 .tl:focus-visible,.meld:focus-visible,.slot:focus-visible,button.b:focus-visible,.bar button:focus-visible,.seg button:focus-visible,.tg:focus-visible{outline:3px solid var(--yel);outline-offset:2px}
-.bar{position:fixed;left:0;right:0;bottom:0;z-index:21;max-width:420px;margin:0 auto;padding:0 14px env(safe-area-inset-bottom,0px);display:flex;justify-content:space-between}
-.bar button{font:400 10px/1.4 var(--px);color:var(--cy);background:transparent;border:0;padding:11px 0;cursor:pointer}
-.bar button[aria-expanded="true"]{color:var(--yel);text-shadow:0 0 8px var(--yel)}
-.bar button[aria-expanded="true"]::after{content:' \00d7'}
-.panel{position:fixed;left:0;right:0;bottom:calc(36px + env(safe-area-inset-bottom,0px));z-index:20;max-width:420px;margin:0 auto;padding:6px 14px 10px;background:#0d0624;border-top:2px solid var(--cy);
- box-shadow:0 -10px 30px rgba(0,0,0,.7),0 -2px 12px rgba(25,243,255,.35);max-height:calc(72dvh - 36px);overflow:auto;font-size:19px;color:var(--mut);line-height:1.15}
-.panel p{margin:6px 0}
-.panel b{color:var(--ink);font-weight:400}
-.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
-.lab{font:400 10px/1.4 var(--px);color:var(--ink);white-space:nowrap}
-@media (max-width:360px){:root{--sw:54px}.seg button{font-size:8px}}
-.row>.tg,.row>.seg{margin-left:auto}
-.row.wrap{flex-wrap:wrap}
-.seg{display:flex;gap:var(--sg);flex:none}
-.seg button{flex:none;width:var(--sw);font:400 9px/1 var(--px);text-align:center;white-space:nowrap;color:var(--cy);background:transparent;border:2px solid var(--cy);border-radius:4px;padding:10px 0;cursor:pointer;text-shadow:0 0 6px var(--cy)}
-.seg button[aria-pressed="true"]{background:var(--cy);color:#07030f;text-shadow:none;box-shadow:0 0 12px var(--cy)}
-.seg button:disabled{opacity:.45;cursor:default}
-.tg{flex:none;width:var(--sw);overflow:hidden;font:400 9px/1 var(--px);text-align:center;white-space:nowrap;color:var(--cy);background:transparent;border:2px solid var(--cy);border-radius:4px;padding:10px 2px;cursor:pointer;text-shadow:0 0 6px var(--cy)}
-.tg.big{width:calc(2*var(--sw) + var(--sg))}
-.tg[aria-checked="true"]{background:var(--cy);color:#07030f;text-shadow:none;box-shadow:0 0 12px var(--cy)}
-.tg.dng{color:var(--mag);border-color:var(--mag);text-shadow:0 0 6px var(--mag)}
-.tg.dng.arm{background:var(--mag);color:#07030f;text-shadow:none;box-shadow:0 0 12px var(--mag)}
-.note{color:var(--yel);margin:6px 0 0}
-[hidden]{display:none!important}
-.short h1{font-size:14px;margin:6px 0}
-.tiny h1{display:none}
-.rot #app{position:fixed;top:50%;left:50%;width:100vh;width:100dvh;height:100vw;transform:translate(-50%,-50%) rotate(-90deg);
- background:radial-gradient(120% 55% at 50% 0%,rgba(255,43,214,.18),transparent 60%),radial-gradient(120% 45% at 50% 100%,rgba(25,243,255,.13),transparent 60%),#07030f}
-.rot.r270 #app{transform:translate(-50%,-50%) rotate(90deg)}
-.rot body::after{background:repeating-linear-gradient(to right,transparent 0 2px,rgba(0,0,0,.16) 2px 3px)}
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 .mid{align-items:flex-end;gap:10px}
 .sirw{flex:1 1 0;min-width:0;cursor:default}
 #sir{--tw:var(--mw);width:100%;height:calc(var(--tw) * 1.32 + 10px);display:flex;gap:2px;overflow-x:auto;overflow-y:hidden;padding:4px;border:1px dashed var(--line);border-radius:4px;scrollbar-width:none}
@@ -157,26 +107,15 @@ button.b.cy:active{background:var(--cy);color:#07030f}
 .pile .pf{left:8px;display:flex;align-items:center;justify-content:center;font:400 calc(var(--pw) * .62)/1 var(--vt);color:#fff;text-shadow:0 0 6px rgba(255,255,255,.6)}
 .slot.go .pf{border-color:var(--yel);box-shadow:0 0 12px var(--yel);animation:pulse 1.2s ease-in-out infinite}
 /* Gap under the title at most 2x its height; spare space goes below the game */
-main{justify-content:flex-start}main>h1{flex:1 1 auto;max-height:calc(3em - 8px)}main::after{content:"";flex:1 1 0}#game{flex:none}#table{flex:none}
-/* One centred block: title, game, bar. Gaps under the title and above the bar are at most 2x the title height */
-main{padding-bottom:16px}main::before{content:"";flex:1 1 0}
-.bar{position:relative;left:auto;right:auto;bottom:auto;width:100%;max-width:none;margin:0;padding:0 0 env(safe-area-inset-bottom,0px);flex:1 1 auto;max-height:calc(76px + env(safe-area-inset-bottom,0px));align-items:flex-end;align-content:end}
-.short .bar{max-height:calc(64px + env(safe-area-inset-bottom,0px))}
-/* Same frame in every game: at most 720px tall and centred; title at its top, bar at its bottom, the game centred between */
-#app{display:flex;flex-direction:column}
-main{width:100%;max-height:720px;margin:auto}
-main::before,main::after{display:none}
-main>h1{flex:1 1 auto;max-height:none}
-.bar{flex:1 1 auto;max-height:none}
+#game{flex:none}#table{flex:none}
 /* ---- Medias skin (Settings > Skin): the same game and layout on a tabletop with ivory tiles. Everything is scoped to html.sk-m;
    sizes that the template depends on (tiles, rack, bar, buttons) stay as in Neon. No scanlines or Accessibility marks in this skin. */
 html.sk-m{--bg:#101813;--panel:#17291f;--line:#8e7448;--ink:#f4ecd9;--mut:#c8bda7;--mag:#bd6558;--cy:#d8c18e;--yel:#e7ca88;--grn:#88b79a;
  --serif:Georgia,"Times New Roman",serif;--sans:"Arial Rounded MT Bold","Helvetica Neue",Arial,sans-serif;--px:var(--serif);--vt:var(--serif);
  --felt:radial-gradient(ellipse at 50% 5%,rgba(197,164,103,.16),transparent 48%),repeating-linear-gradient(115deg,rgba(255,255,255,.012) 0 1px,transparent 1px 5px),linear-gradient(145deg,#1b2b21,#0b1510 65%,#17271d);
  background:#101813}
-html.sk-m body{background:var(--felt);font-size:17px}
-html.sk-m.rot #app{background:var(--felt)}
-html.stg.sk-m{background:linear-gradient(#0b1510,rgba(11,21,16,0) 64px),var(--felt)!important}
+html.sk-m body{font-size:17px}
+html.sk-m{background:linear-gradient(#0b1510,rgba(11,21,16,0) 64px),var(--felt)}
 html.sk-m body::after{display:none}
 html.sk-m body *{text-shadow:none!important}
 html.sk-m .sn{display:none!important}html:not(.sk-m) .sm{display:none!important}
@@ -236,10 +175,9 @@ html.sk-m .panel b{color:#f1dfb8}
 html.sk-m .row{border-bottom-color:#cdb07533}
 html.sk-m .lab{font:600 13px var(--serif);color:#eee0c2}
 html.sk-m .seg button,html.sk-m .tg{font:13px/1 var(--serif);border-radius:7px;box-shadow:none}
-html.sk-m:not(.lnd){--sw:76px}@media (max-width:360px){html.sk-m:not(.lnd){--sw:64px}}
+html.sk-m:not(.lnd){--sw:76px}
 html.sk-m .seg button[aria-pressed="true"],html.sk-m .tg[aria-checked="true"]{background:#c4a56a;color:#172319;box-shadow:inset 0 1px #ffffff55}
 html.sk-m .tg.dng.arm{color:#172319;box-shadow:none}
-@media (max-width:360px){html.sk-m .seg button{font-size:12px}}
 /* ---- Medias landscape layout (Settings > Layout, Medias only): a 750 x 390 block. Top bar: title, message, Rules / Settings / X (Exit).
    Left: pile + atu, then the player cards. Centre: discard row, table, two-row rack (8 a row); right of the rack: counter and actions. */
 html.lnd.sk-m{--mw:26px}
@@ -255,7 +193,9 @@ html.lnd.sk-m body:not(.flip) .chip,html.lnd.sk-m body:not(.flip) #rack,html.lnd
 html.lnd.sk-m body:not(.flip) .chip{display:flex;flex-direction:column;justify-content:center;gap:3px}
 html.lnd.sk-m body:not(.flip) .chip b{font-size:15px}html.lnd.sk-m body:not(.flip) .chip span{font-size:21px}
 html.lnd.sk-m body:not(.flip) #table{grid-area:3/2/4/4;height:auto!important;min-height:0!important;max-height:none!important}
-html.lnd.sk-m body:not(.flip) #rack{grid-area:4/2;--tw:36px;width:100%;margin:0}
+html.lnd.sk-m body:not(.flip) #rack{grid-area:4/2;--tw:36px;width:100%;margin:0;min-width:0}
+html.lnd.sk-m body:not(.flip) #rack.wide{position:relative;display:grid;grid-template-columns:repeat(var(--per,9),var(--tw));grid-auto-rows:calc(var(--tw) * 1.32);justify-content:start;align-content:start;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;overscroll-behavior:contain}
+html.lnd.sk-m body:not(.flip) #rack.wide::-webkit-scrollbar{display:none}
 html.lnd.sk-m body:not(.flip) #cnt{grid-area:4/3;align-self:start;padding:2px 2px 0}
 html.lnd.sk-m body:not(.flip) .acts{grid-area:4/3;align-self:end;display:grid;grid-template-columns:1fr 1fr;gap:6px}
 html.lnd.sk-m body:not(.flip) .acts button.b{font-size:14px;padding:9px 4px}
@@ -272,6 +212,11 @@ html.lnd.sk-m body:not(.flip) .panel[data-p="settings"]{width:700px;max-width:ca
 html.lnd.sk-m body:not(.flip) #pSet:not([hidden]){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:24px}
 html.lnd.sk-m body:not(.flip) #pSet .row{padding:6px 0;flex-wrap:nowrap}
 html.lnd.sk-m body:not(.flip) #pSet .note{grid-column:1/-1}
+/* differs from the shared core */
+button.b:disabled{opacity:.35}
+/* the game fills the game area, 8pt clear of the banner and the bar; the table takes all the room left (it scrolls if it needs more) */
+#game{flex:1 1 auto!important;min-height:0;margin:8px 0;justify-content:flex-start}
+#table{flex:1 1 0!important;height:auto!important;min-height:96px}
 </style>
 </head>
 <body>
@@ -294,7 +239,7 @@ html.lnd.sk-m body:not(.flip) #pSet .note{grid-column:1/-1}
 <div id="rack" role="group" aria-label="Your tiles"></div>
 <div class="acts" id="acts"></div>
 </div>
-<nav class="bar" id="bar"><button type="button" id="bRules" aria-expanded="false">Rules</button><button type="button" id="bSet" aria-expanded="false">Settings</button></nav>
+<nav class="bar" id="bar"><button type="button" id="bRules" aria-expanded="false">Rules</button><button type="button" class="mnu">Exit</button><button type="button" id="bSet" aria-expanded="false">Settings</button></nav>
 <section class="panel" id="panel" hidden>
 <div id="pRules" hidden>
 <p><b>You (green) vs three CPUs (CPU 1 red, CPU 2 yellow, CPU 3 blue)</b>, rules from the Romanian Remy set. Tiles 1–13 in red, yellow, blue and <span class="sn">white (the black of a real set), two of each, plus 2 joly <b>★</b></span><span class="sm">black, two of each, plus 2 joly (clown face)</span>.</p>
@@ -322,11 +267,11 @@ html.lnd.sk-m body:not(.flip) #pSet .note{grid-column:1/-1}
 <div class="row wrap"><span class="lab">Target points</span><div class="seg" id="sTgt" role="group" aria-label="Target points"></div></div>
 <div class="row"><span class="lab">Swap doubles</span><button type="button" class="tg" id="tgSwp" role="switch" aria-checked="true">On</button></div>
 <div class="row sn"><span class="lab">Accessibility</span><button type="button" class="tg" id="tgSym" role="switch" aria-checked="false">Off</button></div>
-<div class="row"><span class="lab">New game</span><button type="button" class="tg dng big" id="btnNew">New</button></div>
 <div class="row"><span class="lab">Sound</span><button type="button" class="tg" id="tgSound" role="switch" aria-checked="false">Off</button></div>
 <div class="row"><span class="lab">Skin</span><div class="seg" id="sSkin" role="group" aria-label="Skin"></div></div>
 <div class="row sm"><span class="lab">Layout</span><div class="seg" id="sLay" role="group" aria-label="Layout"></div></div>
 <div class="row sn"><span class="lab">Scanlines</span><button type="button" class="tg" id="tgCrt" role="switch" aria-checked="true">On</button></div>
+<div class="row"><span class="lab">New game</span><button type="button" class="tg dng big" id="btnNew">New</button></div>
 <p class="note" id="note"></p>
 <p class="note" id="recNote" style="color:var(--mut)"></p>
 </div></section>
@@ -352,7 +297,7 @@ const tname=id=>isJ(id)?'joly':CNAME[TILES[id].c]+' '+TILES[id].n;
 const rm=(arr,ids)=>ids.forEach(id=>{const i=arr.indexOf(id);if(i>=0)arr.splice(i,1)});
 
 let LIMIT=1000,G=null,T=null,lvl=1,spd=1,swp=true,sym=false,boardArm=false,boardT=null,sortBy='col',sel=new Set(),token=0,newIds=[],fresh=[],hitMeld=-1;
-try{const s=JSON.parse(localStorage.getItem('remi_set')||'{}');if(s.lvl!=null)lvl=s.lvl;if(s.spd!=null)spd=s.spd;if(s.sortBy)sortBy=s.sortBy;if(TARGETS.includes(s.limit))LIMIT=s.limit;if(s.swp===false)swp=false;if(s.sym)sym=true;}catch(e){}
+try{const s=JSON.parse(localStorage.getItem('remi_set')||'{}');if([0,1,2].includes(s.lvl))lvl=s.lvl;if([0,1,2].includes(s.spd))spd=s.spd;if(s.sortBy==='col'||s.sortBy==='num')sortBy=s.sortBy;if(TARGETS.includes(s.limit))LIMIT=s.limit;if(s.swp===false)swp=false;if(s.sym)sym=true;}catch(e){}
 document.body.classList.toggle('sym',sym);
 function applySkin(){const k=SKINS[skin];COL=k.COL;CNAME=k.CNAME;OWN=k.OWN;document.documentElement.classList.toggle('sk-m',skin==='medias');
  document.documentElement.classList.toggle('lnd',skin==='medias'&&lay==='land');try{if(window.naSt)naSt()}catch(e){}
@@ -361,19 +306,16 @@ applySkin();
 function saveSet(){try{localStorage.setItem('remi_set',JSON.stringify({lvl,spd,sortBy,limit:LIMIT,swp,sym}))}catch(e){}}
 function save(){try{localStorage.setItem('remi_game2',JSON.stringify(G))}catch(e){}}
 // Saved match record per CPU level: [won, played]
-let REC={};try{REC=JSON.parse(localStorage.getItem('remi_rec'))||{}}catch(e){}
+let REC={};try{const o=JSON.parse(localStorage.getItem('remi_rec')),n=v=>Number.isFinite(v)&&v>=0?Math.floor(v):0;if(o&&typeof o==='object')[0,1,2].forEach(i=>{if(Array.isArray(o[i]))REC[i]=[n(o[i][0]),n(o[i][1])]})}catch(e){}
 function addRec(win){const r=REC[lvl]||(REC[lvl]=[0,0]);r[1]++;if(win)r[0]++;try{localStorage.setItem('remi_rec',JSON.stringify(REC))}catch(e){}}
-function recText(){return 'Matches won: '+['Easy','Norm','Hard'].map((n,i)=>{const r=REC[i]||[0,0];return n+' '+r[0]+'/'+r[1]}).join(' · ')}
+function recText(){return 'Matches won: '+['Easy','Normal','Hard'].map((n,i)=>{const r=REC[i]||[0,0];return n+' '+r[0]+'/'+r[1]}).join(' · ')}
 
 // ---- sound
-let AC=null,sndOn=false;
-function audio(){if(!AC){try{const X=window.AudioContext||window.webkitAudioContext;AC=X?new X():null}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
-function tone(f,d,type,vol,when,to){const a=audio();if(!a)return;const t=a.currentTime+(when||0),o=a.createOscillator(),g=a.createGain();o.type=type||'square';o.frequency.setValueAtTime(f,t);if(to)o.frequency.exponentialRampToValueAtTime(to,t+d);g.gain.setValueAtTime(vol||.06,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.02)}
 const SFX={on(){tone(660,.1,'square',.18);tone(990,.16,'square',.18,.11)},pick(){tone(600,.04,'square',.1)},draw(){tone(380,.07,'triangle',.18,0,520)},
  lay(){tone(520,.06,'square',.13);tone(780,.09,'square',.13,.07)},disc(){tone(300,.08,'square',.12,0,200)},bad(){tone(200,.15,'square',.13,0,120)},
  undo(){tone(500,.08,'triangle',.15,0,300)},win(){[523,659,784,1047].forEach((f,i)=>tone(f,.12,'square',.15,i*.1));tone(1047,.4,'square',.15,.4)},
  lose(){[392,330,262].forEach((f,i)=>tone(f,.16,'square',.13,i*.14))}};
-function sfx(n){if(!sndOn)return;try{SFX[n]()}catch(e){}}
+naSfx=SFX;
 
 // ---- formations: a set (same number, different colours) or a run (one colour, in order; 1 low or after 13)
 function analyze(ids){
@@ -726,9 +668,11 @@ function render(){
   // On the round results the counter stays: what you lost (tiles left in hand, or the not-opened penalty) and the rest of your round score
   if(ph==='over'){const r=G.res;yy=r.closer===0?0:(me.opened||r.closer<0?me.hand.reduce((a,id)=>a+val(id),0):100)*k;xx=r.pen[0]+yy}
   cn.innerHTML='<b>'+xx+'</b><i>-'+yy+'</i>';cn.setAttribute('aria-label',ph==='over'?'This round: '+xx+' points, minus '+yy:'This round: '+xx+' points laid, minus '+yy+' if someone else closes now')}
- const rk=$('rack');rk.innerHTML='';
+ const rk=$('rack'),rsl=rk.scrollLeft;rk.innerHTML='';
  const dbs=ph==='dbl'?dblTiles(me.hand):[];
  sorted(me.hand).forEach(id=>{const e=tileEl(id,true);if(sel.has(id))e.classList.add('sel');if(dbs.includes(id))e.classList.add('dbl');if(newIds.includes(id))e.classList.add('new');if(fresh.includes(id)&&(G.phase==='dbl'||G.cur===0&&G.phase==='play'))e.classList.add('drw');e.onclick=()=>tapTile(id);rk.appendChild(e)});
+ {const n=me.hand.length,wide=n>18&&document.documentElement.classList.contains('lnd');rk.classList.toggle('wide',wide);rk.style.setProperty('--per',Math.max(9,Math.ceil(n/2)));
+  if(wide){rk.scrollLeft=rsl;const e=rk.querySelector('.new');if(e){const l=e.offsetLeft-8,r=e.offsetLeft+e.offsetWidth+8;if(l<rk.scrollLeft)rk.scrollLeft=l;else if(r>rk.scrollLeft+rk.clientWidth)rk.scrollLeft=r-rk.clientWidth}}}
  newIds=[];
  const a=$('acts');a.innerHTML='';
  if(ph==='over'){a.appendChild(G.over?btn('New game',()=>{newGame();showPanel('')}):btn('Next round',dealRound))}
@@ -756,69 +700,53 @@ function layout(){const t=$('table'),g=$('game'),rk=$('rack');
  if(rk.clientWidth){const cs=getComputedStyle(rk),inner=rk.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
   rk.style.setProperty('--tw',Math.max(28,Math.min(32,Math.floor((inner-9*(parseFloat(cs.columnGap)||4))/10)))+'px')}
  if(t.clientWidth){const m=document.querySelector('main'),h=m.querySelector('h1'),bar=$('bar'),cs=getComputedStyle(m),hs=getComputedStyle(h),bs=getComputedStyle(bar),gs=getComputedStyle(g);
-  const ht=hs.display==='none'?0:parseFloat(hs.fontSize)+parseFloat(hs.marginTop)+parseFloat(hs.marginBottom);
+  const ht=hs.display==='none'?0:h.offsetHeight+parseFloat(hs.marginTop)+parseFloat(hs.marginBottom);
   const room=m.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)-ht-bar.firstElementChild.offsetHeight-parseFloat(bs.paddingBottom);
   let rest=parseFloat(gs.paddingTop)+parseFloat(gs.paddingBottom),n=0;[...g.children].forEach(e=>{if(e===t||getComputedStyle(e).display==='none')return;rest+=e.offsetHeight;n++});rest+=n*parseFloat(gs.rowGap||6);
   t.style.maxHeight='';t.style.height=Math.max(150,Math.min(t.clientWidth,Math.floor(room-rest-40)))+'px'}
  const c=document.querySelector('.chip');if(c&&c.offsetWidth)document.documentElement.style.setProperty('--pw',Math.floor((c.offsetWidth-12)/2)+'px')}
 
 // ---- panel
-const panel=$('panel'),bar=$('bar'),pR=$('pRules'),pS=$('pSet'),bR=$('bRules'),bS=$('bSet');let armT=null;
-function showPanel(n){const cur=panel.hidden?'':panel.dataset.p,nx=n&&n!==cur?n:'';panel.hidden=!nx;panel.dataset.p=nx;pR.hidden=nx!=='rules';pS.hidden=nx!=='settings';
- bR.setAttribute('aria-expanded',nx==='rules'?'true':'false');bS.setAttribute('aria-expanded',nx==='settings'?'true':'false');if(nx==='settings')sync()}
 function seg(el,names,cur,fn,dis){el.innerHTML='';names.forEach((t,i)=>{const b=document.createElement('button');b.type='button';b.textContent=t;b.setAttribute('aria-pressed',i===cur?'true':'false');b.disabled=!!dis;b.onclick=()=>{if(b.disabled)return;fn(i);sync()};el.appendChild(b)})}
-function setSw(id,on){const b=$(id);b.setAttribute('aria-checked',on?'true':'false');b.textContent=on?'On':'Off'}
 function inGame(){return G&&!G.over&&(G.round>1||G.tn>0)}
-function sync(){const lock=inGame();seg($('sLvl'),['Easy','Norm','Hard'],lvl,i=>{lvl=i;saveSet()},lock);seg($('sSpd'),['Slow','Norm','Fast'],spd,i=>{spd=i;saveSet()});seg($('sTgt'),TARGETS.map(String),TARGETS.indexOf(LIMIT),i=>{LIMIT=TARGETS[i];saveSet();render()},lock);
+function sync(){const lock=inGame();seg($('sLvl'),['Easy','Normal','Hard'],lvl,i=>{lvl=i;saveSet()},lock);seg($('sSpd'),['Slow','Normal','Fast'],spd,i=>{spd=i;saveSet()});seg($('sTgt'),TARGETS.map(String),TARGETS.indexOf(LIMIT),i=>{LIMIT=TARGETS[i];saveSet();render()},lock);
  seg($('sSkin'),['Neon','Medias'],skin==='medias'?1:0,i=>{skin=i?'medias':'neon';applySkin();saveSet();fit();render()});
  seg($('sLay'),['Portrait','Landscape'],lay==='land'?1:0,i=>{const was=lay;lay=i?'land':'port';if(i&&was!=='land')showPanel('');applySkin();saveSet();fit();render()});
  setSw('tgSound',sndOn);setSw('tgCrt',!document.body.classList.contains('nocrt'));setSw('tgSwp',swp);setSw('tgSym',sym);$('recNote').textContent=recText();
- const b=$('btnNew');clearTimeout(armT);b.classList.remove('arm');b.textContent='New';
+ naDisarm($('btnNew'));
  $('note').textContent=(G?'Round '+G.round+' · first to '+LIMIT+' wins. ':'')+(lock?'CPU level and target are locked until this match ends or New.':'')}
-$('btnNew').onclick=function(){const b=this;
- if(inGame()&&!b.classList.contains('arm')){b.classList.add('arm');b.textContent='Tap again';clearTimeout(armT);armT=setTimeout(()=>{b.classList.remove('arm');b.textContent='New'},3000);return}
- clearTimeout(armT);newGame();showPanel('')};
-$('tgSound').onclick=function(){sndOn=!sndOn;if(sndOn){try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}audio();SFX.on()}sync()};
-$('tgCrt').onclick=function(){document.body.classList.toggle('nocrt');sync()};
 $('tgSym').onclick=function(){sym=!sym;document.body.classList.toggle('sym',sym);saveSet();sync()};
 $('tgSwp').onclick=function(){swp=!swp;saveSet();sync();if(G&&G.phase==='dbl')render()};
 $('sPile').onclick=hDraw;
 // Leaving Remi (Exit, or Landscape's ✕ = the build's Exit restyled) forgets Medias: back in Neon, Portrait
-document.addEventListener('click',e=>{const x=e.target.closest&&e.target.closest('#bar .mnu');if(!x||(skin==='neon'&&lay==='port'))return;
- showPanel('');skin='neon';lay='port';applySkin();saveSet();fit();render()},true);
-bR.onclick=()=>showPanel('rules');bS.onclick=()=>showPanel('settings');
-document.addEventListener('click',e=>{if(!panel.hidden&&!panel.contains(e.target)&&!bar.contains(e.target)){e.stopPropagation();e.preventDefault();showPanel('')}},true);
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden)showPanel('')});
+function leave(){if(skin==='neon'&&lay==='port')return;showPanel('');skin='neon';lay='port';applySkin();saveSet();fit();render()}
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#bar .mnu'))leave()},true);
+window.naLeave=leave; // the cover calls this whenever it takes over (Back button included)
+// New game asks "Tap again" only while a match is on
+$('btnNew').onclick=function(){const go=()=>{newGame();showPanel('')};if(inGame())naArm(this,go);else go()};
+naSync=sync;
 
-// ---- fit: short screens, and phone held sideways rotates back to portrait
-function fit(){const de=document.documentElement,W=innerWidth,H=innerHeight,rot=!de.classList.contains('lnd')&&W>H&&H<600&&matchMedia('(pointer:coarse)').matches;let a=0;
- if(rot)a=screen.orientation&&typeof screen.orientation.angle==='number'?screen.orientation.angle:(window.orientation===-90?270:90);
- de.classList.toggle('rot',rot);de.classList.toggle('r270',rot&&a===270);
- const h=rot?W:H;de.classList.toggle('short',h<=640);de.classList.toggle('tiny',h<=520);layout()}
-fit();addEventListener('resize',fit);addEventListener('orientationchange',()=>setTimeout(fit,100));
-try{screen.orientation.addEventListener('change',fit)}catch(e){}
+// ---- fit: the stage (build.py) scales and turns the page; the game only sizes its own parts
+function fit(){layout()}
+fit();addEventListener('resize',fit);
 
 // ---- start: resume a saved game if there is one
 // The saved game is used only if every tile id is real and no tile appears twice
 function okSave(s){const ids=a=>Array.isArray(a)&&a.every(x=>Number.isInteger(x)&&x>=0&&x<106);
- if(!Array.isArray(s.pl)||s.pl.length!==4||!s.pl.every(P=>P&&ids(P.hand))||!ids(s.pile)||!ids(s.disc)||!Array.isArray(s.melds)||!s.melds.every(m=>m&&ids(m.t)&&m.t.length))return false;
+ if(!Array.isArray(s.pl)||s.pl.length!==4||!s.pl.every(P=>P&&ids(P.hand)&&Number.isFinite(P.score))||!ids(s.pile)||!ids(s.disc)||!Array.isArray(s.melds)||!s.melds.every(m=>m&&ids(m.t)&&m.t.length))return false;
  if(!Number.isInteger(s.cur)||s.cur<0||s.cur>3||typeof s.phase!=='string'||!Number.isInteger(s.atu)||s.atu<0||s.atu>105)return false;
+ // scores, round number and round results are written into the page: numbers and plain names only
+ const bw=b=>b==null||(typeof b==='object'&&/^[A-Za-z]{1,12}$/.test(b.nm)&&Number.isFinite(b.pts));
+ if(!Number.isInteger(s.round)||s.round<0||!bw(s.bw))return false;
+ if(s.res!=null&&!(typeof s.res==='object'&&Array.isArray(s.res.pen)&&s.res.pen.length===4&&s.res.pen.every(Number.isFinite)&&bw(s.res.bw)))return false;
  const all=[...s.pile,...s.disc,...s.pl.flatMap(P=>P.hand),...s.melds.flatMap(m=>m.t)];return new Set(all).size===all.length}
 try{localStorage.removeItem('remi_game');const s=JSON.parse(localStorage.getItem('remi_game2')||'null');if(s&&s.pl&&s.pile&&s.jl&&okSave(s))G=s}catch(e){}
 // A saved game that can't be shown (damaged, or from an older version) is dropped and a new game starts
 try{if(G){if(G.phase==='over'){say(G.res?G.res.why:'');render()}else if(G.phase==='dbl'){say(dblMsg());render()}else startTurn()}else newGame()}
-catch(e){token++;clearTimeout(T);G=null;sel.clear();newGame()}
-try{if(!localStorage.getItem('remi-rules-seen')){showPanel('rules');localStorage.setItem('remi-rules-seen','1')}}catch(e){}
+catch(e){token++;G=null;sel.clear();newGame()}
+naFirstRules('remi-rules-seen');
 window.__remi={get G(){return G},get T(){return T},boardBest,boardOuts,hBoard,hSwap,hUndo,dblTiles,analyze,findBest,openFor,trySwap,hLay,hDraw,hTake,hDiscard,hAdd,sel,set lvl(v){lvl=v},set spd(v){spd=v}};
 })();
-</script>
-<script>
-// The bar sits in the layout: keep the Rules/Settings panel opening right above it
-(function(){var b=document.getElementById('bar'),p=document.getElementById('panel'),a=document.getElementById('app');if(!b||!p)return;
- function place(){if(document.documentElement.classList.contains('rot')){var y=0,e=b;while(e&&e!==a){y+=e.offsetTop;e=e.offsetParent}p.style.bottom=Math.max(0,a.clientHeight-y)+'px'}
-  else p.style.bottom=Math.max(0,innerHeight-b.getBoundingClientRect().top)+'px'}
- place();addEventListener('resize',function(){setTimeout(place,0)});
- try{new MutationObserver(place).observe(p,{attributes:true,attributeFilter:['hidden']});new ResizeObserver(place).observe(document.querySelector('main'))}catch(e){}})();
 </script>
 </body>
 </html>

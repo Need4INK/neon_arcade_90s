@@ -9,6 +9,7 @@ at /, /index.html and ?fbclid=x. Expected: no errors anywhere, app ID ending in 
 """
 import os, tempfile
 from harness import ROOT, start_server, chrome_path
+import harness; harness.strict()   # a printed False ends the script with exit code 1
 from playwright.sync_api import sync_playwright
 
 sub = tempfile.mkdtemp()

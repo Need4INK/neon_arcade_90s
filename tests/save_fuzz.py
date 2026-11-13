@@ -15,6 +15,8 @@ POKE="""(()=>{const bs=[...document.querySelectorAll('main button, #app button, 
 BAD="""(()=>{const t=document.body.innerText;const m=t.match(/undefined|NaN|\\[object|Infinity/);return m?m[0]+' in: '+t.slice(Math.max(0,m.index-30),m.index+30).replace(/\\n/g,' '):''})()"""
 pw,b,page=open_page(port,'iphone12')
 def fresh(store):
+    # close any open game first: one left open saves itself when the page closes (Sudoku does) and would overwrite the damaged values
+    page.evaluate("document.querySelectorAll('iframe').forEach(f=>f.remove())")
     page.evaluate("(s)=>{localStorage.clear();for(const k in s)localStorage.setItem(k,s[k]);localStorage.setItem('%s-rules-seen','1');localStorage.setItem('remi-rules-seen','1');localStorage.setItem('ws-rules-seen','1')}"%G, store)
     page.errors.clear(); page.reload(); page.wait_for_timeout(350)
     try: f=open_game(page,G,500)
@@ -63,6 +65,9 @@ for name,store in cases:
         try:
             t=f.evaluate(BAD)
             if t: res.append('text: '+t)
+            f.evaluate("document.getElementById('bSet').click()"); page.wait_for_timeout(80)   # records are shown in Settings
+            t=f.evaluate(BAD)
+            if t: res.append('settings text: '+t)
         except Exception as e: res.append('frame gone')
         if page.errors: res.append('errors: '+' | '.join(sorted(set(page.errors)))[:260])
     if res: bad+=1; print('FAIL',name,'->',' ; '.join(res),flush=True)

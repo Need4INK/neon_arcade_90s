@@ -58,3 +58,5 @@ if __name__ == '__main__':
             print('OUTSIDE', k, v['outside'])
     print(f'{len(new)} screens checked against {ref}: {len(diffs)} differences')
     print('iPhone 12 Knucklebones:', new['iphone12 kb'], '\nflipped:', new['iphone12 kb flip'])
+    bad = len(diffs) + sum(1 for k, v in new.items() if (isinstance(v, dict) and v.get('outside')) or (k.endswith(' errors') and v))
+    sys.exit(1 if bad else 0)

@@ -44,3 +44,4 @@ with sync_playwright() as pw:
         ctx.close()
     b.close()
 print('failures:', len(fails))
+import sys; sys.exit(1 if fails else 0)
