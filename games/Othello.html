@@ -12,18 +12,7 @@
 <link rel="apple-touch-icon" href="icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#07030f;--panel:#10072a;--line:#2e1d66;--ink:#eaf6ff;--mut:#9a8bd6;--mag:#ff2bd6;--cy:#19f3ff;--yel:#ffe94d;--cell:#0b0720;
---px:"Press Start 2P","Courier New",monospace;--vt:"VT323","Courier New",monospace;
-box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark}
-*{box-sizing:border-box}
-html{height:100vh;height:100dvh;overflow:hidden;background:var(--bg)}
-html,body{margin:0;color:var(--ink);font-family:var(--vt);font-size:18px}
-body{height:100%;background:radial-gradient(120% 55% at 50% 0%,rgba(255,43,214,.18),transparent 60%),radial-gradient(120% 45% at 50% 100%,rgba(25,243,255,.13),transparent 60%),#07030f}
-body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9;background:repeating-linear-gradient(to bottom,transparent 0 2px,rgba(0,0,0,.16) 2px 3px)}
-body.nocrt::after{display:none}
-main{max-width:420px;height:100%;margin:0 auto;padding:4px 14px 40px;display:flex;flex-direction:column;justify-content:center}
-h1{font:400 20px/1 var(--px);text-transform:uppercase;letter-spacing:2px;margin:12px 0 8px;text-align:center;color:#fff;text-shadow:0 0 4px #fff,0 0 10px var(--mag),0 0 22px var(--mag),0 0 42px var(--mag);animation:powerOn 1.1s steps(1) 1}
-@keyframes powerOn{0%{opacity:0}8%{opacity:1}12%{opacity:.2}18%{opacity:1}24%{opacity:.4}30%,100%{opacity:1}}
+:root{--cell:#0b0720}
 .ctl{display:flex;justify-content:center;gap:8px;margin:0 0 8px}
 .diff{display:flex;gap:8px}
 .diff button{font:400 9px/1 var(--px);color:var(--cy);background:transparent;border:2px solid var(--cy);border-radius:4px;padding:8.5px 8px;cursor:pointer;text-shadow:0 0 6px var(--cy)}
@@ -61,62 +50,21 @@ h1{font:400 20px/1 var(--px);text-transform:uppercase;letter-spacing:2px;margin:
 .mid{display:flex;align-items:center;justify-content:center;gap:12px;margin:0 0 8px;width:100%;height:56px;flex:none}
 .msg{text-align:center;font-size:22px;line-height:1.05;max-width:100%;min-width:0}
 .msg>div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-button.b{background:transparent;color:var(--yel);border:2px solid var(--yel);border-radius:4px;padding:6px 10px;margin:4px 4px 0;font:400 10px/1.2 var(--px);cursor:pointer;text-shadow:0 0 8px var(--yel);box-shadow:0 0 10px rgba(255,233,77,.5)}
-button.b:active{background:var(--yel);color:#07030f;text-shadow:none}
-button.b:disabled{opacity:.4;cursor:default}
-.bar{position:fixed;left:0;right:0;bottom:0;z-index:21;max-width:420px;margin:0 auto;padding:0 14px env(safe-area-inset-bottom,0px);display:flex;justify-content:space-between}
-.bar button{font:400 10px/1.4 var(--px);color:var(--cy);background:transparent;border:0;padding:11px 0;cursor:pointer}
-.bar button[aria-expanded="true"]{color:var(--yel);text-shadow:0 0 8px var(--yel)}
-.bar button[aria-expanded="true"]::after{content:' \00d7'}
-.panel{position:fixed;left:0;right:0;bottom:calc(36px + env(safe-area-inset-bottom,0px));z-index:20;max-width:420px;margin:0 auto;padding:6px 14px 10px;background:#0d0624;border-top:2px solid var(--cy);box-shadow:0 -10px 30px rgba(0,0,0,.7),0 -2px 12px rgba(25,243,255,.35);max-height:calc(72dvh - 36px);overflow:auto;font-size:19px;color:var(--mut);line-height:1.15}
-.panel p{margin:6px 0}
-.panel b{color:var(--ink);font-weight:400}
-.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
-.lab{font:400 10px/1.4 var(--px);color:var(--ink)}
-:root{--sw:64px;--g:6px}
-@media (max-width:360px){:root{--sw:54px}}
-.seg{display:flex;gap:var(--g)}
-.seg button,.tg{font:400 9px/1 var(--px);color:var(--cy);background:transparent;border:2px solid var(--cy);border-radius:4px;padding:10px 0;text-align:center;white-space:nowrap;cursor:pointer;text-shadow:0 0 6px var(--cy);flex:none}
-.tg{width:var(--sw)}
-.seg button,.tg.big{width:calc(var(--sw)*2 + var(--g))}
-.row>.seg,.row>.tg{margin-left:auto}
-.seg button[aria-pressed="true"],.tg[aria-checked="true"]{background:var(--cy);color:#07030f;text-shadow:none;box-shadow:0 0 12px var(--cy)}
-.seg button:disabled,.tg:disabled{opacity:.45;cursor:default}
-.tg.dng{color:var(--mag);border-color:var(--mag);text-shadow:0 0 6px var(--mag)}
-.tg.dng.arm{background:var(--mag);color:#07030f;text-shadow:none;box-shadow:0 0 12px var(--mag)}
-.note{color:var(--yel);margin:6px 0 0}
-[hidden]{display:none!important}
 #board{transition:border-color .3s,box-shadow .3s}
 #board.tp{border-color:var(--cy);box-shadow:0 0 12px rgba(25,243,255,.6),inset 0 0 14px rgba(25,243,255,.18)}
 #board.tc{border-color:var(--mag);box-shadow:0 0 12px rgba(255,43,214,.6),inset 0 0 14px rgba(255,43,214,.18)}
 .flip .hd.opp{transform:rotate(180deg)}
-#app{height:100%}
-#app.rot{position:fixed;left:0;top:0;transform-origin:0 0}
 #msg2{display:none;transform:rotate(180deg);margin:0 auto 8px}
-.flip main{padding:40px 14px;gap:8px}
-.flip main>*{margin-top:0!important;margin-bottom:0!important}
+.flip main>*:not(h1){margin-top:0!important;margin-bottom:0!important}
 .flip #board{margin:0 auto}
 .hd,.mid{margin-left:auto;margin-right:auto}
 .flip #msg2{display:flex}
-#t2{display:none}
-.flip #t2{display:block}
 .flip #t1{transform:rotate(180deg)}
-.flip.tight #t1,.flip.tight #t2{display:none}
-@media (max-height:600px){html:not(.rotated) h1{font-size:14px;margin:6px 0}html:not(.rotated) .hd{padding:5px 8px}html:not(.rotated) .msg{font-size:20px}}
-@media (max-height:440px){html:not(.rotated) h1{display:none}}
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
-/* Title pinned to the top (like Water Sort); the game sits centred in the space below */
-body:not(.flip) main{justify-content:flex-start}body:not(.flip) #t1{flex:1 1 auto;max-height:calc(3em - 8px)}body:not(.flip) main::after{content:"";flex:1 1 0}
 /* One centred block: title, game, bar. Gaps under the title and above the bar are at most 2x the title height */
-body:not(.flip) main{padding-bottom:16px}body:not(.flip) .mid:not(#msg2){margin-bottom:0}body:not(.flip) main::before{content:"";flex:1 1 0}
-body:not(.flip) .bar{position:relative;left:auto;right:auto;bottom:auto;width:100%;max-width:none;margin:0;padding:0 0 env(safe-area-inset-bottom,0px);flex:1 1 auto;max-height:calc(76px + env(safe-area-inset-bottom,0px));align-items:flex-end;align-content:end}
-.short body:not(.flip) .bar{max-height:calc(64px + env(safe-area-inset-bottom,0px))}
-/* Same frame in every game: at most 720px tall and centred; title at its top, bar at its bottom, the game centred between */
-#app{display:flex;flex-direction:column}
-body:not(.flip) main{width:100%;max-height:720px;margin:auto}
-body:not(.flip) main::before,body:not(.flip) main::after{display:none}
-body:not(.flip) #t1{flex:1 1 auto;max-height:none}
-body:not(.flip) .bar{flex:1 1 auto;max-height:none}
+body:not(.flip) .mid:not(#msg2){margin-bottom:0}
+/* differs from the shared core */
+button.b{margin:4px 4px 0}
+.seg button{width:calc(2*var(--sw) + var(--sg))}
 </style>
 </head>
 <body>
@@ -130,7 +78,7 @@ body:not(.flip) .bar{flex:1 1 auto;max-height:none}
 <div class="hd you" id="hdY"><span id="yn">You <small id="ys"></small></span><b id="ps">2</b></div>
 <div class="mid"><div class="msg" id="msg" role="status" aria-live="polite"></div></div>
 <h1 id="t2" aria-hidden="true">Othello</h1>
-<nav class="bar" id="bar"><button type="button" id="bRules" aria-expanded="false">Rules</button><button type="button" id="bSet" aria-expanded="false">Settings</button></nav>
+<nav class="bar" id="bar"><button type="button" id="bRules" aria-expanded="false">Rules</button><button type="button" class="mnu">Exit</button><button type="button" id="bSet" aria-expanded="false">Settings</button></nav>
 <section class="panel" id="panel" hidden>
 <div id="pRules" hidden>
 <p>Place a disc so that it <b>sandwiches</b> a straight line (across, down or diagonal) of your opponent's discs between it and another of yours.</p>
@@ -141,7 +89,7 @@ body:not(.flip) .bar{flex:1 1 auto;max-height:none}
 <div id="pSet" hidden>
 <div class="row"><span class="lab">Mode</span><div class="seg" id="modeSeg"><button type="button" data-m="cpu">P1 vs CPU</button><button type="button" data-m="2p">P1 vs P2</button></div></div>
 <div class="row" id="rowFlip" hidden><span class="lab">Flip top player</span><button type="button" class="tg" id="tgFlip" role="switch" aria-checked="false">Off</button></div>
-<div class="row"><span class="lab">Allow undo of own last move</span><button type="button" class="tg" id="tgUndo" role="switch" aria-checked="true">On</button></div>
+<div class="row"><span class="lab">Allow undo</span><button type="button" class="tg" id="tgUndo" role="switch" aria-checked="true">On</button></div>
 <div class="row"><span class="lab">Move hints</span><button type="button" class="tg" id="tgHint" role="switch" aria-checked="true">On</button></div>
 <div class="row"><span class="lab">Sound</span><button type="button" class="tg" id="tgSound" role="switch" aria-checked="false">Off</button></div>
 <div class="row"><span class="lab">Scanlines</span><button type="button" class="tg" id="tgCrt" role="switch" aria-checked="true">On</button></div>
@@ -157,10 +105,8 @@ var WT=[[100,-20,10,5,5,10,-20,100],[-20,-50,-2,-2,-2,-2,-50,-20],[10,-2,1,1,1,1
 var bd,turn,over,last,fresh=[],hist=[],busy=false,mode='cpu',gid=0,hints=true,undoOn=true,floor=0;
 var S={diff:'normal',w:0,l:0,t:0,p1:0,p2:0,pt:0};
 try{var sv=JSON.parse(localStorage.getItem('oth-stats'));if(sv)for(var sk in S)if(sk in sv&&typeof sv[sk]===typeof S[sk]&&(typeof sv[sk]!=='number'||(isFinite(sv[sk])&&sv[sk]>=0)))S[sk]=sv[sk]}catch(e){} // damaged saved values are ignored
+if(['easy','normal','hard'].indexOf(S.diff)<0)S.diff='normal';
 // ---- sound (same chip-tune style as Knucklebones)
-var AC=null,sndOn=false;
-function audio(){if(!AC){try{var X=window.AudioContext||window.webkitAudioContext;AC=X?new X():null}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
-function tone(f,d,type,vol,when,to){var a=audio();if(!a)return;var t=a.currentTime+(when||0),o=a.createOscillator(),g=a.createGain();o.type=type||'square';o.frequency.setValueAtTime(f,t);if(to)o.frequency.exponentialRampToValueAtTime(to,t+d);g.gain.setValueAtTime(vol||.06,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.02)}
 var SFX={on:function(){tone(660,.1,'square',.18);tone(990,.16,'square',.18,.11)},
  place:function(){tone(520,.09,'square',.16,0,880)},opp:function(){tone(300,.1,'square',.14,0,180)},
  flip:function(n){for(var i=0;i<Math.min(n,6);i++)tone(700+i*90,.05,'square',.1,.08+i*.05)},
@@ -168,7 +114,7 @@ var SFX={on:function(){tone(660,.1,'square',.18);tone(990,.16,'square',.18,.11)}
  win:function(){[523,659,784,1047].forEach(function(f,i){tone(f,.12,'square',.15,i*.1)});tone(1047,.4,'square',.15,.4)},
  loss:function(){[392,330,262,196].forEach(function(f,i){tone(f,.18,'square',.15,i*.14)})},
  tie:function(){tone(440,.14,'square',.15);tone(440,.2,'square',.15,.18)}};
-function sfx(n,a){if(!sndOn)return;try{SFX[n](a)}catch(e){}}
+naSfx=SFX;
 // ---- rules
 function inB(r,c){return r>=0&&r<N&&c>=0&&c<N}
 function flips(b,r,c,p){if(b[r][c])return[];var out=[];DIRS.forEach(function(d){var line=[],i=r+d[0],j=c+d[1];while(inB(i,j)&&b[i][j]===-p){line.push([i,j]);i+=d[0];j+=d[1]}if(line.length&&inB(i,j)&&b[i][j]===p)out=out.concat(line)});return out}
@@ -194,7 +140,8 @@ function cpuPick(){var ms=moves(bd,C);
  var pick=at(4);if(empt>10)return pick;
  DL=Date.now()+700;try{for(var d=6;d<=8;d+=2)pick=at(d)}catch(e){if(e!=='T')throw e}DL=0;return pick}
 // Saved record vs the CPU per difficulty (wins, losses, ties)
-var REC={};try{REC=JSON.parse(localStorage.getItem('oth-rec'))||{}}catch(e){}
+var REC={};try{REC=cleanRec(JSON.parse(localStorage.getItem('oth-rec')))}catch(e){}
+function cleanRec(o){var r={};if(o&&typeof o==='object')['easy','normal','hard'].forEach(function(d){var a=o[d];if(Array.isArray(a))r[d]=[0,1,2].map(function(i){var v=a[i];return typeof v==='number'&&isFinite(v)&&v>=0?Math.floor(v):0})});return r}
 function addRec(k,i){var r=REC[k]||(REC[k]=[0,0,0]);r[i]++;try{localStorage.setItem('oth-rec',JSON.stringify(REC))}catch(e){}}
 try{if(!localStorage.getItem('oth-stats'))['easy','normal','hard'].forEach(function(d){var r=REC[d];if(r){S.w+=r[0];S.l+=r[1];S.t+=r[2]}})}catch(e){}
 function recText(){return 'Won vs CPU: '+['easy','normal','hard'].map(function(d){var r=REC[d]||[0,0,0];return d[0].toUpperCase()+d.slice(1)+' '+r[0]+'/'+(r[0]+r[1]+r[2])}).join(' · ')}
@@ -251,7 +198,7 @@ function loadG(){try{var g=JSON.parse(localStorage.getItem('oth-game'));if(!g)re
  if(g.over||!Array.isArray(g.bd)||g.bd.length!==N||!Array.isArray(g.hist)||!g.hist.length)return false;
  if(!g.bd.every(function(r){return Array.isArray(r)&&r.length===N&&r.every(function(v){return v===0||v===P||v===C})}))return false; // a damaged save starts a fresh game
  if(!g.hist.every(function(h){return h&&Array.isArray(h.bd)&&h.bd.length===N}))return false;
- gid++;bd=g.bd;turn=g.turn===C?C:P;over=false;last=g.last;hist=g.hist;floor=g.floor||0;busy=false;fresh=[];mode=g.mode==='2p'?'2p':'cpu';
+ gid++;bd=g.bd;turn=g.turn===C?C:P;over=false;last=g.last;hist=g.hist;floor=typeof g.floor==='number'&&g.floor>=0&&g.floor<=hist.length?Math.floor(g.floor):0;busy=false;fresh=[];mode=g.mode==='2p'?'2p':'cpu';
  document.body.classList.toggle('flip',mode==='2p'&&!!g.flip);next('');return true}catch(e){return false}}
 function oneLine(d){d.style.fontSize='';var f=parseFloat(getComputedStyle(d).fontSize);while(d.scrollWidth>d.clientWidth&&f>14){f-=1;d.style.fontSize=f+'px'}}
 // vs CPU the CPU replies instantly, so Undo takes back your move and the CPU's reply.
@@ -275,28 +222,17 @@ function renderDiff(){var el=document.getElementById('diff');el.innerHTML='';
 var flashT=null;function flash(t){var e=document.querySelector('#msg>div');if(!e)return;var old=e.getAttribute('data-m')!=null?e.getAttribute('data-m'):e.textContent;clearTimeout(flashT);e.setAttribute('data-m',old);e.textContent=t;oneLine(e);
  flashT=setTimeout(function(){var x=document.querySelector('#msg>div');if(x===e&&x.textContent===t){x.textContent=old;x.removeAttribute('data-m');oneLine(x)}},2500)}
 // ---- panel
-var panel=document.getElementById('panel'),bar=document.getElementById('bar'),pR=document.getElementById('pRules'),pS=document.getElementById('pSet'),bR=document.getElementById('bRules'),bS=document.getElementById('bSet'),cancelT=null;
-function showPanel(n){var cur=panel.hidden?'':panel.dataset.p,nx=n&&n!==cur?n:'';panel.hidden=!nx;panel.dataset.p=nx;pR.hidden=nx!=='rules';pS.hidden=nx!=='settings';
- bR.setAttribute('aria-expanded',nx==='rules');bS.setAttribute('aria-expanded',nx==='settings');if(nx==='settings')sync()}
-function setSw(id,on){var b=document.getElementById(id);b.setAttribute('aria-checked',on?'true':'false');b.textContent=on?'On':'Off'}
 function sync(){var lock=inGame();
  document.querySelectorAll('#modeSeg button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.m===mode?'true':'false');b.disabled=lock});
  document.getElementById('lockNote').textContent=lock?'Mode is locked until this game ends or is cancelled.':'';document.getElementById('recNote').textContent=recText();
- var cb=document.getElementById('btnCancel');cb.disabled=!lock;clearTimeout(cancelT);cb.classList.remove('arm');cb.textContent='Cancel game';
+ var cb=document.getElementById('btnCancel');cb.disabled=!lock;naDisarm(cb);
  setSw('tgSound',sndOn);setSw('tgCrt',!document.body.classList.contains('nocrt'));setSw('tgHint',hints);setSw('tgUndo',undoOn);setSw('tgFlip',document.body.classList.contains('flip'));document.getElementById('rowFlip').hidden=mode!=='2p'}
 document.querySelectorAll('#modeSeg button').forEach(function(b){b.onclick=function(){if(b.disabled||mode===b.dataset.m)return;mode=b.dataset.m;if(mode!=='2p')document.body.classList.remove('flip');start();sync()}});
-document.getElementById('tgSound').onclick=function(){sndOn=!sndOn;if(sndOn){try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}audio();SFX.on()}sync()};
 document.getElementById('tgFlip').onclick=function(){document.body.classList.toggle('flip');render(document.querySelector('#msg div').textContent);sync()};
-document.getElementById('tgCrt').onclick=function(){document.body.classList.toggle('nocrt');sync()};
 document.getElementById('tgUndo').onclick=function(){undoOn=!undoOn;render(document.querySelector('#msg div').textContent);sync()};
 document.getElementById('tgHint').onclick=function(){hints=!hints;render(document.querySelector('#msg div').textContent);sync()};
-document.getElementById('btnCancel').onclick=function(){var b=this;if(b.disabled)return;
- if(!b.classList.contains('arm')){b.classList.add('arm');b.textContent='Tap again';clearTimeout(cancelT);cancelT=setTimeout(function(){b.classList.remove('arm');b.textContent='Cancel game'},3000);return}
- clearTimeout(cancelT);start();showPanel('')};
-bR.onclick=function(){showPanel('rules')};bS.onclick=function(){showPanel('settings')};
-try{if(!localStorage.getItem('oth-rules-seen')){showPanel('rules');localStorage.setItem('oth-rules-seen','1')}}catch(e){}
-document.addEventListener('click',function(e){if(!panel.hidden&&!panel.contains(e.target)&&!bar.contains(e.target)){e.stopPropagation();e.preventDefault();showPanel('')}},true);
-document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!panel.hidden)showPanel('')});
+document.getElementById('btnCancel').onclick=function(){naArm(this,function(){start();showPanel('')})};
+naSync=sync;naFirstRules('oth-rules-seen');
 // Size the board as it would be in vs-CPU mode, and use that size in every mode.
 var ctlH=38;
 function fit(){var mn=document.querySelector('main'),b=document.getElementById('board'),cs=getComputedStyle(mn),
@@ -306,29 +242,10 @@ function fit(){var mn=document.querySelector('main'),b=document.getElementById('
  w=mn.clientWidth-28,
  h=mn.clientHeight-4-40-16-t1H-ctlH-document.getElementById('hdO').offsetHeight-document.getElementById('hdY').offsetHeight-document.querySelector('#msg').parentNode.offsetHeight-8;
  var sz=Math.max(160,Math.floor(Math.min(w,h)))+'px';b.style.width=sz;
- ['hdO','hdY','msg2'].forEach(function(id){document.getElementById(id).style.width=sz});document.querySelector('#msg').parentNode.style.width=sz;
- var bo=document.body;if(bo.classList.contains('flip')&&!document.documentElement.classList.contains('rotated')){bo.classList.remove('tight');
-  if(document.getElementById('t2').getBoundingClientRect().bottom>document.getElementById('bar').getBoundingClientRect().top)bo.classList.add('tight')}}
-// Keep the game in portrait when a phone is turned sideways: rotate the whole app back upright.
-function orient(){var app=document.getElementById('app'),W=innerWidth,H=innerHeight,
- coarse=matchMedia('(pointer:coarse)').matches,land=W>H&&H<600&&coarse;
- document.documentElement.classList.toggle('rotated',land);
- if(!land){app.className='';app.style.cssText='';fit();return}
- var ang=(screen.orientation&&screen.orientation.angle!=null)?screen.orientation.angle:(window.orientation||90);ang=((ang%360)+360)%360;
- app.className='rot';app.style.width=H+'px';app.style.height=W+'px';
- app.style.transform=ang===270?'translateX('+W+'px) rotate(90deg)':'translateY('+H+'px) rotate(-90deg)';fit()}
-window.addEventListener('resize',orient);
-if(screen.orientation)screen.orientation.addEventListener('change',function(){setTimeout(orient,50)});
+ ['hdO','hdY','msg2'].forEach(function(id){document.getElementById(id).style.width=sz});document.querySelector('#msg').parentNode.style.width=sz}
 
-if(!loadG())start();orient();
-</script>
-<script>
-// The bar sits in the layout: keep the Rules/Settings panel opening right above it
-(function(){var b=document.getElementById('bar'),p=document.getElementById('panel'),a=document.getElementById('app');if(!b||!p)return;
- function place(){if(document.documentElement.classList.contains('rot')){var y=0,e=b;while(e&&e!==a){y+=e.offsetTop;e=e.offsetParent}p.style.bottom=Math.max(0,a.clientHeight-y)+'px'}
-  else p.style.bottom=Math.max(0,innerHeight-b.getBoundingClientRect().top)+'px'}
- place();addEventListener('resize',function(){setTimeout(place,0)});
- try{new MutationObserver(place).observe(p,{attributes:true,attributeFilter:['hidden']});new ResizeObserver(place).observe(document.querySelector('main'))}catch(e){}})();
+addEventListener('resize',fit);
+if(!loadG())start();fit();
 </script>
 </body>
 </html>

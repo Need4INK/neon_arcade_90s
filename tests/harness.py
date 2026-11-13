@@ -13,7 +13,7 @@ viewport 390x797, screen 390x844, window.__SAFE={t:47,b:34} on the cover and .ba
 in each game. The page then lays out 844 tall, so use full_page=True for screenshots that show the bar.
 Needs: pip install playwright (Chrome is taken from $CHROME, /usr/bin/google-chrome, or Playwright's own).
 """
-import functools, http.server, os, shutil, threading
+import functools, http.server, os, shutil, sys, threading
 from playwright.sync_api import sync_playwright
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -35,6 +35,22 @@ def chrome_path():
         if p and os.path.exists(p):
             return p
     return None  # Playwright's bundled Chromium
+
+
+def strict():
+    """For the automatic checks on GitHub: after this, a printed False or a non-empty "console errors" list makes the
+    script end with exit code 1 (the scripts otherwise only print what they find)."""
+    import builtins, atexit
+    bad = []; real = builtins.print
+    def p(*a, **k):
+        if any(x is False for x in a) or (len(a) > 1 and isinstance(a[0], str) and 'console errors' in a[0] and a[1]):
+            bad.append(a)
+        real(*a, **k)
+    builtins.print = p
+    def done():
+        if bad:
+            real('FAILED checks:', len(bad)); sys.stdout.flush(); os._exit(1)
+    atexit.register(done)
 
 
 def start_server(port, root=ROOT):

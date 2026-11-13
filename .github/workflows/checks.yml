@@ -1,0 +1,38 @@
+# Runs on every pull request, before it is merged (deploy = open the PR, wait for this to pass, merge).
+# It rebuilds the page and runs the quick checks from tests/ in a headless Chrome.
+name: checks
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # layout_compare reads the page on main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test tools (not part of the site)
+        run: |
+          pip install playwright fonttools
+          python -m playwright install --with-deps chromium
+      - name: index.html is a fresh build of the sources
+        run: python3 tests/build_check.py
+      - name: Template positions (title, bar) unchanged from main, nothing outside the stage, no errors
+        run: python3 tests/layout_compare.py origin/main
+      - name: Exit and Back button
+        run: python3 tests/exit_check.py
+      - name: Shared core in every game (panel, Sound and Scanlines, Tap again, Exit)
+        run: python3 tests/core_check.py
+      - name: Saved games resume
+        run: python3 tests/resume_check.py
+      - name: Installs and works offline
+        run: python3 tests/install_check.py

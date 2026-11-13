@@ -6,6 +6,7 @@ Knucklebones (also during the CPU's turn), Othello, Water Sort, Sudoku; also tha
 adds to the saved record and starts fresh. Remi has its own checks in remi_check.py. iPhone 12 simulation.
 """
 from harness import start_server, open_page, open_game, to_cover
+import harness; harness.strict()   # a printed False ends the script with exit code 1
 
 port = start_server(8833)
 pw, b, page = open_page(port, 'iphone12')

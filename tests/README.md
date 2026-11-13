@@ -14,10 +14,17 @@ Needs Python 3 with `playwright` (and `pillow` for the icon preview). Chrome is 
 | `icon_preview.py` | `icon-maskable.png` cut to the common Android launcher shapes (writes `tests/out/android_icon_preview.png`). |
 | `colour_blind_check.py` | How far apart the colours that carry meaning stay under the three kinds of colour blindness (Water Sort liquids, Remi tile colours, Othello discs). Needs `numpy` and `scikit-image`. |
 | `a11y_check.py` | Text contrast and tap-target sizes on the cover and every game (game, Rules, Settings), plus colour-blind screenshots of Water Sort and Remi in `tests/out/`. Dimmed (switched-off) buttons are listed too; those are expected. |
-| `save_fuzz.py game port` | Damaged saved data: each saved value garbled, cut, or with fields deleted / of the wrong type, and storage blocked. The game must still open and play. |
+| `save_fuzz.py game port` | Damaged saved data: each saved value garbled, cut, or with fields deleted / of the wrong type, and storage blocked. The game must still open and play, with no "undefined"/"NaN" on screen or in Settings. Closes any open game before damaging the values (Sudoku saves itself when the page closes). |
 | `referee.py oth\|kb [games]` | Auto-played Othello and Knucklebones games checked move by move against an independent copy of the rules. |
-| `puzzle_check.py sdk\|ws` | Sudoku puzzles have exactly one solution (independent solver) and play through; Water Sort levels are solved by a separate solver and played by tapping with Accessibility on. |
+| `puzzle_check.py sdk N` / `puzzle_check.py ws` | Sudoku puzzles have exactly one solution (independent solver) and play through; Water Sort levels are solved by a separate solver and played by tapping with Accessibility on. |
+| `core_check.py` | What every game gets from the shared core, in each of the five: Rules open the first time only, panel toggles / outside tap / Escape, Sound and Scanlines shared and reset on reopening, a hidden game is quiet, "Tap again" on the red button, Exit, Remi forgets Medias on Exit and Back. |
+| `build_check.py` | `index.html` is exactly what `games/build.py` makes from the sources (packed fonts left out of the comparison). |
+| `style_snapshot.py save NAME [folder] [sizes]` / `compare A B` | For clean-ups that must not change the look: records every element's position and styles on every screen (cover, games in play, Rules, Settings, flipped modes, stress states, Remi Medias and Landscape) at six sizes, with fixed random numbers; `compare` lists every difference. Two snapshots of one build compare equal. |
+| `device_sweep.py [sizes]` | Every screen (cover, games, Rules, Settings, flipped modes, Remi Medias and Landscape, stress states) at 36 screen sizes: phones, tablets, laptops. Nothing cut off, outside the stage, overlapping or clipped; no errors. About 25 min for all sizes. |
 | `monkey.py game port seed [x] [rounds]` | Random fast taps, double taps and reloads, then consistency and stuck-CPU checks. Run one or two at a time (many at once time out). |
 | `exit_check.py` | Exit always brings back the cover: normal window, a window that ignores the step back (Chrome app installed on Windows), several instant taps on Exit or a card, and the Back button. |
 
 Notes: Water Sort keeps its state inside the page's closure, so deep scripted tests of it need a test-only copy of the game that exposes it (never committed). Real-phone things (iPhone clipping, Android launchers) still need a real device.
+
+## On GitHub
+`.github/workflows/checks.yml` runs `build_check`, `layout_compare origin/main`, `exit_check`, `core_check`, `resume_check` and `install_check` on every pull request. These six end with exit code 1 when something is wrong (`harness.strict()` turns a printed `False` or console errors into a failure); the other scripts only print what they find.

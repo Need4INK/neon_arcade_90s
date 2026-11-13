@@ -1,11 +1,15 @@
 """Packs the Neon Arcade games and the cover page into one HTML file.
 
-Usage:  python3 build.py Knucklebones.html Othello.html Water_Sort.html Sudoku.html Remi.html Neon-Arcade.html
+Usage:  python3 games/build.py games/Knucklebones.html games/Othello.html games/Water_Sort.html games/Sudoku.html games/Remi.html index.html
 
-Each game stays a normal standalone page. This script only adds the green Exit button
-to each game's bottom bar and wraps all five in the cover page (cards, flicker title,
-portrait lock, offline service-worker registration). Publish the output next to
-sw.js, manifest.json and icon.png.
+A game file holds only what is its own (play area, rules, sounds). Everything the games share lives next to this script
+and is put into each game here:
+  core.css   the page, the 390 x 797 template, the bottom bar, the Rules/Settings panel and its rows
+  stage.js   scales (and, on a sideways phone, turns) the template to fit the screen
+  core.js    sound, the panel, switches, "Tap again", Exit, Sound/Scanlines shared between games
+So a game file no longer works when opened on its own. Each game runs in its own full-screen iframe inside the cover
+page (cards, flicker title, share pop-up, offline service-worker registration). Publish the output next to sw.js,
+manifest.json and the icons.
 """
 import json, sys
 kb = open(sys.argv[1], encoding='utf-8').read()
@@ -15,92 +19,31 @@ sdk = open(sys.argv[4], encoding='utf-8').read()
 rem = open(sys.argv[5], encoding='utf-8').read()
 out = sys.argv[6]
 
-MENU_CSS = '.bar .mnu{color:#39ff7a!important;text-shadow:0 0 6px #39ff7a!important}'
-# Exit button in each game's bottom bar: closes any open panel (games close it on Escape), then shows the cover.
-MENU_BTN = '<button type="button" class="mnu" onclick="try{document.dispatchEvent(new KeyboardEvent(\'keydown\',{key:\'Escape\'}))}catch(e){}try{parent.kbShowCover()}catch(e){}">Exit</button>'
-CENTRE = '.bar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}#bRules{justify-self:start}#bar .mnu{justify-self:center}#bSet{justify-self:end}'
+import os
+HERE = os.path.dirname(os.path.abspath(__file__))
+def part(name):
+    return open(os.path.join(HERE, name), encoding='utf-8').read()
 
-# Knucklebones: bar is already a 3-column grid, middle column is free
-kb = kb.replace('</style>', '#bar .mnu{grid-column:2;justify-self:center}' + MENU_CSS + '</style>', 1)
-kb = kb.replace('aria-controls="panel">Rules</button>', 'aria-controls="panel">Rules</button>' + MENU_BTN, 1)
-# Othello, Water Sort, Sudoku and Remi: turn the two-button bar into three columns so Exit sits exactly in the middle
-for name in ('oth', 'ws', 'sdk', 'rem'):
-    g = globals()[name]
-    g = g.replace('</style>', CENTRE + MENU_CSS + '</style>', 1)
-    g = g.replace('id="bRules" aria-expanded="false">Rules</button>', 'id="bRules" aria-expanded="false">Rules</button>' + MENU_BTN, 1)
-    globals()[name] = g
-assert all(g.count('class="mnu"') == 1 for g in (kb, oth, ws, sdk, rem))
-
-# Stage: every screen (cover and games) is a 390 x 797 block laid out for the iPhone 12 (banner 64 + game area 667 + bar 36 +
-# gap 30), placed below the top safe inset and scaled as one, evenly, to fit; other screen shapes get plain background around it.
-# The iframe fills the whole screen; the cover tells each game the safe-area insets, which iOS doesn't pass into iframes.
+# Sizing shared by the cover and the games' stage (see stage.js)
 NACALC = ("var NA_W=390,NA_H=797;function naCalc(s,W,H,rot,r270){var w=W-s.l-s.r,h=H-s.t,cw=rot?h:w,ch=rot?w:h,"
           "k=Math.min(cw/NA_W,ch/NA_H),sh=NA_H,a=rot?(r270?90:-90):0;return {k:k,sh:sh,a:a,"
           "st:'translate('+(s.l+w/2)+'px,'+(s.t+h/2)+'px) rotate('+a+'deg) scale('+k+') translate('+(-NA_W/2)+'px,'+(-sh/2)+'px)'}}")
-STAGE = ('<style>html.stg #app{position:fixed!important;left:0!important;top:0!important;right:auto!important;bottom:auto!important;'
-         'width:var(--stw,390px)!important;height:var(--sh)!important;margin:0!important;transform-origin:0 0!important;transform:var(--st)!important}'
-         # one background for the whole screen: on the html (some games only painted the body, which iOS can leave short)
-         'html.stg{padding:0!important;height:100%!important;background:linear-gradient(#07030f,rgba(7,3,15,0) 64px),radial-gradient(120% 55% at 50% 0%,rgba(255,43,214,.18),transparent 60%),radial-gradient(120% 45% at 50% 100%,rgba(25,243,255,.13),transparent 60%),#07030f!important}'
-         'html.stg body{background:transparent!important}html.stg.rot #app,html.stg #app{background:transparent!important;padding:0!important}'
-         # Template (iPhone 12 reference, stage 390 x 797 below the status bar):
-         #   1-player: banner 64 (title centred) / game area 667 (game centred) / bar 36 (buttons flush with its bottom edge) / gap 30
-         #   2-player flipped: banner 64 / game area 603 / banner 64 (second title) / bar 36 / gap 30
-         # iOS gives the home-bar inset inside the games: the bars must not add it
-         "html.stg main{max-width:none!important;max-height:none!important;width:100%!important;height:100%!important;margin:0!important}"
-         "html.stg body:not(.flip) main{padding:0 14px 30px!important;justify-content:flex-start!important}"
-         "html.stg main>h1:not(#t2){flex:none!important;height:64px!important;max-height:none!important;display:flex!important;align-items:center;justify-content:center;font-size:20px!important}"
-         "html.stg body:not(.flip) main>h1:not(#t2){margin:0 0 auto!important}"
-         "html.stg body:not(.flip) .bar{position:relative!important;inset:auto!important;flex:none!important;height:36px!important;max-height:none!important;margin:auto 0 0!important;padding:0!important;width:100%!important;max-width:none!important}"
-         "html.stg .bar{display:grid!important;grid-template-columns:1fr auto 1fr!important;align-items:end!important;align-content:end!important}"
-         "html.stg .bar button{padding:22px 0 0!important}"
-         # Rules/Settings panel: same height cap in stage units on every screen (the games' own 72dvh used the unscaled
-         # screen, so panels were shorter and scrolled on small phones and sideways); 572 = what the iPhone 12 had
-         "html.stg .panel{max-height:572px!important}"
-         "html.stg body.flip main{padding:0 14px 66px!important;gap:8px!important;justify-content:flex-start!important}"
-         "html.stg body.flip main>h1:not(#t2){margin:0 0 auto!important}"
-         "html.stg body.flip main>.ttl2,html.stg body.flip main>#t2{flex:none!important;height:64px!important;max-height:none!important;display:flex!important;align-items:center;justify-content:center;font-size:20px!important;margin:auto 0 0!important}"
-         "html.stg body.flip .bar{position:absolute!important;left:0!important;right:0!important;top:auto!important;bottom:30px!important;height:36px!important;margin:0!important;padding:0 14px!important;max-width:none!important}"
-         "</style>\n"
-         '<script>(function(){var de=document.documentElement;de.classList.add("stg");' + NACALC +
-         # Remi's Medias landscape layout (html.lnd) is a 750 x 390 block, turned a quarter only when the screen is upright
-         'function st(){var L=de.classList.contains("lnd"),W=innerWidth,H=innerHeight,rot=L?W<H:W>H&&H<600&&matchMedia("(pointer:coarse)").matches,a=0;'
-         'var s={t:0,r:0,b:0,l:0};try{s=parent.__safe()}catch(e){}'
-         'NA_W=L?750:390;NA_H=797;if(L){var cw=rot?H-s.t-s.b:W-s.l-s.r,ch=rot?W-s.l-s.r:H-s.t;NA_H=Math.max(390,Math.min(560,Math.round(750*ch/cw)))}de.style.setProperty("--stw",NA_W+"px");'
-         'if(rot&&!L){a=screen.orientation&&typeof screen.orientation.angle==="number"?screen.orientation.angle:(window.orientation===-90?270:90)}'
-         'var r=naCalc(s,W,L&&rot?H-s.b:H,rot,a===270);'
-         'de.style.setProperty("--sh",r.sh+"px");de.style.setProperty("--st",r.st)}'
-         'window.naSt=st;st();addEventListener("resize",st);addEventListener("orientationchange",function(){setTimeout(st,90)});'
-         # the stage is never short, so drop the games' short-screen classes
-         'try{new MutationObserver(function(){if(de.classList.contains("short"))de.classList.remove("short");if(de.classList.contains("tiny"))de.classList.remove("tiny")}).observe(de,{attributes:true,attributeFilter:["class"]})}catch(e){}'
-         '})()</script>\n')
-PANEL_A = "function place(){if(document.documentElement.classList.contains('rot')){"
-PANEL_B = "function place(){if(document.documentElement.classList.contains('rot')||document.documentElement.classList.contains('stg')){"
-GAME_CSS = {
-    # Knucklebones: boards grow to fill the game area, 8pt clear of its edges; no difficulty row in 2-player
-    'kb': 'html.stg body:not(.flip) .side{flex-grow:8}html.stg body:not(.flip) .ctl{margin:8px 0!important}'
-          'html.stg body:not(.flip) .ctl[hidden]+.side.opp{margin-top:8px}html.stg body:not(.flip) .side.you{margin-bottom:8px}',
-    'oth': 'html.stg body:not(.flip) .mid:not(#msg2){margin-bottom:0!important}html.stg .flip.tight #t1,html.stg .flip.tight #t2{display:flex!important}',
-    'ws': '', 'sdk': '',
-    # Remi: the game fills the game area, 8pt clear of the banner and the bar; the table takes all the room left (it scrolls if it needs more)
-    'rem': 'html.stg #game{flex:1 1 auto!important;min-height:0;margin:8px 0;justify-content:flex-start}'
-           'html.stg #table{flex:1 1 0!important;height:auto!important;min-height:96px}',
-}
+CORE_CSS = '<style>\n' + part('core.css') + '</style>\n'
+STAGE_JS = '<script>\n' + part('stage.js').replace('__NACALC__', NACALC) + '</script>\n'
+CORE_JS = '<script>\n' + part('core.js') + '</script>\n'
 for name in ('kb', 'oth', 'ws', 'sdk', 'rem'):
     g = globals()[name]
-    assert g.count('</head>') == 1 and g.count(PANEL_A) == 1, name
-    css = '<style>' + GAME_CSS[name] + '</style>\n' if GAME_CSS[name] else ''
-    globals()[name] = g.replace('</head>', STAGE + css + '</head>', 1).replace(PANEL_A, PANEL_B, 1)
-# Remi sizes its table from the room left: count the full banner height, not just the title's font size
-RH = 'parseFloat(hs.fontSize)+parseFloat(hs.marginTop)'
-assert rem.count(RH) == 1
-rem = rem.replace(RH, 'h.offsetHeight+parseFloat(hs.marginTop)', 1)
+    # the shared styles come first so a game's own rules can differ from them; the stage runs before the page is drawn;
+    # the shared script sits right in front of the game's own (the page is built by then)
+    assert g.count('<style>') == 1 and g.count('<script>') == 1 and g.count('class="mnu"') == 1, name
+    globals()[name] = g.replace('<script>', CORE_JS + '<script>', 1).replace('<style>', CORE_CSS + STAGE_JS + '<style>', 1)
 
 # Fonts: if games/fonts/ holds PressStart2P-Regular and VT323-Regular (.woff2, .woff or .ttf), they are packed
 # into the page so the games never depend on Google Fonts (works offline even if the fonts were never saved).
 # The cover declares them once; each game copies that declaration from the cover when it loads.
-import base64, io, os
+import base64, io
 GLINK = '<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">'
-FDIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fonts')
+FDIR = os.path.join(HERE, 'fonts')
 def font_face(name, family):
     for ext in ('woff2', 'woff', 'ttf'):
         f = os.path.join(FDIR, name + '.' + ext)
@@ -110,7 +53,7 @@ def font_face(name, family):
         try:  # keep only the characters the games use, saved as compressed woff
             from fontTools import subset
             from fontTools.ttLib import TTFont
-            ft = TTFont(io.BytesIO(data))
+            ft = TTFont(io.BytesIO(data), recalcTimestamp=False)  # same bytes on every build
             o = subset.Options(); o.flavor = 'woff'; o.ignore_missing_unicodes = True; o.name_IDs = ['*']  # keeps the OFL licence text in the font
             sub = subset.Subsetter(o)
             sub.populate(unicodes=list(range(0x20, 0x7f)) + list(range(0xa0, 0x180)) + list(range(0x2010, 0x2050)) + [0x2190, 0x2192, 0x2605, 0x25ae, 0x2713, 0xd7])
@@ -164,8 +107,10 @@ page = r'''<!DOCTYPE html>
 <style>
 :root{--bg:#07030f;--panel:#10072a;--line:#2e1d66;--ink:#eaf6ff;--mut:#9a8bd6;--mag:#ff2bd6;--cy:#19f3ff;--yel:#ffe94d;--die:#0b0720;--or:#ff9e2c;--rd:#e8566a;
 --px:"Press Start 2P","Courier New",monospace;--vt:"VT323","Courier New",monospace;color-scheme:dark}
-*{box-sizing:border-box}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--vt);font-size:18px}
+body{touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+@media (hover:hover) and (pointer:fine){.card:hover,.sbox button:hover{filter:brightness(1.25)}}
 #cover{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;justify-content:safe center;gap:22px;
  padding:calc(20px + env(safe-area-inset-top,0px)) 18px calc(20px + env(safe-area-inset-bottom,0px));overflow:auto;
  background:linear-gradient(#07030f,rgba(7,3,15,0) 64px),radial-gradient(120% 55% at 50% 0%,rgba(255,43,214,.2),transparent 60%),radial-gradient(120% 45% at 50% 100%,rgba(25,243,255,.15),transparent 60%),var(--bg)}
@@ -361,8 +306,12 @@ function openGame(g,push){
  current=g;
  if(push){try{history[history.state&&history.state.g?'replaceState':'pushState']({g:g},'',location.pathname+location.search)}catch(e){}} // never two game entries in a row
  setTimeout(function(){try{frames[g].contentWindow.focus()}catch(e){}},50)}
+// Sound and Scanlines picked in any game, for all games, until the app is closed
+var naShared={snd:false,crt:true};
+function naShare(k,v,from){naShared[k]=v;Object.keys(frames).forEach(function(g){try{var w=frames[g].contentWindow;if(w!==from&&w.naSet)w.naSet(k,v)}catch(e){}})}
 function showCover(){
- Object.keys(frames).forEach(function(k){frames[k].hidden=true});
+ // any way out of a game (Exit, Back button) lets it tidy up first: Remi forgets Medias
+ Object.keys(frames).forEach(function(k){if(!frames[k].hidden){try{var w=frames[k].contentWindow;if(w.naPause)w.naPause();if(w.naLeave)w.naLeave()}catch(e){}}frames[k].hidden=true});
  cover.hidden=false;current=null}
 // Called by the Exit button inside each game. Games stay loaded, so a match in progress is kept.
 // Share pop-up on the title

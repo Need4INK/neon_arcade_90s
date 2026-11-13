@@ -1,4 +1,10 @@
-Editable sources of the five games (each a standalone page) and `build.py` (the cover page and the packer).
+Editable sources of the five games and `build.py` (the cover page and the packer).
+
+A game file holds only what is its own (play area, rules, sounds, saved data). What all five share is kept once and put into each game by the build, so a game file does not work when opened on its own:
+
+- `core.css`: the page, the 390 × 797 template, the bottom bar, the Rules/Settings panel and its rows, action buttons, touch and hover behaviour.
+- `stage.js`: scales the template to the screen (and keeps it upright on a sideways phone).
+- `core.js`: sound, the panel, switches, "Tap again", Exit, Sound/Scanlines shared between games.
 
 Rebuild the published pack from the repo root after any change:
 
