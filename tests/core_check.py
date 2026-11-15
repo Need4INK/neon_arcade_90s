@@ -9,7 +9,7 @@
     python3 tests/core_check.py        # exit code 1 if anything fails
 """
 import sys
-from harness import start_server, open_page, open_game, game_frame, to_cover
+from harness import start_server, open_page, open_game, game_frame, to_cover, close_panel
 
 port = start_server(8847)
 GAMES = ['kb', 'oth', 'ws', 'sdk', 'rem']
@@ -122,6 +122,28 @@ for way in ['exit', 'back']:
     f = open_game(page, 'rem', 800)
     ok(way + ': back to Neon upright', f.evaluate("!document.documentElement.classList.contains('lnd')&&!document.documentElement.classList.contains('sk-m')"))
     to_cover(page)
+print('## Remi Medias is hidden: 5 quick taps on the title')
+f = open_game(page, 'rem', 1000); sk = "document.documentElement.classList.contains('sk-m')"
+f.click('#bSet'); page.wait_for_timeout(100)
+ok('Skin row hidden in Neon', f.evaluate("getComputedStyle(document.querySelector('#sSkin').closest('.row')).display==='none'"))
+ok('Skin paragraph hidden in Neon', not f.evaluate("[...document.querySelectorAll('p')].some(p=>p.offsetParent!==null&&/Skin/.test(p.textContent))"))
+close_panel(f)
+for _ in range(4): f.click('main>h1')
+ok('4 taps: still Neon', not f.evaluate(sk))
+page.wait_for_timeout(2200)
+for _ in range(4): f.click('main>h1')
+ok('taps spread over 2 s: still Neon', not f.evaluate(sk))
+page.wait_for_timeout(2200)
+for _ in range(5): f.click('main>h1')
+page.wait_for_timeout(200)
+ok('5 quick taps: Medias', f.evaluate(sk))
+f.click('#bSet'); page.wait_for_timeout(100)
+ok('Skin row shown in Medias', f.evaluate("getComputedStyle(document.querySelector('#sSkin').closest('.row')).display!=='none'"))
+close_panel(f)
+for _ in range(5): f.click('main>h1')
+page.wait_for_timeout(200)
+ok('5 more taps: back to Neon', not f.evaluate(sk))
+to_cover(page)
 ok('no console errors', not page.errors, page.errors[:3])
 b.close(); pw.stop()
 print('failures:', len(fails), fails)

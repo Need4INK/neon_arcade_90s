@@ -259,7 +259,7 @@ button.b:disabled{opacity:.35}
 <p><b>Board game</b> (joc pe tabla): in your first 3 turns, before opening, tap <b>Board</b> (then Tap again). You keep everything in hand: no laying down, no adding, no joly swaps, and you take only the last discard (no need to use it). Close by discarding your 15th tile when the other 14 make a board hand:</p>
 <p>Simplu: runs and sets, <b>500</b> · Bete: 2 sets of 4 + 2 sets of 3, <b>700</b> · Mozaic: 1 to 13 to 1, no two neighbours the same colour, the first 4 all different, the two 1s different, <b>1000</b> · Bicolor: two runs in two colours, <b>1200</b> · Duble: 7 doubles, <b>1300</b> · Monocolor: 1 to 13 to 1 in one colour, <b>1500</b>. Jolys fill in anywhere. The board score replaces your tile count and closing bonus; atu and doubling still count. If someone else closes first: −100.</p>
 <p><b>Player cards:</b> ✓ opened · <b>A</b> holds the atu's twin (+50) · <b>B</b> playing a board game. CPU cards show tiles in hand (14▮) then the score; it turns <span class="sn">magenta</span><span class="sm">red</span> at 3 tiles or fewer.</p>
-<p><b>Skin</b> (Settings): Neon or Medias (a tabletop with tiles like a real set). Only the look changes; your game carries on. Remi always opens in Neon.</p>
+<p class="sm"><b>Skin</b> (Settings): Neon or Medias (a tabletop with tiles like a real set). Only the look changes; your game carries on. Remi always opens in Neon.</p>
 <p class="sm"><b>Layout</b> (Settings): Portrait, or Landscape for wide screens: turn your phone sideways (it stays sideways even if your phone is held upright); the ✕ top right takes you to the cover.</p>
 <p class="sn"><b>Accessibility</b> (Settings): a mark in the bottom-left corner of every tile, if some colours look alike to you: red one bar, yellow two, blue three, white none.</p>
 <p><b>Controls:</b> tap tiles to select, <b>Lay down</b> makes a formation, tap a formation to add the selected tiles or swap a joly. <b>Undo</b> takes back your turn. With a mouse, drag the discards, the table or your tiles (or turn the wheel) when they hold more than fits.</p></div>
@@ -270,7 +270,7 @@ button.b:disabled{opacity:.35}
 <div class="row"><span class="lab">Swap doubles</span><button type="button" class="tg" id="tgSwp" role="switch" aria-checked="true">On</button></div>
 <div class="row sn"><span class="lab">Accessibility</span><button type="button" class="tg" id="tgSym" role="switch" aria-checked="false">Off</button></div>
 <div class="row"><span class="lab">Sound</span><button type="button" class="tg" id="tgSound" role="switch" aria-checked="false">Off</button></div>
-<div class="row"><span class="lab">Skin</span><div class="seg" id="sSkin" role="group" aria-label="Skin"></div></div>
+<div class="row sm"><span class="lab">Skin</span><div class="seg" id="sSkin" role="group" aria-label="Skin"></div></div>
 <div class="row sm"><span class="lab">Layout</span><div class="seg" id="sLay" role="group" aria-label="Layout"></div></div>
 <div class="row sn"><span class="lab">Scanlines</span><button type="button" class="tg" id="tgCrt" role="switch" aria-checked="true">On</button></div>
 <div class="row"><span class="lab">New game</span><button type="button" class="tg dng big" id="btnNew">New</button></div>
@@ -723,7 +723,10 @@ $('sPile').onclick=hDraw;
 // Leaving Remi (Exit, or Landscape's ✕ = the build's Exit restyled) forgets Medias: back in Neon, Portrait
 function leave(){if(skin==='neon'&&lay==='port')return;showPanel('');skin='neon';lay='port';applySkin();saveSet();fit();render()}
 document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#bar .mnu'))leave()},true);
-window.naLeave=leave; // the cover calls this whenever it takes over (Back button included)
+window.naLeave=leave;
+// Hidden way into Medias: 5 quick taps on the REMI title (within 2 s); the Skin row only shows once in Medias
+{let n=0,t0=0;document.querySelector('main>h1').addEventListener('click',()=>{const now=Date.now();if(now-t0>2000){n=0;t0=now}
+ if(++n<5)return;n=0;skin=skin==='medias'?'neon':'medias';if(skin==='neon')lay='port';applySkin();saveSet();fit();render();sync()})} // the cover calls this whenever it takes over (Back button included)
 // New game asks "Tap again" only while a match is on
 $('btnNew').onclick=function(){const go=()=>{newGame();showPanel('')};if(inGame())naArm(this,go);else go()};
 naSync=sync;
