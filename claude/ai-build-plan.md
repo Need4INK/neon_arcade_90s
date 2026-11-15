@@ -14,20 +14,35 @@ How to build `claude/ai-blueprint.md`, one step per chat. Written Nov 15 2026.
 - **Opus 5.5** does clear engineering: tools, Othello, Knucklebones, the player adjustment and the puzzle helpers.
 - **Fable 5.2** does the subtle work: Remi's hidden-information play, the personalities and the final review, where judgement matters most.
 
+## Running steps in parallel
+Some steps change different files, so two chats can work at once: one **Opus** chat and one **Fable** chat side by side.
+- **Order:**
+  1. **Step 0 alone, first.** Everything else builds on it.
+  2. **Then, side by side:** Opus does steps 1 and 2, one after the other in its chat. Fable does step 3.
+  3. **Then, side by side:** Fable does steps 4a, 4b, then 5. Opus does step 7.
+  4. **Then step 6** (Opus), once steps 1–5 are done. It touches all three opponent games.
+  5. **Step 8 last** (Fable).
+- **Remi steps run one after another.** 3, 4 and 5 all change the same file.
+- **Deploy one chat at a time.** Every step rebuilds `index.html`, so two deploys at once would clash. Say "deploy" in one chat, wait until it's merged, then in the other.
+- **Before pushing, update from `main`** (the chat must do this when it hears "deploy"): fetch the latest `main`, rebase onto it, rebuild `index.html`, re-run the quick checks, then push. If the plan's Progress table or the design notes changed meanwhile, merge them; never overwrite them.
+- **Parallel chats don't save usage, only waiting time.** Two chats use up the five-hour session about twice as fast. Opus and Fable have separate weekly limits, so pairing one of each spreads the load best.
+- **Test one change at a time on the phone** where you can, so you know which step caused anything odd.
+
 ## Progress
 | Step | What | Model · effort | Status |
 |---|---|---|---|
-| 0 | Tools and shared brain kit | Opus 5.5 · high | done (Nov 15) |
+| 0 | Tools and shared brain kit | Opus 5.5 · high | done (Nov 15, PR #78) |
 | 1 | Othello | Opus 5.5 · high | to do |
 | 2 | Knucklebones | Opus 5.5 · medium | to do |
 | 3 | Remi A: memory and discard-taking | Fable 5.2 · high | to do |
-| 4 | Remi B: personalities and playing like a person | Fable 5.2 · xhigh | to do |
+| 4a | Remi B1: the three personalities | Fable 5.2 · xhigh | to do |
+| 4b | Remi B2: playing like a person | Fable 5.2 · xhigh | to do |
 | 5 | Remi C: Hard imagines hidden hands | Fable 5.2 · xhigh | to do |
 | 6 | Adjusting to the player | Opus 5.5 · high | to do |
 | 7 | Puzzle helpers | Opus 5.5 · medium | to do |
 | 8 | Final review and tuning | Fable 5.2 · high | to do |
 
-Every prompt below assumes the chat follows the project instructions: connect and clone the repo, work locally, and deploy only on "deploy".
+Every prompt below assumes the chat follows the project instructions: connect and clone the repo, work locally, and deploy only on "deploy". On "deploy", it first updates from `main` and rebuilds, because another chat may have deployed meanwhile (see "Running steps in parallel"). After a successful deploy, it ends with: "Step N done. Next: step M, open a new chat with <model> · <effort> and paste its prompt" (or "All steps done"). It also keeps a task list beside the chat (one line per part of the step, ticked off as it goes), so you can see how far along it is without interrupting.
 
 ---
 
@@ -55,11 +70,17 @@ Every prompt below assumes the chat follows the project instructions: connect an
 
 **Check:** Do the CPUs now take from the discards, sometimes deep in the row? Do they stop feeding you tiles you collect?
 
-### Step 4 · Remi B: personalities and playing like a person · Fable 5.2 · xhigh
+### Step 4a · Remi B1: the three personalities · Fable 5.2 · xhigh
 **Prompt:**
-> Build step 4 of `claude/ai-build-plan.md`: the three Remi personalities (section 6b) and "playing like a person" (section 3a: misses, memory, thinking time, reading you, playing the score, fishing, holding back) from `claude/ai-blueprint.md`. Before starting, ask me open decisions 4 (CPU voice) and 7 (personalities in the Rules). Tournaments must show the three styles within ±5% of each other. Hand back a short report.
+> Build step 4a of `claude/ai-build-plan.md`: the three Remi personalities (Cautious, Bold, Sly) from `claude/ai-blueprint.md` section 6b, on top of step 3's CPUs. Before starting, ask me open decision 7 (personalities in the Rules). Tournaments must show the three styles within ±5% of each other, and `remi_check.py` must stay at 0 violations. Hand back a short report.
 
-**Check:** After a few rounds, can you tell CPU 1, 2 and 3 apart? Do they feel like people?
+**Check:** After a few rounds, can you tell CPU 1, 2 and 3 apart?
+
+### Step 4b · Remi B2: playing like a person · Fable 5.2 · xhigh
+**Prompt:**
+> Build step 4b of `claude/ai-build-plan.md`: "playing like a person" for the Remi CPUs from `claude/ai-blueprint.md` section 3a: plausible misses, imperfect memory, thinking time that fits the moment, reading the player, playing the score, fishing and holding back. Keep the personalities from step 4a. Before starting, ask me open decision 4 (CPU voice). Keep the levels' tournament gaps and `remi_check.py` at 0 violations. Hand back a short report.
+
+**Check:** Do the CPUs feel like people? Do they ever miss something believable, and never something silly?
 
 ### Step 5 · Remi C: Hard imagines hidden hands · Fable 5.2 · xhigh
 **Prompt:**
