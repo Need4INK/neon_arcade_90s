@@ -194,6 +194,26 @@ Details behind the project instructions (Nov 2026). One doc for everything: add 
 - User after PR #71 (Nov 13): "all confirmed" on the iPhone (Sudoku pad doesn't zoom, sound in every game, Sound/Scanlines following, Remi Landscape big hand, Back/Exit from Medias), plus one issue on the Windows laptop: nothing in Remi could be scrolled with a mouse → PR #72 (mouse wheel and drag; `mouse_scroll_check.py`; layout_compare 0, core_check, exit_check, remi_check 1,096 checks 0 violations, five-size sweep 0 problems, monkey 0; GitHub checks passed). Awaiting the user's check on the laptop.
 - Project instructions updated by the user (Nov 13) for the shared core: no narrow/short variants, Medias upright 76px, shared things in `games/core.css` / `core.js` / `stage.js`, mouse scrolling, deploy waits for the GitHub checks.
 
+## CPU brain (AI build, from Nov 15 2026)
+- Plan and goals: `claude/ai-build-plan.md` (one step per chat) and `claude/ai-blueprint.md` (what to build, levels, tests). Both also in the Project.
+- Step 0 (local, Nov 15): the shared **brain kit** at the end of `core.js`: `naRng(seed)` / `naR` (seeded random, never touches `Math.random`, so seeded tests of the games keep their sequence), `naThink(fn,{min,max,ok})` (visible pause, cancelled when `ok()` turns false), `naSearch` + `naTick` (look deeper each round, keep the deepest finished depth; the first depth always finishes), `naWorker(work,helpers)` (blob: Worker, falls back to the main thread), `naChoose(moves,{temp,blind})` (the one mistake model; a move's `miss` makes it easier to overlook), `naLevel` / `naKnobs(game,level)` (knobs in one table; "all" holds what a level means), `naAdapt` / `naAdaptNote` (`<game>-adapt`, -1..1, Easy up to 90% of the way to Normal, Normal a third, Hard never; damaged = 0), `window.__ai` (seed, adapt, fast, main, pick, level). No game uses the kit yet. The build drops whole-line `//` comments from `core.js` (it is packed five times): page 344 → 358 KB.
+- Tests: `tests/ai_tournament.py` (bot vs bot, fixed seeds; Remi through a never-shipped build where all four seats are CPUs, each seat with its own level) and `tests/ai_kit_check.py` (the kit in every game). Same seed, same numbers: re-running after the kit was added gave identical results in all three games (proof that nothing plays differently).
+- **Baseline, today's CPUs** (seed 1; win % counts a tie as half; targets: Hard ≥ 75% vs Normal, Normal ≥ 75% vs Easy, every level ≥ 95% vs Random):
+
+| Pairing | Knucklebones (1000 games) | Othello (100 games) |
+|---|---|---|
+| Normal vs Easy | 71.8% | 94.0% |
+| Hard vs Normal | 57.6% | 89.0% |
+| Hard vs Easy | 74.2% | 100% |
+| Easy vs Random | 59.2% | 57.5% (Easy is random) |
+| Normal vs Random | 79.7% | 97.0% |
+| Hard vs Random | 81.0% | 100% |
+
+  - Remi (200 rounds per pairing, two seats each, points per round per CPU): Normal +95.8 vs Easy +100.1 (Normal not better); Hard +91.2 vs Normal +73.6; Hard +98.5 vs Easy +91.9. Closes split about evenly; the pile never ran out.
+  - Thinking time at 4× CPU slow-down (headless Chrome here, not the phone): Knucklebones Hard mean 4 ms, max 9 ms; Othello Normal max 10 ms, Hard mean 108 ms, 95% within 278 ms, max 437 ms (all on the main thread). Remi: one main-thread task of 50 ms in 2 Hard rounds, none at Easy / Normal.
+  - Step 0 tested (core change): ai_kit_check 27 checks × 5 games ok; build_check; layout_compare 0 differences; core_check, exit_check, mouse_scroll_check 0 failures; resume_check, install_check ok; style_snapshot before/after 0 differences (one run showed 474 in laptop Remi Landscape, the wide rack's `.pan` hover class and which tiles are in view; two snapshots of the same build differ the same way, so it's a test flake); remi_check 937 checks, 0 violations; referee 65 Othello / 210 Knucklebones games (only the known quirks); puzzle checks ok; no console errors. Not run: device_sweep, save_fuzz (nothing in the games changed or reads new saves yet).
+  - Knucklebones is mostly dice: even Hard beats a random player only 81%, so the 95% target may be out of reach there; step 2 should check what is possible (e.g. Hard vs Random with the new engine) before tuning to it.
+
 ## After pass 9
 - PR #73 (Nov 15, deployed): secret Medias, 5 taps on the Remi title (see Remi › "Secret Medias"). Tested: build_check, core_check (new section, all ok), layout_compare 0 differences, exit_check 0 failures, resume_check, mouse_scroll_check 0 failures, remi_check clean, no console errors; GitHub `checks` passed; squash-merged. Awaiting the user's check on the iPhone and the laptop.
 - PR #74 (Nov 15, deployed): repo `.claude/CLAUDE.md` Medias line updated for the secret 5 taps (Skin row only in Medias); GitHub `checks` passed. The user's project instructions needed no change.

@@ -30,7 +30,8 @@ NACALC = ("var NA_W=390,NA_H=797;function naCalc(s,W,H,rot,r270){var w=W-s.l-s.r
           "st:'translate('+(s.l+w/2)+'px,'+(s.t+h/2)+'px) rotate('+a+'deg) scale('+k+') translate('+(-NA_W/2)+'px,'+(-sh/2)+'px)'}}")
 CORE_CSS = '<style>\n' + part('core.css') + '</style>\n'
 STAGE_JS = '<script>\n' + part('stage.js').replace('__NACALC__', NACALC) + '</script>\n'
-CORE_JS = '<script>\n' + part('core.js') + '</script>\n'
+# core.js goes into all five games: its whole-line // comments stay in the source only (keeps the page small)
+CORE_JS = '<script>\n' + ''.join(l for l in part('core.js').splitlines(True) if not l.lstrip().startswith('//')) + '</script>\n'
 for name in ('kb', 'oth', 'ws', 'sdk', 'rem'):
     g = globals()[name]
     # the shared styles come first so a game's own rules can differ from them; the stage runs before the page is drawn;
