@@ -13,7 +13,7 @@ A phone-first pack of neon arcade games (Knucklebones, Othello, Water Sort, Sudo
 - `.github/workflows/checks.yml`: on every pull request GitHub rebuilds the page and runs `build_check`, `layout_compare`, `exit_check`, `core_check`, `resume_check`, `install_check`.
 - `icons/icon_template.py`: generates the 1024×1024 neon app icons (presets per game).
 - `icons/share_images.py`: makes `icons/qr.svg` (embedded in the share pop-up), the QR poster `icons/neon_arcade_qr.png` and the link-preview picture `og.jpg`.
-- Design notes with the reasons behind every decision live in the claude.ai project (`claude/design-notes.md`).
+- Design notes with the reasons behind every decision live in the claude.ai project (`claude/design-notes.md`); a copy is kept in this repo's `claude/` folder (design notes, QA report pass 9, project instructions), so they stay with the code.
 
 ## Making changes
 - Game change: edit its file in `games/`. Something every game has (bar, panel, Settings rows, buttons, sound, template): edit `games/core.css` / `core.js` / `stage.js` once, never per game. Cover-page change: edit `games/build.py`.
