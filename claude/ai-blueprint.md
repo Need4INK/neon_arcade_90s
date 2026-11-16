@@ -192,7 +192,7 @@ Each of the three CPUs plays the same level with its own style, so the table fee
 
 - Every style follows the same rules, has the same fairness, and plays at the same level.
 - Tournaments check that no style wins clearly more than the others (each within about ±5% of a third of the wins).
-- Whether to mention the styles in Remi's Rules is still open.
+- The Rules don't mention the styles (decided Nov 16): players feel the difference.
 
 ## 7. How we prove it's good (acceptance tests)
 - **Tournaments** (new `tests/ai_tournament.py`, building on `referee.py`), with fixed seeds:
@@ -225,8 +225,8 @@ Each of the three CPUs plays the same level with its own style, so the table fee
 2. **Adjusting to the player:** part of each level. Easy adjusts the most, Normal a little, Hard not at all (section 6a).
 3. **Remi:** the three CPUs get distinct personalities (section 6b).
 6. **Records:** the improved AIs keep the "Won vs CPU" records; no reset.
+7. **Remi personalities in the Rules** (Nov 16): not mentioned; players just feel the difference.
 
 **Still open:**
 4. **CPU "voice":** short flavour lines in the message line, or keep it factual as now? (Recommended: factual.)
 5. **Hints in Water Sort:** add one, off by default like Sudoku's?
-7. **Remi personalities in the Rules:** mention them, or let players just feel the difference?
