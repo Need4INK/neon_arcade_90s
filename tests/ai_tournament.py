@@ -16,11 +16,14 @@ game's own CPU code is called with its globals swapped (`cpuMove` / `cpuPick`), 
 they play. Randomness: the frame's Math.random is replaced by a seeded generator, and `__ai.seed(seed)` is called.
 
 Remi: a never-shipped copy of the game (built in tests/out/ai_remi/) lets all four seats play as CPUs, each seat
-with its own level. Two levels share a table (seats A B A B, then B A B A); it reports points per round for each
-level, and how often each level closed. Target: Hard averages more points per round than Normal.
+with its own level. Two levels share a table (seats A B A B, then B A B A, both on the same deals); it reports points
+per round for each level, the gap with its standard error (ok = more than two errors above zero), how often each
+closed and how they took from the discard row. Target: Hard averages more points per round than Normal.
+    python3 tests/ai_tournament.py remi 400 --vs     # today's CPU against the one from before the AI build, level by level
+    python3 tests/ai_tournament.py remi 400 --base   # the old CPU's levels against each other
 
---slow: Chrome's CPU slow-down at 4x (the iPhone 12 budget) while timing each Knucklebones / Othello decision and
-counting main-thread tasks over 50 ms during a few Remi rounds.
+--slow: Chrome's CPU slow-down at 4x (the iPhone 12 budget) while timing each Knucklebones / Othello decision; for
+Remi it counts main-thread tasks over 50 ms during a few drawn rounds and times every CPU decision of 12 rounds.
 Writes the numbers to tests/out/ai_tournament.json.
 """
 import json, os, re, shutil, subprocess, sys, time
@@ -32,6 +35,8 @@ SEED = 1
 if '--seed' in argv:
     i = argv.index('--seed'); SEED = int(argv[i + 1]); del argv[i:i + 2]
 SLOW = '--slow' in argv
+VS = '--vs' in argv        # Remi: the new CPU against the one from before the AI build, same level
+BASE = '--base' in argv    # Remi: the old CPU's levels against each other (the "before" numbers)
 args = [a for a in argv if not a.startswith('--')]
 WHICH = args[0] if args else 'all'
 N = int(args[1]) if len(args) > 1 else None
@@ -185,14 +190,18 @@ def run_oth(page):
         cdp.send('Emulation.setCPUThrottlingRate', {'rate': 1})
 
 
-# ---- Remi: a test-only build where seat 0 is a CPU too and every seat has its own level
+# ---- Remi: a test-only build where seat 0 is a CPU too, every seat has its own level, and a seat can be played by the
+# CPU from before the AI build (tests/fixtures/remi_cpu_base.js) as a yardstick
 REMI_PATCH = [
-    # every seat plays with its own level (set at the start of its turn; turns never overlap)
-    ("async function cpuTurn(tk){\n const p=G.cur", "async function cpuTurn(tk){if(window.__lv)lvl=__lv[G.cur];\n const p=G.cur"),
+    # every seat plays with its own level (set at the start of its turn; turns never overlap); "base" seats use the old CPU
+    ("async function cpuTurn(tk){\n const p=G.cur", "async function cpuTurn(tk){if(window.__lv)lvl=__lv[G.cur];if(window.__old&&__old[G.cur])return base_cpuTurn(tk);\n const p=G.cur"),
     # seat 0 is played by the CPU code (no doubles swap screen for it either)
     ("if(G.cur===0){if(G.tn>3)fresh=[]", "if(G.cur===0&&!window.__bot0){if(G.tn>3)fresh=[]"),
     ("if(G.d3||(swp&&dblTiles(G.pl[0].hand).length))", "if(!window.__bot0&&(G.d3||(swp&&dblTiles(G.pl[0].hand).length)))"),
-    ("window.__remi={", "window.__remi={dealRound,newGame,get lvl(){return lvl},"),
+    ("window.__remi={", "window.__remi={dealRound,newGame,endRound,get lvl(){return lvl},"),
+    # the tournament doesn't draw the table (same game, about 10x faster), and counts what is taken from the discards
+    ("function render(){", "function render(){if(window.__norender)return;"),
+    ("function takeRow(p,i){", "function takeRow(p,i){if(window.__tk)__tk.push([p,G.disc.length-i]);"),
 ]
 
 
@@ -203,6 +212,12 @@ def remi_copy():
         if a not in src:
             sys.exit('ai_tournament: Remi changed, update REMI_PATCH: ' + a[:50])
         src = src.replace(a, b, 1)
+    base = open(os.path.join(ROOT, 'tests', 'fixtures', 'remi_cpu_base.js'), encoding='utf-8').read()
+    base = base.replace("G.disc.pop();P.hand.push(d);", "if(window.__tk)__tk.push([p,1]);G.disc.pop();P.hand.push(d);")
+    mark = "// ---- game flow"
+    if mark not in src:
+        sys.exit('ai_tournament: Remi changed, no "' + mark + '" line to put the old CPU before')
+    src = src.replace(mark, base + mark, 1)
     open(os.path.join(d, 'Remi.html'), 'w', encoding='utf-8').write(src)
     g = os.path.join(ROOT, 'games')
     subprocess.run([sys.executable, os.path.join(g, 'build.py')] + [os.path.join(g, x) for x in
@@ -213,54 +228,97 @@ def remi_copy():
     return d
 
 
+# Round i of a pairing is always dealt from seed*100000+i, whoever sits where: both seatings (and every pairing) play
+# the same deals, so the levels are compared on equal cards. Timers fire at once (the game's own waits, not its moves).
 REMI_GO = RNG + r"""
-const st=window.setTimeout;window.setTimeout=(fn,t,...a)=>st(fn,Math.min(t||0,1),...a);window.__sleep=ms=>new Promise(r=>st(r,ms));
-window.__bot0=true;__remi.spd=2;
+const st=window.setTimeout,tq=[],mc=new MessageChannel();mc.port1.onmessage=()=>{const f=tq.shift();if(f)f()};
+window.setTimeout=(fn,t,...a)=>{if(window.__slowT)return st(fn,Math.min(t||0,1),...a);tq.push(()=>fn(...a));mc.port2.postMessage(0);return 0};
+window.__sleep=ms=>new Promise(r=>st(r,ms));
+window.__bot0=true;__remi.spd=2;if(window.__ai)__ai.adapt=false;
 window.__long=[];try{new PerformanceObserver(l=>l.getEntries().forEach(e=>__long.push(e.duration))).observe({type:'longtask',buffered:false})}catch(e){}
-window.__remiRounds=async function(seats,n){const pts=[0,0,0,0],closes=[0,0,0,0],R=__remi;let draws=0;window.__lv=seats;
- for(let i=0;i<n;i++){R.G.pl.forEach(P=>P.score=0);R.G.over=false;R.dealRound();let w=0;
-  while(R.G.phase!=='over'&&w++<60000)await __sleep(2);
+window.__remiRounds=async function(seats,old,n,seed){const R=__remi,rounds=[],closes=[0,0,0,0];let draws=0,stuck=0,turns=0;window.__lv=seats;window.__old=old;window.__tk=[];
+ if(R.G.phase!=='over')R.endRound(-1,-1,'');   // the game opened with the page: stop its CPU turn before dealing again
+ for(let i=0;i<n;i++){__seed(seed*100000+i);R.G.pl.forEach(P=>P.score=0);R.G.over=false;R.G.starter=i%4;R.dealRound();let w=0;
+  while(R.G.phase!=='over'&&w++<60000){await __sleep(1);
+   // nobody can ever close (every tile left fits nowhere and the pile keeps being reshuffled): counted, then ended like a pile that ran out
+   if(R.G.tn>1200&&R.G.phase!=='over'){stuck++;R.endRound(-1,-1,'stuck')}}
   if(R.G.phase!=='over')throw new Error('Remi round did not finish');
-  const r=R.G.res;r.pen.forEach((s,k)=>pts[k]+=s);if(r.closer>=0)closes[r.closer]++;else draws++}
- return {pts,closes,draws}};
+  const r=R.G.res;turns+=R.G.tn;rounds.push(r.pen.slice());if(r.closer>=0)closes[r.closer]++;else draws++}
+ return {rounds,closes,draws,stuck,turns,takes:__tk}};
 """
+L = {'easy': 0, 'normal': 1, 'hard': 2}
+
+
+def remi_pair(f, a, b, n):
+    """a, b: 'normal' or 'base:normal'. Two of each at the table, both seatings on the same deals."""
+    lv = lambda x: L[x.split(':')[-1]]
+    old = lambda x: x.startswith('base:')
+    half = max(1, n // 2); pts = {a: 0, b: 0}; cl = {a: 0, b: 0}; tk = {a: [], b: []}; draws = stuck = turns = 0; diff = [0.0] * half
+    for seats in ([a, b, a, b], [b, a, b, a]):
+        r = f.evaluate(f"__remiRounds({json.dumps([lv(x) for x in seats])},{json.dumps([old(x) for x in seats])},{half},{SEED})")
+        for i, pen in enumerate(r['rounds']):
+            for k, x in enumerate(seats):
+                pts[x] += pen[k]; diff[i] += (pen[k] if x == a else -pen[k]) / 4
+        for k, x in enumerate(seats):
+            cl[x] += r['closes'][k]
+        for p, depth in r['takes']:
+            tk[seats[p]].append(depth)
+        draws += r['draws']; stuck += r['stuck']; turns += r['turns']
+    seat_rounds = 4 * half                                  # two seats per level, two seatings
+    pa, pb = pts[a] / seat_rounds, pts[b] / seat_rounds
+    m = sum(diff) / half; se = (sum((d - m) ** 2 for d in diff) / max(1, half - 1) / half) ** .5
+    tks = lambda x: {'per_round': round(len(tk[x]) / seat_rounds, 2), 'deep': round(sum(1 for d in tk[x] if d > 1) / max(1, len(tk[x])), 2),
+                     'avg_tiles': round(sum(tk[x]) / max(1, len(tk[x])), 1), 'most': max(tk[x] or [0])}
+    res = {'rounds': 2 * half, a: {'pts_per_round': round(pa, 1), 'closes': cl[a], 'takes': tks(a)},
+           b: {'pts_per_round': round(pb, 1), 'closes': cl[b], 'takes': tks(b)}, 'gap': round(m, 1), 'gap_se': round(se, 1), 'pile_ran_out': draws,
+           'stuck': stuck, 'turns_per_round': round(turns / (2 * half), 1)}
+    ta, tb = tks(a), tks(b)
+    print(f"  {a:>11} vs {b:<11} {2 * half} rounds: points per round per CPU {pa:+.1f} / {pb:+.1f}, gap {m:+.1f} ± {se:.1f}"
+          f" ({'ok' if m > 2 * se else 'ok?' if m > 0 else 'MISS'});  closes {cl[a]} / {cl[b]};"
+          f"  takes per CPU per round {ta['per_round']} / {tb['per_round']} (2+ tiles {ta['deep']:.0%} / {tb['deep']:.0%}, avg {ta['avg_tiles']} / {tb['avg_tiles']}, most {ta['most']} / {tb['most']})"
+          f"; {turns / (2 * half):.0f} turns a round, no close {draws}, stuck {stuck}", flush=True)
+    return res
 
 
 def run_remi(page_unused):
     n = N or 200
-    print(f'Remi (4 CPUs, two levels per table, seed {SEED})', flush=True)
+    mode = 'vs' if VS else 'base' if BASE else 'levels'
+    pairs = {'levels': [('normal', 'easy'), ('hard', 'normal'), ('hard', 'easy')],
+             'vs': [('easy', 'base:easy'), ('normal', 'base:normal'), ('hard', 'base:hard')],
+             'base': [('base:normal', 'base:easy'), ('base:hard', 'base:normal'), ('base:hard', 'base:easy')]}[mode]
+    print(f'Remi (4 CPUs, two kinds per table, seed {SEED}; "base" = the CPU from before the AI build; gap ± standard error)', flush=True)
     d = remi_copy(); port = start_server(8957, root=d)
     pw, b, page = open_page(port, 'iphone12')
     try:
         page.evaluate("localStorage.setItem('remi-rules-seen','1');localStorage.removeItem('remi_game2')")
         f = open_game(page, 'rem', 1200); f.evaluate(REMI_GO); f.evaluate(f"__seed({SEED})")
-        f.evaluate("__remi.newGame()")
-        L = {'easy': 0, 'normal': 1, 'hard': 2}
+        f.evaluate("__remi.newGame()"); f.evaluate("window.__norender=true")
         res = {}
-        for a, bb in [('normal', 'easy'), ('hard', 'normal'), ('hard', 'easy')]:
-            tot = {a: [0, 0], bb: [0, 0]}; draws = 0; rounds = 0
-            for seats in ([a, bb, a, bb], [bb, a, bb, a]):
-                r = f.evaluate(f"__remiRounds({json.dumps([L[x] for x in seats])},{n // 2})")
-                for k, lv in enumerate(seats):
-                    tot[lv][0] += r['pts'][k]; tot[lv][1] += r['closes'][k]
-                draws += r['draws']; rounds += n // 2
-            pa, pb = tot[a][0] / (2 * rounds), tot[bb][0] / (2 * rounds)  # two seats per level
-            res[f'{a}-{bb}'] = {'rounds': rounds, a: {'pts_per_round': round(pa, 1), 'closes': tot[a][1]},
-                                bb: {'pts_per_round': round(pb, 1), 'closes': tot[bb][1]}, 'pile_ran_out': draws}
-            print(f"  {a:>6} vs {bb:<6} {rounds} rounds: points per round per CPU {a} {pa:+.1f} / {bb} {pb:+.1f}"
-                  f" ({'ok' if pa > pb else 'MISS'}: {a} should be higher);  closes {a} {tot[a][1]} / {bb} {tot[bb][1]}"
-                  f", pile ran out {draws}", flush=True)
-        RESULTS['remi'] = {'pairs': res}
+        for a, bb in pairs:
+            res[f'{a}-{bb}'] = remi_pair(f, a, bb, n)
+        RESULTS['remi'] = {'mode': mode, 'pairs': res}
         if SLOW:
-            f.evaluate("__long=[]"); cdp = throttle(page, f, 4)
+            f.evaluate("window.__norender=false;window.__slowT=true;__long=[]"); cdp = throttle(page, f, 4)
             for lv in [0, 1, 2]:
-                f.evaluate(f"__long=[];__remiRounds([{lv},{lv},{lv},{lv}],2)")
+                f.evaluate(f"__long=[];__remiRounds([{lv},{lv},{lv},{lv}],[false,false,false,false],3,{SEED + 7})")
                 lg = f.evaluate("__long")
                 RESULTS['remi'].setdefault('long_tasks_4x', {})[['easy', 'normal', 'hard'][lv]] = {
                     'over_50ms': len(lg), 'max_ms': round(max(lg), 1) if lg else 0}
-                print(f"  4x slow, {['easy', 'normal', 'hard'][lv]}: {len(lg)} main-thread tasks over 50 ms in 2 rounds"
+                print(f"  4x slow, {['easy', 'normal', 'hard'][lv]}: {len(lg)} main-thread tasks over 50 ms in 3 rounds"
                       f", longest {round(max(lg)) if lg else 0} ms", flush=True)
             cdp.send('Emulation.setCPUThrottlingRate', {'rate': 1})
+            # every decision of a few rounds, asked again at 4x slow-down and timed on its own
+            f.evaluate("window.__norender=true;window.__slowT=false")
+            for lv in [0, 1, 2]:
+                f.evaluate("__ai.log=[]"); f.evaluate(f"__remiRounds([{lv},{lv},{lv},{lv}],[false,false,false,false],12,{SEED + 9})")
+                cdp = throttle(page, f, 4)
+                ts = f.evaluate("(()=>{const L=__ai.log;__ai.log=null;return L.map(([k,s,v])=>{v=JSON.parse(v);const t=performance.now();__ai.pick({k,v,s});return [k,performance.now()-t]})})()")
+                cdp.send('Emulation.setCPUThrottlingRate', {'rate': 1})
+                st = stats([t for k, t in ts]); st['over_50ms'] = sum(1 for k, t in ts if t > 50)
+                st['slowest'] = max(ts, key=lambda x: x[1])[0]
+                RESULTS['remi'].setdefault('time_4x', {})[['easy', 'normal', 'hard'][lv]] = st
+                print(f"  4x slow, {['easy', 'normal', 'hard'][lv]}: {st['n']} decisions, mean {st['mean_ms']} ms, 95% within {st['p95_ms']} ms,"
+                      f" max {st['max_ms']} ms ({st['slowest']}), over 50 ms: {st['over_50ms']}", flush=True)
         RESULTS['remi_errors'] = page.errors[:5]
         print('  console errors:', page.errors[:5])
     finally:
