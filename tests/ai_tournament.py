@@ -83,6 +83,22 @@ window.__othMatch=function(A,B,n){let w=0,l=0,ti=0,pts=0;for(let i=0;i<n;i++){co
  if(r[0]>r[1])w++;else if(r[0]<r[1])l++;else ti++;pts+=r[0]-r[1]}return {w,l,t:ti,margin:pts/n}};
 """
 
+# Othello played through the page (the player taps a random legal square), CPU at its real pace in its Worker
+OTH_LIVE = r"""
+window.__othLive=async function(lv,games){const sl=ms=>new Promise(r=>setTimeout(r,ms)),R={search:[],turn:[],long:[]};
+ let po=null;try{po=new PerformanceObserver(l=>l.getEntries().forEach(e=>R.long.push(e.duration)));po.observe({type:'longtask'})}catch(e){}
+ const ob=brain,oc=cpuTurn;let t0=0;
+ brain=function(){const w=ob();return {run:d=>{const t=naNow();return w.run(d).then(o=>{R.search.push(naNow()-t);return o})}}};
+ cpuTurn=function(){t0=naNow();return oc()};
+ mode='cpu';S.diff=lv;
+ for(let g=0;g<games;g++){start();let n=0;
+  while(!over&&n++<4000){if(busy||turn!==P){if(!busy&&t0){}await sl(20);continue}
+   if(t0){R.turn.push(naNow()-t0);t0=0}
+   const ms=moves(bd,P);if(!ms.length){await sl(20);continue}const m=ms[__tr()*ms.length|0];
+   document.querySelectorAll('#board .sq')[m.r*8+m.c].click();await sl(30)}}
+ brain=ob;cpuTurn=oc;if(po)po.disconnect();return R};
+"""
+
 
 def rate(r):
     n = r['w'] + r['l'] + r['t']
@@ -153,8 +169,20 @@ def run_oth(page):
         f.evaluate(f"__times={{}};__seed({SEED+1})"); cdp = throttle(page, f, 4)
         for lv in ['easy', 'normal', 'hard']:
             f.evaluate(f"__othMatch('{lv}','random',2)")
-        cdp.send('Emulation.setCPUThrottlingRate', {'rate': 1})
         RESULTS['oth']['time_4x'] = timing(f, '4x slow')
+        # real games through the page at 4x: the CPU thinks in its Worker; time each CPU turn (search, and
+        # search + visible pause) and count main-thread tasks over 50 ms
+        f.evaluate(OTH_LIVE); live = {}
+        for lv in ['easy', 'normal', 'hard']:
+            r = f.evaluate(f"__othLive('{lv}',1)")
+            live[lv] = {'search': stats(r['search']), 'turn': stats(r['turn']), 'long_over_50ms': len(r['long']),
+                        'long_max_ms': round(max(r['long']), 1) if r['long'] else 0}
+            s1, s2 = live[lv]['search'], live[lv]['turn']
+            print(f"  4x slow, real game {lv:>6}: {s1['n']} CPU turns, search 95% within {s1['p95_ms']} ms (max {s1['max_ms']}),"
+                  f" whole turn {s2['mean_ms']} ms mean / {s2['max_ms']} max; main-thread tasks over 50 ms: {len(r['long'])}"
+                  f"{' (longest ' + str(round(max(r['long']))) + ' ms)' if r['long'] else ''}", flush=True)
+        RESULTS['oth']['live_4x'] = live
+        cdp.send('Emulation.setCPUThrottlingRate', {'rate': 1})
 
 
 # ---- Remi: a test-only build where seat 0 is a CPU too and every seat has its own level

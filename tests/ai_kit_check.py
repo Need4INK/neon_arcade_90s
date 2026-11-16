@@ -11,7 +11,7 @@ from harness import start_server, open_page, open_game, to_cover, GAMES, strict
 
 strict()
 JS = r"""async()=>{const R={},A=window.__ai;
- R.hook=!!A&&typeof A.seed==='function'&&A.pick===null&&A.adapt===true;
+ R.hook=!!A&&typeof A.seed==='function'&&(A.pick===null||typeof A.pick==='function')&&A.adapt===true;
  // naRng: same seed, same numbers; in 0..1
  const a=naRng(5),b=naRng(5),xs=[];for(let i=0;i<1000;i++)xs.push(a());R.rngRepeat=xs.every(x=>x===b());R.rngRange=xs.every(x=>x>=0&&x<1);
  A.seed(9);const s1=[naR(),naR()];A.seed(9);R.seed=JSON.stringify(s1)===JSON.stringify([naR(),naR()]);

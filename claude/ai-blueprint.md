@@ -224,9 +224,9 @@ Each of the three CPUs plays the same level with its own style, so the table fee
 1. **Levels:** keep three (Easy / Normal / Hard), so the UI doesn't change. Hard gets stronger instead.
 2. **Adjusting to the player:** part of each level. Easy adjusts the most, Normal a little, Hard not at all (section 6a).
 3. **Remi:** the three CPUs get distinct personalities (section 6b).
+6. **Records:** the improved AIs keep the "Won vs CPU" records; no reset.
 
 **Still open:**
 4. **CPU "voice":** short flavour lines in the message line, or keep it factual as now? (Recommended: factual.)
 5. **Hints in Water Sort:** add one, off by default like Sudoku's?
-6. **Records:** should the improved AIs reset the "Won vs CPU" records, or keep them?
 7. **Remi personalities in the Rules:** mention them, or let players just feel the difference?
