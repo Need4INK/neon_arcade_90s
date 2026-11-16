@@ -40,7 +40,9 @@ window.__game=async function(md,df){mode=md;S.diff=df;const s0=JSON.stringify(S)
   const s1=JSON.parse(JSON.stringify(S)),o=JSON.parse(s0);const d=k=>s1[k]-o[k];
   const want=md==='cpu'?{w:+(a>z),l:+(a<z),t:+(a===z),p1:0,p2:0,pt:0}:{w:0,l:0,t:0,p1:+(a>z),p2:+(a<z),pt:+(a===z)};
   for(const k in want)if(d(k)!==want[k])V.push('stat '+k+' changed by '+d(k)+' expected '+want[k])}
- return [a,z]}"""
+ return [a,z]};0"""
+# OTH and KB end in "0", not in a function: Playwright calls a script that ends in a function once with no
+# arguments (that bogus empty game made the old Knucklebones quirks "start not empty" / "game did not finish").
 KB=FAST+r"""
 const V=window.__v=[];window.__dice=[];
 const sc=g=>g.reduce((s,a)=>{const n={};a.forEach(v=>n[v]=(n[v]||0)+1);return s+Object.keys(n).reduce((t,v)=>t+v*n[v]*n[v],0)},0);
@@ -74,7 +76,7 @@ window.__game=async function(md,df,nc){mode=md;S.diff=df;NC=nc;const s0=J(S);sta
   if(md==='cpu'&&((a>z)!==/You win/i.test(msg)||(a<z)!==/You lose|CPU wins/i.test(msg)))V.push('winner text "'+msg+'" vs '+a+'-'+z);
   const s1=JSON.parse(J(S)),o=JSON.parse(s0),want=md==='cpu'?{w:+(a>z),l:+(a<z),t:+(a===z)}:{p1:+(a>z),p2:+(a<z),pt:+(a===z)};
   for(const k in want)if(s1[k]-o[k]!==want[k])V.push('stat '+k+' changed by '+(s1[k]-o[k])+' expected '+want[k]+' ('+msg+')')}
- return [a,z,msg]}"""
+ return [a,z,msg]};0"""
 which=sys.argv[1]; N=int(sys.argv[2])
 if which=='oth':
     f=open_game(page,'oth'); f.evaluate(OTH)
