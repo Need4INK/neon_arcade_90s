@@ -33,7 +33,7 @@ Some steps change different files, so two chats can work at once: one **Opus** c
 |---|---|---|---|
 | 0 | Tools and shared brain kit | Opus 5.5 · high | done (Nov 15, PR #78) |
 | 1 | Othello | Opus 5.5 · high | done (Nov 16, PR #80) |
-| 2 | Knucklebones | Opus 5.5 · medium | to do |
+| 2 | Knucklebones | Opus 5.5 · medium | done (Nov 16, PR #81) |
 | 3 | Remi A: memory and discard-taking | Fable 5.2 · high | to do |
 | 4a | Remi B1: the three personalities | Fable 5.2 · xhigh | to do |
 | 4b | Remi B2: playing like a person | Fable 5.2 · xhigh | to do |

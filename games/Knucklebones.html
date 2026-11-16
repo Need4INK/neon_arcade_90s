@@ -139,7 +139,6 @@ function total(g){return g.reduce(function(s,a){return s+colScore(a)},0)}
 var S={best:0,w:0,l:0,t:0,diff:'normal',p1:0,p2:0,pt:0,b1:0,b2:0};
 try{var sv=JSON.parse(localStorage.getItem('kb-stats'));if(sv)for(var sk in S)if(sk in sv&&typeof sv[sk]===typeof S[sk]&&(typeof sv[sk]!=='number'||(isFinite(sv[sk])&&sv[sk]>=0)))S[sk]=sv[sk]}catch(e){} // damaged saved values are ignored
 if(['easy','normal','hard'].indexOf(S.diff)<0)S.diff='normal';
-var DIFF={easy:{n:6,r:0,k:.5,rand:0.6},normal:{n:.8,r:.65,k:1.1},hard:{n:.1,r:1,k:1.3}};
 function noise(d,vol){var a=audio();if(!a)return;var n=Math.floor(a.sampleRate*d),b=a.createBuffer(1,n,a.sampleRate),x=b.getChannelData(0);
   for(var i=0;i<n;i++)x[i]=Math.random()*2-1;var s=a.createBufferSource(),g=a.createGain();s.buffer=b;
   g.gain.setValueAtTime(vol,a.currentTime);g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+d);s.connect(g);g.connect(a.destination);s.start()}
@@ -161,7 +160,7 @@ function cleanRec(o){var r={};if(o&&typeof o==='object')['easy','normal','hard']
 function addRec(k,i){var r=REC[k]||(REC[k]=[0,0,0]);r[i]++;try{localStorage.setItem('kb-rec',JSON.stringify(REC))}catch(e){}}
 try{if(!localStorage.getItem('kb-stats'))['easy','normal','hard'].forEach(function(d){var r=REC[d];if(r){S.w+=r[0];S.l+=r[1];S.t+=r[2]}});}catch(e){}
 function recText(){return 'Won vs CPU: '+['easy','normal','hard'].map(function(d){var r=REC[d]||[0,0,0];return d[0].toUpperCase()+d.slice(1)+' '+r[0]+'/'+(r[0]+r[1]+r[2])}).join(' · ')}
-function renderDiff(){var el=document.getElementById('diff');el.innerHTML='';
+function renderDiff(){var el=document.getElementById('diff');el.innerHTML='';naAI.level=S.diff;
 
   el.parentNode.hidden=(mode==='2p');if(mode==='2p')return;
   var lock=!over&&!!p&&!!c&&(p.some(function(a){return a.length})||c.some(function(a){return a.length}));
@@ -182,49 +181,94 @@ function roll(){return 1+Math.floor(Math.random()*6)}
 function full(g){return g.every(function(a){return a.length>=3})}
 function start(){gid++;document.body.classList.toggle('c4',NC===4);p=blank();c=blank();turn='p';over=false;hit=null;hide=false;show=null;die=roll();render(mode==='2p'?'Player 1: your turn.':'Your turn: tap a column.')}
 function place(me,opp,col,v){me[col].push(v);var b=opp[col].length;opp[col]=opp[col].filter(function(x){return x!==v});return b-opp[col].length}
-function without(a,v){return a.filter(function(x){return x!==v})}
-// Hard: expectimax search. Values are CPU total minus player total, averaged over each die roll,
-// with the CPU maximizing and the player minimizing.
-var HDEPTH=3;
-function mv(g,o,i,v){return[g.map(function(a,j){return j===i?a.concat([v]):a.slice()}),o.map(function(a,j){return j===i?without(a,v):a.slice()})]}
-function search(cg,pg,cpuTurn,d){
-  if(d===0||full(cg)||full(pg))return total(cg)-total(pg);
-  var sum=0;
-  for(var f=1;f<=6;f++){
-    var best=cpuTurn?-1e9:1e9;
-    for(var j=0;j<cg.length;j++){
-      var val;
-      if(cpuTurn){if(cg[j].length>=3)continue;var r=mv(cg,pg,j,f);val=search(r[0],r[1],false,d-1);if(val>best)best=val}
-      else{if(pg[j].length>=3)continue;var q=mv(pg,cg,j,f);val=search(q[1],q[0],true,d-1);if(val<best)best=val}
-    }
-    sum+=best;
-  }
-  return sum/6}
-function lookahead(i,v){var r=mv(c,p,i,v);return search(r[0],r[1],false,HDEPTH-1)}
-function cpuMove(){
-  var v=die,best=-1e9,pick=0,D=DIFF[S.diff]||DIFF.normal;
-  for(var i=0;i<c.length;i++){
-    if(c[i].length>=3)continue;
-
-    var candidate=c[i].concat([v]);
-    var mine=colScore(candidate)-colScore(c[i]);
-    var kill=colScore(p[i])-colScore(p[i].filter(function(x){return x!==v}));
-
-    // Estimate how many points this column could lose to the player's next roll.
-    // The player can only attack this column if it still has an empty space.
-    var risk=0;
-    if(p[i].length<3){
-      for(var face=1;face<=6;face++){
-        var after=candidate.filter(function(x){return x!==face});
-        risk+=(colScore(candidate)-colScore(after))/6;
-      }
-    }
-
-    // Prefer immediate scoring and attacks, but avoid easily punished columns.
-    var s=S.diff==='hard'?lookahead(i,v)+Math.random()*0.05:mine+kill*D.k-risk*D.r+Math.random()*D.n;
-    if(s>best){best=s;pick=i}
-  }
-  if(D.rand&&Math.random()<D.rand){var open=cols().filter(function(i){return c[i].length<3});pick=open[Math.floor(Math.random()*open.length)]}
+// ---- AI (blueprint section 5 Knucklebones), built on the core brain kit. The engine runs in a Worker.
+// Knobs per level (naLevel, blueprint section 6): ev 'e' = Easy's one-die-at-a-time view (kill / risk: how much it
+// weighs knocking your dice off and being hit back), temp / blind = the mistake model, depth = Normal's look-ahead
+// (dice), obv = a lead (in the same steps as temp) Normal never overlooks, ms / nodes = Hard's budget. Easy's temp
+// is above Normal's so that adjusting to the player (naKnobs) sharpens in the right direction.
+naLevel.kb={easy:{ev:'e',temp:4,blind:.4,kill:.7,risk:.1},normal:{depth:2,temp:2,blind:.05,obv:10},hard:{ms:400,nodes:3000}};
+// Knucklebones CPU engine (blueprint 5 Knucklebones). Self-contained (runs in a Worker via naWorker, or here).
+// d: {me, opp: columns of dice (CPU's, player's), die: the CPU's roll, k: level knobs, seed, ms: time budget}
+// Returns {col, v: score, v2: next best, n: open columns, depth, nodes}
+function kbAI(d){
+ var k=d.k,R=naRng(d.seed),NC=d.me.length,nodes=0,cap=0,dl=0,TT={},U=1.05,
+  SG=k.sg||9,AT=k.at==null?.5:k.at,TP=k.tp==null?.5:k.tp;
+ function cs(a){var s=0,i,j,n;for(i=0;i<a.length;i++){n=0;for(j=0;j<a.length;j++)if(a[j]===a[i])n++;s+=a[i]*n}return s}
+ function tot(g){var s=0;for(var i=0;i<NC;i++)s+=cs(g[i]);return s}
+ function room(g){var n=0;for(var i=0;i<NC;i++)n+=3-g[i].length;return n}
+ function without(a,v){var r=[];for(var i=0;i<a.length;i++)if(a[i]!==v)r.push(a[i]);return r}
+ // the die v placed in column i: new boards [mover's, other's]
+ function put(A,B,i,v){var A2=A.slice(),B2=B.slice();A2[i]=A[i].concat([v]);B2[i]=without(B[i],v);return [A2,B2]}
+ // points the mover gains in column i with v (own column) and knocks off the other side
+ function gain(A,i,v){return cs(A[i].concat([v]))-cs(A[i])}
+ function kill(B,i,v){return cs(B[i])-cs(without(B[i],v))}
+ // what B's dice could lose to A's next die, averaged over A's roll (A only hits columns where it has room)
+ function exposed(A,B){var s=0,i,f;for(i=0;i<NC;i++)if(A[i].length<3&&B[i].length)for(f=1;f<=6;f++)s+=kill(B,i,f)/6;return s}
+ // the best A can do with its next die, averaged over the roll (it moves first: a tempo)
+ function tempo(A,B){var s=0,f,i,b,x;for(f=1;f<=6;f++){b=-1e9;for(i=0;i<NC;i++)if(A[i].length<3){x=gain(A,i,f)+kill(B,i,f);if(x>b)b=x}s+=b}return s/6}
+ // game over (a board is full): win 1, loss -1, tie 0, plus a hair for the margin
+ function over(A,B){var x=tot(A)-tot(B);return (x>0?1:x<0?-1:0)+x/10000}
+ // judgement for A, who rolls next: lead (with what is exposed to the other side's die, and A's tempo) turned into a
+ // chance to win; the fewer placements left before a board fills, the surer a lead is (so the race to fill counts)
+ function judge(A,B){var ra=room(A),rb=room(B),x=tot(A)-tot(B)+AT*(exposed(A,B)-exposed(B,A))+TP*tempo(A,B),
+   left=2*Math.min(ra,rb)+(ra<=rb?0:1),sd=SG*Math.sqrt(left+1);return 2/(1+Math.exp(-1.7*x/sd))-1}
+ function key(A,B){var p=[],i;for(i=0;i<NC;i++)p.push(A[i].slice().sort().join('')+'/'+B[i].slice().sort().join(''));return p.sort().join('|')}
+ function tick(){if(!(++nodes&255)&&dl&&(naNow()>dl||nodes>cap))throw NA_TIME}
+ // A to roll and move, dep moves still to look at: A's expected result (Star1: chance node cut-offs with bounds)
+ function chance(A,B,dep,a,b){tick();if(!dep)return judge(A,B);
+  var kk=dep+key(A,B),t=TT[kk];if(t!=null)return t;
+  var lo=6*(a-U)+U,hi=6*(b+U)-U,sum=0,f,v;
+  for(f=1;f<=6;f++){v=best(A,B,f,dep,Math.max(lo,-U),Math.min(hi,U));
+   if(v<=lo)return a;if(v>=hi)return b;sum+=v;lo+=U-v;hi+=-U-v}
+  return TT[kk]=sum/6}
+ function best(A,B,f,dep,a,b){var m=-9,i,r,v;
+  for(i=0;i<NC;i++){if(A[i].length>=3)continue;r=put(A,B,i,f);
+   v=room(r[0])?-chance(r[1],r[0],dep-1,-b,-Math.max(a,m)):over(r[0],r[1]);
+   if(v>m){m=v;if(m>=b)return m}}
+  return m}
+ var A0=d.me,B0=d.opp,v=d.die,root=[],i,out={n:0,depth:0};
+ for(i=0;i<NC;i++)if(A0[i].length<3)root.push(i);
+ out.n=root.length;
+ function done(ms){ms.sort(function(a,b){return b.s-a.s});var m=ms[0];
+  if(k.temp||k.blind)m=naChoose(ms,{temp:k.temp,blind:k.blind},R);
+  out.col=m.i;out.v=m.s;out.v2=ms.length>1?ms[1].s:m.s;out.nodes=nodes;out.all=ms;return out}
+ if(root.length===1)return done([{i:root[0],s:0}]);
+ // Easy: one die at a time, the way a beginner sees it: points now, dice knocked off (k.kill), a little worry about
+ // being hit back (k.risk). Its blind spot is attacks: some turns it doesn't think of knocking your dice off.
+ if(k.ev==='e'){var ms=root.map(function(i){var g=gain(A0,i,v),x=kill(B0,i,v),r=put(A0,B0,i,v),
+   s=g+(k.kill||1)*x-(k.risk||0)*(exposed(r[1],r[0])-exposed(B0,A0));
+   return {i:i,s:s,miss:x>0?1:0}});return done(ms)}
+ // Normal and Hard: look ahead (Normal a fixed number of dice; Hard deeper each round until its budget is spent)
+ var t0=naNow(),res;cap=k.nodes||1e9;
+ var full=k.temp||k.blind;
+ // equal moves (two empty columns) are tried in a random order, so ties don't always go the same way
+ for(i=root.length-1;i>0;i--){var j=Math.floor(R()*(i+1)),x=root[i];root[i]=root[j];root[j]=x}
+ res=naSearch(function(dep,dlx){dl=dlx;TT={};var sc=[],a=-9;
+  for(var j=0;j<root.length;j++){var i=root[j],r=put(A0,B0,i,v),w;
+   w=room(r[0])?-chance(r[1],r[0],dep-1,-U,full?U:-a):over(r[0],r[1]);
+   // narrowed: a move that can't beat the best so far only gets an upper bound, so it is put clearly below it
+   if(w>a)a=w;else if(!full)w-=.05;sc.push({i:i,s:w})}
+  return {sc:sc,done:dep>=room(A0)+room(B0)}},{from:Math.min(k.depth||1,9),to:k.depth||9,deadline:k.depth?0:t0+(d.ms||400)});
+ out.depth=res.depth;
+ var sc=res.v.sc;
+ // scores are chances to win (-1..1); spread them to points-like steps for the mistake model
+ sc.forEach(function(m){m.s*=50});
+ if(k.blind&&sc.length>1){var srt=sc.slice().sort(function(a,b){return b.s-a.s});sc.forEach(function(m){m.miss=1});
+  if(srt[0].s-srt[1].s>=k.obv)srt[0].miss=0}
+ return done(sc)}
+// one CPU decision for the CPU's board me against opp with the die v, at this level (knobs include adjusting to the player)
+function kbJob(me,opp,v,lv){var k=naKnobs('kb',lv);return {me:me,opp:opp,die:v,k:k,seed:Math.floor(naR()*4294967296),ms:k.ms||400}}
+var kbW=null;function brain(){return kbW||(kbW=naWorker(kbAI))}
+// Test hook (tests/ai_tournament.py): the CPU's column for any position, decided here on the main thread
+naAI.pick=function(st,lv){var o=kbAI(kbJob(st.me,st.opp,st.die,lv));return o&&o.col};
+// How long the CPU seems to think (blueprint 3, 3a): quick when only one column is open or the choice is clear,
+// longer for a close call; a little different every time, never over 1.5 s. Time spent searching counts.
+function pace(o){var t=S.diff==='easy'?500:S.diff==='normal'?600:650;t+=350*naR();
+ if(!o||o.n<2)t=300+150*naR();else if(o.v-o.v2>=15)t-=150;else if(S.diff!=='easy'&&o.v-o.v2<1.5)t+=250;
+ return Math.min(1500,t)}
+// the CPU places the die in the column it chose (o.col; any open column if there is no answer)
+function cpuMove(o){
+  var v=die,pick=-1;for(var i=0;i<c.length;i++)if(c[i].length<3&&(pick<0||(o&&o.col===i)))pick=i;
   var idx=c[pick].length;
   var k=place(c,p,pick,v);
   hit={placed:{side:'c',col:pick,idx:idx},killed:k?{side:'p',col:pick}:null};
@@ -250,8 +294,13 @@ function play(col,side){
   handover('c',k?'You destroyed '+k+(k>1?' dice':' die')+'.':'CPU is rolling…','CPU rolled a '+die+'.',cpuPlace)}
 // CPU turn after a reload: roll straight in
 function cpuGo(){var g=gid;setTimeout(function(){if(g!==gid)return;die=roll();hit=null;rolled=true;render('CPU rolled a '+die+'.');rolled=false;cpuPlace()},700)}
-function cpuPlace(){var g=gid;setTimeout(function(){if(g!==gid)return;show='c';var k2=cpuMove();sfx('opp');if(k2)sfx('lose',80);if(end())return;
-      turn='p';die=roll();handover('p',k2?'Lost '+k2+(k2>1?' dice':' die')+'! Your turn.':'Your turn: tap a column.')},800)}
+// the CPU's turn once its die is shown: it thinks (in its Worker), waits its pace, then places; a new game, Cancel
+// or a reload meanwhile (gid changes) drops the answer, so no late move or sound
+function cpuPlace(){var g=gid,t0=naNow(),d=kbJob(c,p,die,S.diff),live=function(){return g===gid};
+ naThink(function(){return brain().run(d)},{max:d.ms,ok:live}).catch(function(){return live()?kbAI(d):null}).then(function(o){
+  if(!live())return;var w=naAI.fast?0:pace(o)-(naNow()-t0);
+  setTimeout(function(){if(!live())return;show='c';var k2=cpuMove(o);sfx('opp');if(k2)sfx('lose',80);if(end())return;
+   turn='p';die=roll();handover('p',k2?'Lost '+k2+(k2>1?' dice':' die')+'! Your turn.':'Your turn: tap a column.')},Math.max(0,w))})}
 function grid(el,g,mine){
   var flipped=!mine&&document.body.classList.contains('flip');
   el.innerHTML='';
