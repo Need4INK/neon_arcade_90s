@@ -23,8 +23,12 @@ closed and how they took from the discard row. Target: Hard averages more points
     python3 tests/ai_tournament.py remi 400 --base   # the old CPU's levels against each other
     python3 tests/ai_tournament.py remi 2000 --styles  # the three personalities: each against the plain level, then
                                                      # the game's table (who wins the matches, how each one plays)
+    python3 tests/ai_tournament.py remi 2000 --person  # playing like a person (blueprint 3a): what the habits cost,
+                                                     # how often each shows, score play in matches, the pauses
 In the game seat 0 is you, and CPU 1 / 2 / 3 play Cautious / Bold / Sly; here seat 0 is a CPU of the plain level
 (no style). Target (blueprint 6b): each style wins a third of the three styles' matches, give or take 5 points.
+The styles' tables are played as matches (scores run on to the target, as in the game), because the CPUs play the
+score; the level pairings start every round at 0 : 0.
 
 --slow: Chrome's CPU slow-down at 4x (the iPhone 12 budget) while timing each Knucklebones / Othello decision; for
 Remi it counts main-thread tasks over 50 ms during a few drawn rounds and times every CPU decision of 12 rounds.
@@ -42,6 +46,7 @@ SLOW = '--slow' in argv
 VS = '--vs' in argv        # Remi: the new CPU against the one from before the AI build, same level
 BASE = '--base' in argv    # Remi: the old CPU's levels against each other (the "before" numbers)
 STYLES = '--styles' in argv  # Remi: the three personalities (same strength, different play)
+PERSON = '--person' in argv  # Remi: playing like a person (misses, memory, pauses, score play, fishing, holding back)
 args = [a for a in argv if not a.startswith('--')]
 WHICH = args[0] if args else 'all'
 N = int(args[1]) if len(args) > 1 else None
@@ -203,7 +208,7 @@ REMI_PATCH = [
     # seat 0 is played by the CPU code (no doubles swap screen for it either)
     ("if(G.cur===0){if(G.tn>3)fresh=[]", "if(G.cur===0&&!window.__bot0){if(G.tn>3)fresh=[]"),
     ("if(G.d3||(swp&&dblTiles(G.pl[0].hand).length))", "if(!window.__bot0&&(G.d3||(swp&&dblTiles(G.pl[0].hand).length)))"),
-    ("window.__remi={", "window.__remi={dealRound,newGame,endRound,get lvl(){return lvl},"),
+    ("window.__remi={", "window.__remi={dealRound,newGame,endRound,get lvl(){return lvl},set limit(v){LIMIT=v},"),
     # the tournament doesn't draw the table (same game, about 10x faster), and counts what is taken from the discards
     ("function render(){", "function render(){if(window.__norender)return;"),
     ("function takeRow(p,i){", "function takeRow(p,i){if(window.__tk)__tk.push([p,G.disc.length-i]);"),
@@ -212,6 +217,10 @@ REMI_PATCH = [
     # what the styles look like: when each seat opens, and who goes for the board game
     ("const was=P.opened;P.opened=true;", "const was=P.opened;P.opened=true;if(window.__op&&!was)__op.push([p,myTurnNo(p),pts]);"),
     ("if(d.board&&canBoard(p)){P.board=true;", "if(d.board&&canBoard(p)){P.board=true;if(window.__bd)__bd.push(p);"),
+    # how long each pause is, as a share of the speed setting's step
+    ("(s>>>8&1023)/1024)));return o}", "(s>>>8&1023)/1024)));if(window.__pw)__pw.push([k,PW,q.w]);return o}"),
+    # a seat can play with some knobs set by the test (to compare one habit on and off on the same deals)
+    ("Math.max(0,K[k]+S[k]);return K}", "Math.max(0,K[k]+S[k]);if(window.__kn&&__kn[p])Object.assign(K,__kn[p]);return K}"),
 ]
 
 
@@ -246,15 +255,16 @@ window.setTimeout=(fn,t,...a)=>{if(window.__slowT)return st(fn,Math.min(t||0,1),
 window.__sleep=ms=>new Promise(r=>st(r,ms));
 window.__bot0=true;__remi.spd=2;if(window.__ai)__ai.adapt=false;
 window.__long=[];try{new PerformanceObserver(l=>l.getEntries().forEach(e=>__long.push(e.duration))).observe({type:'longtask',buffered:false})}catch(e){}
-window.__remiRounds=async function(seats,old,n,seed,sty){const R=__remi,rounds=[],closes=[0,0,0,0],x2=[0,0,0,0],shut=[0,0,0,0];let draws=0,stuck=0,turns=0;window.__lv=seats;window.__old=old;window.__tk=[];window.__sty=sty;window.__op=[];window.__bd=[];
+window.__remiRounds=async function(seats,old,n,seed,sty,opt){const R=__remi,rounds=[],closes=[0,0,0,0],x2=[0,0,0,0],shut=[0,0,0,0],wins=[0,0,0,0],M=opt&&opt.match;let draws=0,stuck=0,turns=0;window.__lv=seats;window.__old=old;window.__tk=[];window.__sty=sty;window.__op=[];window.__bd=[];window.__kn=opt&&opt.kn||null;
  if(R.G.phase!=='over')R.endRound(-1,-1,'');   // the game opened with the page: stop its CPU turn before dealing again
- for(let i=0;i<n;i++){__seed(seed*100000+i);R.G.pl.forEach(P=>P.score=0);R.G.over=false;R.G.starter=i%4;R.dealRound();let w=0;
+ for(let i=0;i<n;i++){__seed(seed*100000+i);if(!M||!i||R.G.over)R.G.pl.forEach(P=>P.score=0);R.G.over=false;R.G.starter=i%4;R.G.round=i;R.dealRound();let w=0;
   while(R.G.phase!=='over'&&w++<60000){await __sleep(1);
    // nobody can ever close (every tile left fits nowhere and the pile keeps being reshuffled): counted, then ended like a pile that ran out
    if(R.G.tn>1200&&R.G.phase!=='over'){stuck++;R.endRound(-1,-1,'stuck')}}
   if(R.G.phase!=='over')throw new Error('Remi round did not finish');
-  const r=R.G.res;turns+=R.G.tn;rounds.push(r.pen.slice());if(r.closer>=0){closes[r.closer]++;if(r.x)x2[r.closer]++;R.G.pl.forEach((P,q)=>{if(!P.opened&&q!==r.closer)shut[q]++})}else draws++}
- return {rounds,closes,x2,shut,draws,stuck,turns,takes:__tk,opens:__op,boards:__bd}};
+  const r=R.G.res;turns+=R.G.tn;rounds.push(r.pen.slice());if(r.closer>=0){closes[r.closer]++;if(r.x)x2[r.closer]++;R.G.pl.forEach((P,q)=>{if(!P.opened&&q!==r.closer)shut[q]++})}else draws++;
+  if(M&&R.G.over)wins[R.G.pl.reduce((b,P,q)=>P.score>R.G.pl[b].score?q:b,0)]++}
+ return {rounds,closes,x2,shut,draws,stuck,turns,takes:__tk,opens:__op,boards:__bd,wins}};
 """
 L = {'easy': 0, 'normal': 1, 'hard': 2}
 
@@ -293,23 +303,15 @@ def remi_pair(f, a, b, n):
 STYLE = ['plain', 'Cautious', 'Bold', 'Sly']
 
 
-def matches(rounds, who, target):
-    """Cut a row of rounds into matches as the game does: first past the target wins, a tie at the top plays on."""
-    wins = {}; sc = [0] * 4; n = 0
-    for i, pen in enumerate(rounds):
-        sc = [a + b for a, b in zip(sc, pen)]
-        top = max(sc)
-        if top >= target and sc.count(top) == 1:
-            w = who[i][sc.index(top)]; wins[w] = wins.get(w, 0) + 1; n += 1; sc = [0] * 4
-    return wins, n
-
-
-def remi_table(f, lv, n, perms, label):
-    """One level, a style per seat. perms: seatings (style of seats 0-3) that all play the same deals."""
-    m = max(1, n // len(perms)); rounds = []; who = []; st = {k: dict(pts=0, n=0, cl=0, x2=0, shut=0, tk=0, tiles=0, op=0, opn=0, opp=0, bd=0) for k in range(4)}
+def remi_table(f, lv, n, perms, label, limit=1000):
+    """One level, a style per seat, played as matches to `limit`. perms: seatings (style of seats 0-3) that all play the same deals."""
+    m = max(1, n // len(perms)); rounds = []; w = {}; st = {k: dict(pts=0, n=0, cl=0, x2=0, shut=0, tk=0, tiles=0, op=0, opn=0, opp=0, bd=0) for k in range(4)}
+    f.evaluate(f"__remi.limit={limit}")
     for sty in perms:
-        r = f.evaluate(f"__remiRounds({[lv] * 4},[false,false,false,false],{m},{SEED},{json.dumps(sty)})")
-        rounds += r['rounds']; who += [sty] * m
+        r = f.evaluate(f"__remiRounds({[lv] * 4},[false,false,false,false],{m},{SEED},{json.dumps(sty)},{{match:1}})")
+        rounds += r['rounds']
+        for q in range(4):
+            w[sty[q]] = w.get(sty[q], 0) + r['wins'][q]
         for pen in r['rounds']:
             for q in range(4):
                 st[sty[q]]['pts'] += pen[q]; st[sty[q]]['n'] += 1
@@ -321,8 +323,9 @@ def remi_table(f, lv, n, perms, label):
             a = st[sty[q]]; a['op'] += turn; a['opn'] += 1; a['opp'] += pts
         for q in r['boards']:
             st[sty[q]]['bd'] += 1
-    res = {'rounds': len(rounds), 'styles': {}}
-    print(f"  {label}, {len(rounds)} rounds:", flush=True)
+    f.evaluate("__remi.limit=1000")
+    res = {'rounds': len(rounds), 'limit': limit, 'styles': {}}
+    print(f"  {label}, {len(rounds)} rounds, matches to {limit}:", flush=True)
     for k in range(4):
         a = st[k]
         if not a['n']:
@@ -334,13 +337,12 @@ def remi_table(f, lv, n, perms, label):
         print(f"    {STYLE[k]:>8}: {d['pts_per_round']:+6.1f} points a round · closes {d['closes']:.1%} (with a 1 or joly {d['closes_x2']:.0%})"
               f" · not opened {d['not_opened']:.1%} · takes {d['takes']} a round ({d['tiles_per_take']} tiles) · opens in turn {d['opens_turn']}"
               f" with {d['opens_with']} · board games {d['boards']}", flush=True)
-    for target in (500, 750, 1000):
-        w, nm = matches(rounds, who, target); three = sum(w.get(k, 0) for k in (1, 2, 3)) or 1
-        sh = {STYLE[k]: round(w.get(k, 0) / three, 3) for k in (1, 2, 3)}
-        ok = all(abs(v - 1 / 3) <= .05 for v in sh.values())
-        res[f'wins_{target}'] = {'matches': nm, 'plain': round(w.get(0, 0) / max(1, nm), 3), 'share': sh, 'ok': ok}
-        print(f"    matches to {target:4d}: {nm:5d} · share of the three styles' wins: " + ' · '.join(f"{k} {v:.1%}" for k, v in sh.items())
-              + f" ({'ok' if ok else 'MISS'}: each within 5 points of a third) · the plain seat wins {w.get(0, 0) / max(1, nm):.1%}", flush=True)
+    nm = sum(w.values()); three = sum(w.get(k, 0) for k in (1, 2, 3)) or 1
+    sh = {STYLE[k]: round(w.get(k, 0) / three, 3) for k in (1, 2, 3)}
+    ok = all(abs(v - 1 / 3) <= .05 for v in sh.values())
+    res['wins'] = {'matches': nm, 'plain': round(w.get(0, 0) / max(1, nm), 3), 'share': sh, 'ok': ok}
+    print(f"    {nm:5d} matches · share of the three styles' wins: " + ' · '.join(f"{k} {v:.1%}" for k, v in sh.items())
+          + f" ({'ok' if ok else 'MISS'}: each within 5 points of a third) · the plain seat wins {w.get(0, 0) / max(1, nm):.1%}", flush=True)
     return res
 
 
@@ -363,15 +365,88 @@ def run_styles(f, n):
             print(f"  {STYLE[k]:>8} vs plain {2 * half} rounds: {pts[0] / half / 4:+.1f} / {pts[1] / half / 4:+.1f} points a round, gap {m:+.1f} ± {se:.1f}", flush=True)
         o['game'] = remi_table(f, lv, 3 * n, [[0, 1, 2, 3]], "the game's table (you = plain, CPU 1 Cautious, CPU 2 Bold, CPU 3 Sly)")
         o['moved'] = remi_table(f, lv, 3 * n, [[0, 1, 2, 3], [0, 2, 3, 1], [0, 3, 1, 2], [0, 1, 3, 2], [0, 3, 2, 1], [0, 2, 1, 3]], 'styles moved round the CPU seats')
+        o['game_500'] = remi_table(f, lv, 3 * n // 2, [[0, 1, 2, 3]], "the game's table", 500)
+    return out_
+
+
+# ---- playing like a person (blueprint 3a). Every habit has a knob that is off at 0, so a seat can play without it.
+HABITS = {'memory': ['span', 'fade', 'fog'], 'misses': ['slip'], 'reading': ['read', 'shut'], 'fishing': ['fish'], 'small opening': ['sand'], 'score': ['score']}
+
+
+def habits_off(name, keys=None):
+    """knobs that switch habits off for a seat of that level (all of them: the CPU as it was before step 4b)"""
+    keys = keys or [k for g in HABITS.values() for k in g] + ['tempo']
+    return {k: (1 if name == 'hard' else 0) if k == 'read' else 0 for k in keys}
+
+
+def remi_ab(f, name, on, off, n, label, match=False):
+    """One level at the game's table (seat p plays style p). Seats 0 and 2 play with knobs `on`, 1 and 3 with `off`
+    (None = as built), then the other way round on the same deals: points a round on minus off, and matches won."""
+    half = max(1, n // 2); diff = [0.0] * half; wins = [0, 0]
+    for flip in (0, 1):
+        kn = [off, on, off, on] if flip else [on, off, on, off]
+        r = f.evaluate(f"__remiRounds({[L[name]] * 4},[false,false,false,false],{half},{SEED},null,{json.dumps({'kn': kn, 'match': match})})")
+        for i, pen in enumerate(r['rounds']):
+            for q in range(4):
+                diff[i] += (pen[q] if (q % 2 == 0) != bool(flip) else -pen[q]) / 4
+        for q in range(4):
+            wins[(q % 2 == 0) == bool(flip)] += r['wins'][q]
+    m = sum(diff) / half; se = (sum((d - m) ** 2 for d in diff) / max(1, half - 1) / half) ** .5
+    res = {'rounds': 2 * half, 'gap': round(m, 1), 'gap_se': round(se, 1)}
+    txt = f"  {name:>6} · {label:<28} {2 * half} rounds: {m:+.1f} ± {se:.1f} points a round"
+    if match:
+        res['matches'] = sum(wins); res['won'] = round(wins[0] / max(1, sum(wins)), 3)
+        txt += f" · wins {wins[0]} of {sum(wins)} matches ({wins[0] / max(1, sum(wins)):.1%}; even = 50%)"
+    print(txt, flush=True)
+    return res
+
+
+# Every decision of some rounds, asked again with one habit off: where the answer differs, the habit was at work
+PERSON_JS = r"""(()=>{const B=__remi.brain,o={disc:0,fitThrown:0,fish:0,opens:0,small:0,adds:0,addMiss:0,swapMiss:0,takes:0,takeMiss:0,row:0,rowGone:0,score:0,rush:0,pace:{}};
+ const pick=(k,v,s,kn)=>JSON.stringify(__ai.pick({k,v:Object.assign({},v,{K:Object.assign({},v.K,kn)}),s}));
+ for(const [k,s,vj,oj] of __ai.log){const v=JSON.parse(vj),me=v.pl[v.p];
+  if(k==='disc'){o.disc++;if(me.opened&&v.hand.length>1&&!me.board&&B.fitsTable(v.melds,JSON.parse(oj),v.p)>=0)o.fitThrown++;
+   if(v.K.fish>0&&v.K.pool<2&&pick(k,v,s,{fish:0})!==oj)o.fish++;
+   const nd=v.disc.length;v.disc.forEach((x,i)=>{const a=nd-1-i;o.row++;if(B.rbH(v.z,v.p,x)<Math.min(.6,Math.max(0,a-v.K.span)*v.K.fade)||(a>=v.K.span&&!v.K.mem))o.rowGone++});
+   const m=B.rbMood(v);if(m!==v){o.score++;if(Math.max(...v.sc)>=v.lim-200&&v.K.score>.5)o.rush++}}
+  if(k==='lay'&&!me.opened&&JSON.parse(oj).length){o.opens++;if(v.K.sand>0&&pick(k,v,s,{sand:0})!==oj)o.small++}
+  if(k==='extras'){const a=JSON.parse(oj),b=JSON.parse(pick(k,v,s,{slip:0}));if(b.length){o.adds++;if(b.length>a.length)o.addMiss++;if(b.some(x=>x.a==='swap')&&!a.some(x=>x.a==='swap'))o.swapMiss++}}
+  if(k==='start'&&me.opened&&v.hand.length>=3&&!me.board&&pick(k,v,s,{blind:0,temp:0}).includes('take')){o.takes++;if(!oj.includes('take'))o.takeMiss++}}
+ for(const [k,w] of __pw)(o.pace[k]||(o.pace[k]=[])).push(w);
+ for(const k in o.pace){const a=o.pace[k].sort((x,y)=>x-y),q=p=>+a[Math.floor(p*(a.length-1))].toFixed(2);o.pace[k]={n:a.length,min:q(0),p10:q(.1),mid:q(.5),p90:q(.9),max:q(1)}}
+ return o})()"""
+
+
+def run_person(f, n):
+    """Playing like a person (blueprint 3a). Per level: the CPU as built against itself without the new habits (what
+    they cost), each habit on its own, score play in matches, then how often each habit shows and how long the pauses are."""
+    out_ = {}
+    for name in ['easy', 'normal', 'hard']:
+        o = out_[name] = {}
+        o['all'] = remi_ab(f, name, None, habits_off(name), n, 'all habits, against none')
+        for g, keys in HABITS.items():
+            if g != 'score':
+                o[g] = remi_ab(f, name, None, habits_off(name, keys), n, g + ', against without')
+        o['score'] = remi_ab(f, name, None, {'score': 0}, 3 * n, 'playing the score, matches', True)
+        f.evaluate("__ai.log=[];window.__pw=[]")
+        f.evaluate(f"__remiRounds({[L[name]] * 4},[false,false,false,false],{min(300, n)},{SEED + 3},null,{{match:1}})")
+        h = o['shows'] = f.evaluate(PERSON_JS); f.evaluate("__ai.log=null;window.__pw=null")
+        p = lambda a, c: f"{a} of {c} ({a / max(1, c):.1%})"
+        print(f"  {name:>6} · in {min(300, n)} rounds of match play: threw a tile that fits the table {p(h['fitThrown'], h['disc'])} discards · an add overlooked in"
+              f" {p(h['addMiss'], h['adds'])} turns with one (a joly swap: {h['swapMiss']}) · takes overlooked {p(h['takeMiss'], h['takes'])}"
+              f" · discards in the row it no longer knows {h['rowGone'] / max(1, h['row']):.1%} · fishing discards {p(h['fish'], h['disc'])}"
+              f" · small openings {p(h['small'], h['opens'])} · discards with the score in mind {p(h['score'], h['disc'])} (closing fast: {h['rush']})", flush=True)
+        print(f"  {name:>6} · pauses, as a share of the speed step (lowest, 10%, middle, 90%, highest): "
+              + ' · '.join(f"{k} {v['min']} {v['p10']} {v['mid']} {v['p90']} {v['max']}" for k, v in h['pace'].items()), flush=True)
     return out_
 
 
 def run_remi(page_unused):
     n = N or 200
-    mode = 'styles' if STYLES else 'vs' if VS else 'base' if BASE else 'levels'
+    mode = 'styles' if STYLES else 'person' if PERSON else 'vs' if VS else 'base' if BASE else 'levels'
     pairs = {'levels': [('normal', 'easy'), ('hard', 'normal'), ('hard', 'easy')],
              'vs': [('easy', 'base:easy'), ('normal', 'base:normal'), ('hard', 'base:hard')],
-             'base': [('base:normal', 'base:easy'), ('base:hard', 'base:normal'), ('base:hard', 'base:easy')], 'styles': []}[mode]
+             'base': [('base:normal', 'base:easy'), ('base:hard', 'base:normal'), ('base:hard', 'base:easy')], 'styles': [], 'person': []}[mode]
     print(f'Remi (4 CPUs, two kinds per table, seed {SEED}; "base" = the CPU from before the AI build; gap ± standard error)', flush=True)
     d = remi_copy(); port = start_server(8957, root=d)
     pw, b, page = open_page(port, 'iphone12')
@@ -385,6 +460,8 @@ def run_remi(page_unused):
         RESULTS['remi'] = {'mode': mode, 'pairs': res}
         if STYLES:
             RESULTS['remi']['styles'] = run_styles(f, n)
+        if PERSON:
+            RESULTS['remi']['person'] = run_person(f, n)
         if SLOW:
             f.evaluate("window.__norender=false;window.__slowT=true;__long=[]"); cdp = throttle(page, f, 4)
             for lv in [0, 1, 2]:

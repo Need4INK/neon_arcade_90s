@@ -451,9 +451,18 @@ function swapIdsFor(m,hand,S){const a=analyze(m.t);if(!a)return null;
 //  weakest tiles · mem: remembers what was played (dead pairs, tiles seen taken) · safe: weight of not feeding the
 //  next player · read: reads what the next player threw away or passed on · look: before opening, counts the tiles
 //  still out that would let it open · guard: gets rid of costly tiles when someone is about to close · swap: joly swaps
-naLevel.remi={easy:{deep:4,blind:.25,draw:3,pool:3,dtemp:6,mem:0,safe:0,read:0,look:0,guard:0,swap:0},
- normal:{deep:10,draw:3,pool:1,dtemp:0,mem:1,safe:5,read:0,look:0,guard:0,swap:0},
- hard:{deep:20,draw:3,pool:1,dtemp:0,mem:1,safe:5,read:1,look:4,guard:.6,swap:1}};
+// Playing like a person (blueprint 3a; every one of these is off at 0, which gives the CPU of step 4a exactly):
+//  span: the last discards it is sure of · fade: chance per older discard that it no longer knows it (what is forgotten
+//  stays forgotten that round; Easy knows only those last few) · fog: tiles on a crowded table, or seen taken into a hand,
+//  that it didn't register · slip: chance to overlook a formation across a crowded table this turn (an add, a joly swap,
+//  a tile that would fit; never its own formations, never with 4 tiles or fewer in hand); takes are overlooked more on a
+//  busy table too · read (0..1): how far back it reads the next player's discards and passes (Normal: the last two) ·
+//  shut: how much more it minds feeding a next player who has 3 tiles (a take there ends the round) · fish: how often it
+//  discards, among tiles it would throw anyway, the one next to what it collects · score: plays the match score
+//  (behind: bolder; ahead: safer; near the target: closes fast or blocks the leader)
+naLevel.remi={easy:{deep:4,blind:.25,draw:3,pool:3,dtemp:6,mem:0,safe:0,read:0,look:0,guard:0,swap:0,span:4,fade:.3,fog:0,slip:.3,shut:0,fish:0,score:.4},
+ normal:{deep:10,draw:3,pool:1,dtemp:0,mem:1,safe:5,read:.25,look:0,guard:0,swap:0,span:5,fade:.06,fog:.2,slip:.1,shut:3,fish:.3,score:1},
+ hard:{deep:20,draw:3,pool:1,dtemp:0,mem:1,safe:5,read:1,look:4,guard:.6,swap:1,span:12,fade:.01,fog:.03,slip:.015,shut:3,fish:.5,score:1}};
 // Personalities (blueprint 6b): each CPU plays its level in its own style, a few weights on top of the level's knobs
 // (added to them; deep is multiplied; a level can have its own value). CPU 1 Cautious, CPU 2 Bold, CPU 3 Sly. Tuned with
 // tests/ai_tournament.py remi --styles so that the three win the same share of matches; the plain level (no style) is your seat there.
@@ -466,14 +475,16 @@ naLevel.remi={easy:{deep:4,blind:.25,draw:3,pool:3,dtemp:6,mem:0,safe:0,read:0,l
 //  Cautious also minds its opening (look) and the end (guard); Bold looks further back and forgets defence (guard, safe).
 //  Per level, to keep the three even: at Hard Cautious drops solid and cheap, Bold plans its opening less (look) and Sly
 //  takes less (shy); at Easy Bold looks less far back and Sly is less shy.
+//  Step 4b: tempo: Cautious takes a little longer over a move, Bold a little less · sand: Sly opens with as little as
+//  the rules allow and keeps its other formations back · Sly fishes more often.
 const RSTY=[{},
- {draw:20,shy:4,solid:10,cheap:.2,wary:1,guard:.4,bd:1,look:2,hard:{solid:0,cheap:0}},
- {deep:1.5,shy:-8,bd:-2,guard:-.6,safe:-5,easy:{deep:1.25},hard:{look:-3.5}},
- {hold:1,fin:1,safe:3,shy:14,easy:{shy:4},hard:{shy:30}}],RS0={solid:0,cheap:0,wary:0,bd:0,hold:0,fin:0,shy:0};
+ {draw:20,shy:4,solid:10,cheap:.2,wary:1,guard:.4,bd:1,look:2,tempo:.1,hard:{solid:0,cheap:0}},
+ {deep:1.5,shy:-8,bd:-2,guard:-.6,safe:-5,tempo:-.12,easy:{deep:1.25},hard:{look:-3.5}},
+ {hold:1,fin:1,safe:3,shy:14,sand:1,fish:.3,easy:{shy:4,sand:0,fish:0},hard:{shy:30}}],RS0={solid:0,cheap:0,wary:0,bd:0,hold:0,fin:0,shy:0,tempo:0,sand:0};
 function knobsOf(p,lv){const K=Object.assign({},RS0,naKnobs('remi',lv)),S0=RSTY[p]||{},S=Object.assign({},S0,S0[K.level]);
  // a level made gentler (adjusting to the player, a later step) moves its knobs away from the next level: keep them in range
  for(const k in K)if(typeof K[k]==='number'&&k!=='adapt'&&k!=='draw')K[k]=Math.max(k==='deep'||k==='pool'?1:0,K[k]);K.mem=Math.min(1,K.mem);
- for(const k in S)if(typeof S[k]==='number')K[k]=k==='deep'?Math.max(1,Math.round(K.deep*S.deep)):/^(draw|cheap|bd|shy)$/.test(k)?K[k]+S[k]:Math.max(0,K[k]+S[k]);return K}
+ for(const k in S)if(typeof S[k]==='number')K[k]=k==='deep'?Math.max(1,Math.round(K.deep*S.deep)):/^(draw|cheap|bd|shy|tempo)$/.test(k)?K[k]+S[k]:Math.max(0,K[k]+S[k]);return K}
 // What the whole table has seen this round (kept in G, saved, checked on load): h = tiles known to sit in a hand (taken
 // from the discards and kept; the atu's twin), no[p] = the last tiles player p threw away or passed on (newest last).
 function newMem(){return {h:{},no:[[],[],[],[]]}}
@@ -488,17 +499,32 @@ function toDisc(p,id){rm(G.pl[p].hand,[id]);G.disc.push(id);delete G.mem.h[id];n
 // The view of player p: public things and p's own hand only. Never the pile's tiles or another player's hand.
 function viewOf(p,x){const h={},P=G.pl[p],K=knobsOf(p,lvl);for(const id in G.mem.h)if(G.own[id]<0)h[id]=G.mem.h[id];
  return Object.assign({p,K,hand:P.hand.slice(),disc:G.disc.slice(),melds:G.melds.map(m=>({o:m.o,t:m.t.slice()})),jl:Object.assign({},G.jl),
-  pl:G.pl.map(Q=>({n:Q.hand.length,opened:Q.opened,board:!!Q.board})),pile:G.pile.length,tn:G.tn,turn:myTurnNo(p),h,no:G.mem.no.map(a=>a.slice()),must:-1,start:P.hand.length},x)}
+  pl:G.pl.map(Q=>({n:Q.hand.length,opened:Q.opened,board:!!Q.board})),pile:G.pile.length,tn:G.tn,turn:myTurnNo(p),h,no:G.mem.no.map(a=>a.slice()),must:-1,start:P.hand.length,
+  // the match so far (on the score table for everyone), and a number per round made from public things only (round,
+  // atu, who started): it decides what this CPU forgets or overlooks, the same after a reload
+  sc:G.pl.map(Q=>Q.score),lim:LIMIT,z:(Math.imul(G.round+1,7919)^Math.imul(G.atu+1,104729)^G.starter<<20)>>>0},x)}
 
+// A person's memory and attention, not a recording (blueprint 3a). rbH: a fixed number 0..1 for (z, a, b), so the same
+// tile is forgotten, or the same formation overlooked, by every decision that asks. rbBusy: how crowded the table is, 0..1.
+// rbSees: does this CPU notice formation mi this turn? Always its own, always with 4 tiles or fewer in hand (it looks hard).
+function rbH(z,a,b){let x=Math.imul(z^Math.imul(a+1,0x9E3779B1)^Math.imul(b+7,0x85EBCA6B),0xC2B2AE35);x^=x>>>15;x=Math.imul(x,0x27D4EB2F);return((x^x>>>13)>>>0)/4294967296}
+function rbBusy(V){return Math.min(1,Math.max(0,V.melds.length-2)/8)}
+function rbSees(V,mi,f){const s=V.K.slip*f*rbBusy(V);return !(s>0)||V.melds[mi].o===V.p||V.hand.length<5||rbH(V.z^0x5bd1e995,V.tn*4+V.p,mi)>=s}
+// the formation on table M that tile id goes on, among those it notices (M: the view's formations first, then its own new ones)
+function rbFit(V,M,id,all){const p=V.p,n=V.melds.length;return M.findIndex((m,i)=>(all||i>=n||rbSees(V,i,1))&&(!isJ(id)||m.o===p)&&analyze(m.t.concat(id)))}
+function rbW(V,w){if(V.q)V.q.w=w}                                       // how long this choice takes to make (the game's pause)
 function rbTy(id){return id>103?52:id%52}                               // tile type: colour x 13 + number - 1, 52 = joly
 function rbPos(c,q){return q<1||q>14?-1:c*13+(q===14?0:q-1)}             // the type at place q of a run (14: the 1 after 13)
 // What this CPU knows. u: copies of each type it hasn't seen (its hand, and with memory the table, the discards and tiles
 // it saw taken) · row: copies it could still take from the discards · fit: types that go on a formation on the table ·
 // hz: chance the round ends before its next turn (measured: 47% once an opened player is down to 1 tile, 12% at 2-3,
 // 4% at 4, under 1% otherwise) · dg: how close someone is to closing (0..1). A wary CPU (Cautious) sees both coming sooner.
-function rbCnt(V){const m=V.K.mem,wa=V.K.wary,p=V.p,u=Array(53).fill(2),row=Array(53).fill(0),fit=Array(53).fill(0),see=(id,w)=>{const t=rbTy(id);u[t]=Math.max(0,u[t]-w)};
- V.hand.forEach(id=>see(id,1));V.disc.forEach((id,i)=>{see(id,m);if(i)row[rbTy(id)]+=m});for(const id in V.h)if(V.h[id]!==p)see(+id,m);
- V.melds.forEach(x=>{x.t.forEach(id=>see(id,m));const a=analyze(x.t);if(!a)return;const c=a.seq[0].c,n=a.seq[0].n;
+function rbCnt(V){const K=V.K,m=K.mem,wa=K.wary,p=V.p,nd=V.disc.length,u=Array(53).fill(2),row=Array(53).fill(0),fit=Array(53).fill(0),see=(id,w)=>{const t=rbTy(id);u[t]=Math.max(0,u[t]-w)},
+  fg=K.fog*rbBusy(V),key=id=>rbH(V.z,p,id);
+ V.hand.forEach(id=>see(id,1));
+ V.disc.forEach((id,i)=>{const a=nd-1-i,w=key(id)<Math.min(.6,Math.max(0,a-K.span)*K.fade)?0:a<K.span?1:m;see(id,w);if(i)row[rbTy(id)]+=w});
+ for(const id in V.h)if(V.h[id]!==p&&key(+id)>=K.fog)see(+id,m);
+ V.melds.forEach((x,mi)=>{x.t.forEach(id=>{if(key(id)>=fg)see(id,m)});if(!rbSees(V,mi,1))return;const a=analyze(x.t);if(!a)return;const c=a.seq[0].c,n=a.seq[0].n;
   (a.type==='set'?[0,1,2,3].map(d=>d*13+n-1):[rbPos(c,n-1),rbPos(c,a.seq[a.seq.length-1].n+1)]).forEach(t=>{if(t>=0&&analyze(x.t.concat(t)))fit[t]=1})});
  let dg=0,km=99;V.pl.forEach((Q,q)=>{if(q!==p&&Q.opened){const n=Q.n-wa;km=Math.min(km,n);if(n<4)dg=Math.max(dg,Math.min(1,(4-n)/3))}});
  return {u,row,fit,hz:km<2?.47:km<4?.12:km<5?.045:km<6?.01:.004,dg,km}}
@@ -520,14 +546,14 @@ function rbKeep(V,C,h,quick){const K=V.K,me=V.pl[V.p],has=Array(53).fill(0),jo=K
 // Chance (0..1) that the next player can lay discard id in a new formation: from the tiles still unseen, the tiles it
 // was seen taking and, when reading it (Hard), the tiles it just threw away or passed on
 function rbRisk(V,C,id){const p=V.p,nx=(p+1)%4,N=V.pl[nx];if(isJ(id))return 1;
- let U=V.pile;const kn={};V.pl.forEach((Q,q)=>{if(q!==p)U+=Q.n});for(const x in V.h)if(V.h[x]!==p){U--;if(V.h[x]===nx)kn[rbTy(+x)]=1}
+ let U=V.pile;const kn={};V.pl.forEach((Q,q)=>{if(q!==p)U+=Q.n});for(const x in V.h)if(V.h[x]!==p&&rbH(V.z,p,+x)>=V.K.fog){U--;if(V.h[x]===nx)kn[rbTy(+x)]=1}
  const rho=Math.min(1,N.n/Math.max(1,U)),has=t=>t<0?0:kn[t]?1:1-Math.pow(1-rho,C.u[t]),c=TILES[id].c,n=TILES[id].n,hj=has(52);
  if(N.board)return has(rbTy(id));
  let q=1;const pr=(a,b)=>{q*=1-a*b};
  for(const k of n===1?[1,14]:[n]){const a=has(rbPos(c,k-2)),b=has(rbPos(c,k-1)),d=has(rbPos(c,k+1)),e=has(rbPos(c,k+2));pr(a,b);pr(b,d);pr(d,e);[a,b,d,e].forEach(x=>pr(x,hj))}
  const o=[0,1,2,3].filter(d=>d!==c).map(d=>has(d*13+n-1));pr(o[0],o[1]);pr(o[0],o[2]);pr(o[1],o[2]);o.forEach(x=>pr(x,hj));
  let r=1-q;
- if(V.K.read>.5){const L=V.no[nx];for(let i=L.length-1,a=0;i>=0;i--,a++)if(rbTy(L[i])===rbTy(id)){r*=a<2?.15:a<4?.4:.7;break}}
+ if(V.K.read>0){const L=V.no[nx];for(let i=L.length-1,a=0;i>=0&&a<V.K.read*8;i--,a++)if(rbTy(L[i])===rbTy(id)){r*=a<2?.15:a<4?.4:.7;break}}
  return r*(N.opened&&N.n>=3?1:.2)}
 // Before opening: for every tile type still out, would drawing it let the hand open? Each tile of h gets the number of
 // such draws that don't need it (so it can go). Null when the hand is more than one tile away from opening.
@@ -535,12 +561,47 @@ function rbOuts(C,h){const w={},inH=new Set(h);let any=0;h.forEach(id=>w[id]=0);
  for(let t=0;t<53;t++){if(C.u[t]<=0)continue;const x=t>51?(inH.has(104)?105:104):inH.has(t)?t+52:t,b=openFor(h.concat(x));if(!b.melds.length)continue;
   const used=new Set([].concat(...b.melds));any=1;h.forEach(id=>{if(!used.has(id))w[id]+=C.u[t]})}
  return any?w:null}
+// Playing the score (blueprint 3a): the same view with the knobs moved by how the match stands. m: behind the best
+// other player > 0 (bolder: a shy CPU takes more, it keeps tiles to build, saves a 1 or joly for a double close, tries
+// the board game with one double less, though never with fewer than 3) .. ahead < 0 (safer: a cheap hand, smaller
+// takes, no holding back), counting for more as the match goes on. Once anyone is
+// within a round of the target it closes as fast as it can (to win, or to stop the leader) and minds feeding a leader
+// who plays next.
+function rbMood(V){const K0=V.K,g=K0.score;if(!(g>0)||!V.sc)return V;
+ const s=V.sc,p=V.p,me=s[p],top=Math.max(...s.filter((x,q)=>q!==p)),hi=Math.max(top,me),L=V.lim,
+  m=g*Math.max(-1,Math.min(1,(top-me)/250))*Math.min(1,hi/(.4*L)),rush=g>.5&&hi>=L-200;
+ if(!m&&!rush)return V;
+ const K=Object.assign({},K0);K.guard=Math.max(0,K.guard-.3*m);K.cheap-=.15*m;if(K.shy>0)K.shy*=1-.5*m;K.bd=Math.max(-2,K.bd-Math.round(m));
+ if(m>.6)K.fin=1;if(m<-.6||rush)K.fin=K.hold=K.sand=0;
+ if(rush&&s[(p+1)%4]>=L-200&&K.safe>0)K.safe*=1.6;
+ return Object.assign({},V,{K})}
+// What it hopes to pick up: for each tile type it doesn't hold but that is still out, the pairs in hand h it would finish
+function rbWant(C,h){const W={},has={};h.forEach(id=>{if(!isJ(id))(has[rbTy(id)]=has[rbTy(id)]||[]).push(id)});
+ const add=(t,a,b)=>{if(t>=0&&!has[t]&&C.u[t]+C.row[t]>0)(W[t]=W[t]||new Set()).add(a).add(b)};
+ for(const k in has){const t=+k,c=t/13|0,n=t%13+1,a=has[t][0];
+  for(let d=c+1;d<4;d++){const o=has[d*13+n-1];if(o)for(let e=0;e<4;e++)if(e!==c&&e!==d)add(e*13+n-1,a,o[0])}
+  for(const q of n===1?[1,14]:[n]){const x=has[rbPos(c,q+1)],y=has[rbPos(c,q+2)];if(x){add(rbPos(c,q-1),a,x[0]);add(rbPos(c,q+2),a,x[0])}if(y)add(rbPos(c,q+1),a,y[0])}}
+ return W}
 // The tile to discard: the one worth least to keep and least useful to the next player
-function rbDisc(V,rnd){const h=V.hand,K=V.K,me=V.pl[V.p];if(h.length===1)return h[0];
+function rbDisc(V,rnd){V=rbMood(V);const h=V.hand,K=V.K,me=V.pl[V.p];rbW(V,.7);if(h.length===1)return h[0];
  if(me.board){const o=boardOuts(h);if(o.length)return o[0].id;
-  const L=h.filter(x=>!isJ(x)),S=L.filter(x=>L.filter(y=>rbTy(y)===rbTy(x)).length%2===1),A=S.length?S:L;return A[Math.floor(rnd()*A.length)]}
- const C=rbCnt(V),w=K.look&&!me.opened?rbOuts(C,h):null,sc=rbKeep(V,C,h).map(x=>({id:x.id,s:-x.s-(K.safe?K.safe*rbRisk(V,C,x.id)*(1+C.dg):0)+(w?K.look*w[x.id]:0)})).sort((a,b)=>b.s-a.s);
- return naChoose(sc.slice(0,Math.max(1,Math.round(K.pool))),{temp:K.dtemp},rnd).id}
+  const L=h.filter(x=>!isJ(x)),S=L.filter(x=>L.filter(y=>rbTy(y)===rbTy(x)).length%2===1),A=S.length?S:L;rbW(V,.9);return A[Math.floor(rnd()*A.length)]}
+ // a next player with 3 tiles who can use the discard takes it, lays 3 and is out: mind that far more (shut)
+ const C=rbCnt(V),N=V.pl[(V.p+1)%4],sh=N.opened&&N.n===3?1+K.shut:1,w=K.look&&!me.opened?rbOuts(C,h):null,
+  sc=rbKeep(V,C,h).map(x=>({id:x.id,s:-x.s-(K.safe?K.safe*rbRisk(V,C,x.id)*(1+C.dg)*sh:0)+(w?K.look*w[x.id]:0)})).sort((a,b)=>b.s-a.s);
+ let o=null;
+ // Fishing: among the tiles it would throw anyway, sometimes the one next to a tile it hopes for (the same number in
+ // another colour, or the neighbour in its colour), so that tile looks safe to throw. Not when someone is about to close.
+ if(K.fish>0&&me.opened&&!C.dg&&h.length>3&&rnd()<K.fish){const W=rbWant(C,h);let best=0;
+  for(const x of sc){if(x.s<sc[0].s-1.2)break;if(isJ(x.id))continue;const c=TILES[x.id].c,n=TILES[x.id].n;let b=0;
+   for(const t in W){const tc=t/13|0,tn=t%13+1;if(!W[t].has(x.id)&&(tc===c?Math.abs(tn-n)===1||Math.abs(tn-n)===12:tn===n))b++}
+   if(b>best){best=b;o=x}}}
+ if(!o)o=naChoose(sc.slice(0,Math.max(1,Math.round(K.pool))),{temp:K.dtemp},rnd);
+ // the pause: quick when one tile is clearly the one to go, longer for a close call, the last tiles, or a tile the next
+ // player may well use while someone is getting close
+ const gap=sc[0].s-sc[1].s,rk=K.safe>0&&N.opened&&N.n>2&&N.n<6?rbRisk(V,C,o.id):0;
+ rbW(V,(gap>1.5?.65:gap<.15?1.15:.9)+(rk>.2?.35:0)+(C.dg>0?.15:0)+(h.length<5?.2:0));
+ return o.id}
 // What ending the turn like this is worth, in points: the tiles laid now, plus what each tile left may still bring (laid
 // later) or cost (in hand when someone closes). H: the hand · must: a taken discard that has to be laid · drew: a pile tile comes too
 function rbEv(V,C,H,must,drew,nt){const b=findBest(H,1,false,false,must<0?null:must,4000),used=new Set([].concat(...b.melds));
@@ -558,15 +619,17 @@ function rbCan(cnt,x){if(isJ(x))return true;const J=cnt[52]?1:0,c=TILES[x].c,n=T
  for(const q of n===1?[1,14]:[n])for(let lo=Math.max(1,q-2);lo<=q&&lo<13;lo++){let miss=0;for(let t=lo;t<lo+3;t++)if(t!==q&&!cnt[rbPos(c,t)])miss++;if(miss<=J)return true}
  return false}
 // Start of a turn: play on the board, take from the discard row (how far back), or draw
-function rbStart(V,rnd){const K=V.K,me=V.pl[V.p],h=V.hand,n=V.disc.length,d=n>1?V.disc[n-1]:-1;
- if(K.level!=='easy'&&!me.opened&&!me.board&&V.turn<=3&&doubles(h)>=5+K.bd)return {board:1};
+function rbStart(V,rnd){V=rbMood(V);const K=V.K,me=V.pl[V.p],h=V.hand,n=V.disc.length,d=n>1?V.disc[n-1]:-1;rbW(V,.6);
+ if(K.level!=='easy'&&!me.opened&&!me.board&&V.turn<=3&&doubles(h)>=5+K.bd){rbW(V,1.4);return {board:1}}
  if(!V.tn||d<0)return {};
  if(me.board)return V.tn>=4&&!isJ(d)&&h.filter(x=>rbTy(x)===rbTy(d)).length===1?{take:n-1}:{};
  if(!me.opened||h.length<3)return {};
  const C=rbCnt(V),opts=[{i:0,s:rbEv(V,C,h,-1,true)+K.draw,miss:0}],cnt=Array(53).fill(0);h.forEach(id=>cnt[rbTy(id)]++);
  for(let i=n-1,tried=0;i>=1&&n-i<=K.deep&&tried<8&&(i===n-1||h.length>=4);i--){const x=V.disc[i];cnt[rbTy(x)]++;if(!rbCan(cnt,x))continue;
-  tried++;const s=rbEv(V,C,h.concat(V.disc.slice(i)),x,false,n-i);if(s!=null)opts.push({i,s,miss:Math.min(3,.7+.3*(n-1-i))})}
- const o=naChoose(opts,{blind:K.blind,temp:K.temp},rnd);return o.i?{take:o.i}:{}}
+  tried++;const s=rbEv(V,C,h.concat(V.disc.slice(i)),x,false,n-i);if(s!=null)opts.push({i,s,miss:Math.min(3,.7+.3*(n-1-i))*(1+1.5*K.slip*rbBusy(V))})}
+ const o=naChoose(opts,{blind:K.blind,temp:K.temp},rnd);
+ // the pause: longer the further back it takes; a draw is quick unless a take was a close call
+ rbW(V,o.i?1+Math.min(.5,.12*(n-o.i)):opts.length<2?.7:opts.some(x=>x.i&&x.s>opts[0].s-4)?1.15:.85);return o.i?{take:o.i}:{}}
 // Everything hand h could put down this turn: new formations (a taken tile m in one of them), then tiles added to the
 // table. keep: a tile held back as the last one · adds: only adding (after the lay-down). rest: what stays in hand
 function rbDown(V,h,m,keep,adds){const p=V.p,R=h.filter(x=>x!==keep),b=adds?{melds:[]}:findBest(R,1,false,false,m<0?null:m,4000,keep>=0),u=new Set([].concat(...b.melds)),
@@ -583,34 +646,47 @@ function rbFin(V,h,m,adds){if(!(V.K.fin>0)||!V.pl[V.p].opened||h.length<2)return
 // someone else is down to 2 tiles
 function rbFree(V,C,h,m,adds){return C.km<3||rbDown(V,h,m,-1,adds).rest.length<2}
 // Formations to lay down: its opening, or once opened everything it can (with the taken discard in one of them)
-function rbLay(V){const K=V.K,p=V.p,h=V.hand,m=V.must<0?null:V.must;
+function rbLay(V){V=rbMood(V);const K=V.K,p=V.p,h=V.hand,m=V.must<0?null:V.must;rbW(V,m==null?1:.8);
  if(!V.pl[p].opened){const b=V.tn>=4?openFor(h):null;if(!b||!b.melds.length)return [];
   // Cautious opens only with a solid hand, unless it has waited two turns or someone is getting close
-  return K.solid&&b.pts<OPEN+K.solid&&V.turn<4&&!V.pl.some((Q,q)=>q!==p&&(Q.board||Q.opened&&Q.n<8))?[]:b.melds}
+  if(K.solid&&b.pts<OPEN+K.solid&&V.turn<4&&!V.pl.some((Q,q)=>q!==p&&(Q.board||Q.opened&&Q.n<8)))return [];
+  rbW(V,1.4);
+  // Sly opens with as little as the rules allow (the fewest tiles that make 45 with a run and a set) and keeps its other
+  // formations back, unless it can go out with them or someone is down to 2 tiles
+  if(K.sand>0&&b.melds.length>2&&!rbFree(V,rbCnt(V),h,-1,0)){const A=b.melds.map(analyze);let best=null,bn=99;
+   for(let k=1;k<1<<A.length;k++){let pts=0,n=0,r=0,st=0;A.forEach((a,i)=>{if(k>>i&1){pts+=a.pts;n+=a.seq.length;a.type==='run'?r++:st++}});
+    if(pts>=OPEN&&r&&st&&n<bn){bn=n;best=k}}
+   if(best)return b.melds.filter((z,i)=>best>>i&1)}
+  return b.melds}
  const f=rbFin(V,h,V.must,0);if(f)return f.melds;
  const b=findBest(h,1,false,false,m);return !(K.hold>0)||rbFree(V,rbCnt(V),h,V.must,0)?b.melds:b.melds.filter(z=>z.includes(m))}
 // Joly swaps (Hard) and adding to the table, worked out on the view's own copy of the table; the game replays the steps
-function rbExtras(V){const K=V.K,p=V.p,acts=[],C=rbCnt(V),hold=!(K.guard>.3&&C.hz>.4),f=rbFin(V,V.hand,-1,1),free=f||!(K.hold>0)||rbFree(V,C,V.hand,-1,1),
+function rbExtras(V){V=rbMood(V);const K=V.K,p=V.p,acts=[],C=rbCnt(V),hold=!(K.guard>.3&&C.hz>.4),f=rbFin(V,V.hand,-1,1),free=f||!(K.hold>0)||rbFree(V,C,V.hand,-1,1),
   // Sly: the tile it goes out with now, or else a 1 (or a joly) it keeps back to close with later
   keep=f?f.x:K.fin>0&&C.hz<.1?[...V.hand].sort((a,b)=>isJ(a)-isJ(b)).find(id=>isJ(id)||TILES[id].n===1):-1;let h=V.hand.slice(),M=V.melds.map(m=>({o:m.o,t:m.t.slice()})),S={jl:Object.assign({},V.jl)};
  for(let loop=0;loop<12;loop++){let ch=false;
-  if(K.swap>.5)for(let mi=0;mi<M.length&&h.length>1;mi++){const ids=swapIdsFor(M[mi],h,S);if(!ids)continue;
+  if(K.swap>.5)for(let mi=0;mi<M.length&&h.length>1;mi++){if(mi<V.melds.length&&!rbSees(V,mi,2))continue;const ids=swapIdsFor(M[mi],h,S);if(!ids)continue;
    const bk=JSON.stringify([M,h,S]),n=acts.length,j=trySwap(M[mi],ids,S);if(j<0)continue;
    rm(h,ids);h.push(j);acts.push({a:'swap',m:mi,ids});let used=false;
    const oi=M.findIndex(x=>x.o===p&&analyze(x.t.concat(j)));
    if(oi>=0&&h.length>1){M[oi].t=analyze(M[oi].t.concat(j)).seq.map(s=>s.id);rm(h,[j]);acts.push({a:'add',m:oi,id:j});used=true}
    else if(V.start>2){const b=findBest(h,1,false);if(b.melds.some(z=>z.includes(j))){b.melds.forEach(z=>{rm(h,z);M.push({o:p,t:analyze(z).seq.map(s=>s.id)});acts.push({a:'lay',t:z})});used=true}}
    if(used)ch=true;else{[M,h,S]=JSON.parse(bk);acts.length=n}}
-  if(free)for(const id of h.slice().sort((a,b)=>isJ(a)-isJ(b))){if(h.length<=1)break;if(id===keep||isJ(id)&&h.length>3&&hold&&!f)continue;const mi=fitsTable(M,id,p);
+  if(free)for(const id of h.slice().sort((a,b)=>isJ(a)-isJ(b))){if(h.length<=1)break;if(id===keep||isJ(id)&&h.length>3&&hold&&!f)continue;const mi=rbFit(V,M,id,f||K.hold>0);
    if(mi>=0){M[mi].t=analyze(M[mi].t.concat(id)).seq.map(s=>s.id);rm(h,[id]);acts.push({a:'add',m:mi,id});ch=true}}
   if(!ch)break}
- return acts}
+ rbW(V,acts.some(a=>a.a==='swap')?1.2:Math.min(1.2,.7+.1*acts.length));return acts}
 // Everything the rb functions use, for the fairness test (and later a Worker): nothing in this list reads G
 const RB={start:rbStart,lay:rbLay,extras:rbExtras,disc:rbDisc},
  BRAIN={TILES,OPEN,BOARDS,isJ,face,val,openVal,rm,analyze,trySwap,fitsTable,bCnt,isDuble,isMono,isMozaic,isCover,boardBest,boardOuts,findBest,openFor,swapIdsFor,doubles,
-  naRng,naChoose,rbTy,rbPos,rbCnt,rbKeep,rbRisk,rbOuts,rbDisc,rbEv,rbCan,rbStart,rbDown,rbFin,rbFree,rbLay,rbExtras};
+  naRng,naChoose,rbH,rbBusy,rbSees,rbFit,rbW,rbMood,rbWant,rbTy,rbPos,rbCnt,rbKeep,rbRisk,rbOuts,rbDisc,rbEv,rbCan,rbStart,rbDown,rbFin,rbFree,rbLay,rbExtras};
 // One decision: build the view, ask the brain (its own seeded random numbers, so a test can repeat it exactly)
-function think(p,k,x){const v=viewOf(p,x),s=Math.floor(naR()*4294967296),j=naAI.log&&JSON.stringify(v),o=RB[k](v,naRng(s));if(j)naAI.log.push([k,s,j,JSON.stringify(o)]);return o}
+// PW: how long the pause before playing this answer is, as a share of the speed setting's step (blueprint 3a: quick when
+// the choice is plain, longer for a hard one, never the same twice; .45 to 1.5). The brain says how hard the choice was
+// (rbW); the CPU's own tempo and a little chance come on top. It never changes what is played.
+let PW=1;
+function think(p,k,x){const v=viewOf(p,x),s=Math.floor(naR()*4294967296),j=naAI.log&&JSON.stringify(v),q=v.q={w:1},o=RB[k](v,naRng(s));if(j)naAI.log.push([k,s,j,JSON.stringify(o)]);
+ PW=Math.max(.45,Math.min(1.5,q.w*(1+v.K.tempo)*(.85+.3*(s>>>8&1023)/1024)));return o}
 naAI.pick=(st,lv)=>RB[st.k](lv==null?st.v:Object.assign({},st.v,{K:knobsOf(st.v.p,lv)}),naRng(st.s));naAI.level=()=>NA_LV[lvl];
 
 // ---- CPU turn: the game plays what the brain answers, after checking it against the same rules as your moves
@@ -630,10 +706,11 @@ function doExtras(p,acts,start){const P=G.pl[p],bk=JSON.stringify({melds:G.melds
  const r=JSON.parse(bk);G.melds=r.melds;P.hand=r.hand;G.own=r.own;G.jl=r.jl;return false}
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function cpuTurn(tk){
- const p=G.cur,P=G.pl[p],start=P.hand.length,startOpened=P.opened,nm=NAMES[p];const wait=async()=>{await sleep(DEL[spd]);return tk===token};
- if(!await wait())return;
+ const p=G.cur,P=G.pl[p],start=P.hand.length,startOpened=P.opened,nm=NAMES[p];const wait=async()=>{await sleep(DEL[spd]*PW);return tk===token};
+ // every choice is made first and played after its pause, so the pause fits the choice (PW)
  let d=think(p,'start'),must=-1,plan=null;
- if(d.board&&canBoard(p)){P.board=true;ev.push([nm,'plays on the board']);say(nm+' plays on the board!');render();if(!await wait())return;d=think(p,'start')}
+ if((G.tn>0||d.board)&&!await wait())return;
+ if(d.board&&canBoard(p)){P.board=true;ev.push([nm,'plays on the board']);say(nm+' plays on the board!');render();d=think(p,'start');if(!await wait())return}
  if(G.tn>0){const n=G.disc.length,i=d.take;let got=null;
   if(P.board){if(n>1&&i===n-1&&canOpen())got=takeRow(p,i)}                       // board game: the last discard only, no need to lay it
   else if(i>0&&i<n&&startOpened&&start>=3&&(i===n-1||start>=4)){                // as for you: opened, 3 tiles = the last only
@@ -641,15 +718,16 @@ async function cpuTurn(tk){
    if(layOk(p,L,hand,G.disc[i])){plan=L;got=takeRow(p,i);must=got[0]}}           // taken only if it goes in a new formation now
   if(got){ev.push([nm,'took '+(got.length>1?got.length+'▮':tname(got[0]))]);say(nm+' takes '+tname(got[0])+(got.length>1?' +'+(got.length-1):''))}
   else{notePass(p,start,startOpened);if(!refill()){endRound(-1,-1,'The pile ran out');return}P.hand.push(G.pile.pop());say(nm+' draws')}
-  sfx('draw');render();if(!await wait())return}
- if(P.board){let id=think(p,'disc');if(!P.hand.includes(id))id=P.hand[0];const b=boardBest(P.hand.filter(x=>x!==id));toDisc(p,id);sfx('disc');
+  sfx('draw');render()}
+ if(P.board){let id=think(p,'disc');if(!await wait())return;if(!P.hand.includes(id))id=P.hand[0];const b=boardBest(P.hand.filter(x=>x!==id));toDisc(p,id);sfx('disc');
   if(b){G.bw=b;endRound(p,id,nm+' closes: '+b.nm+' +'+b.pts+'!');return}
   say(nm+' discards '+tname(id));nextTurn();return}
  if(start>2){const L=plan||think(p,'lay');
-  if(layOk(p,L,P.hand,must)){let pts=0;L.forEach(ids=>{const a=analyze(ids);pts+=a.pts;rm(P.hand,ids);G.melds.push({o:p,t:a.seq.map(s=>s.id)});place(p,ids)});
-   const was=P.opened;P.opened=true;hitMeld=G.melds.length-1;sfx('lay');ev.push([nm,was?'laid down':'opened']);say(nm+(was?' lays down':' opens with '+pts));render();if(!await wait())return}}
- if(startOpened&&doExtras(p,think(p,'extras',{start}),start)){sfx('lay');ev.push([nm,'added']);say(nm+' adds to the table');render();if(!await wait())return}
- let id=think(p,'disc');if(!P.hand.includes(id))id=P.hand[0];
+  if(layOk(p,L,P.hand,must)){if(G.tn>0&&!await wait())return;let pts=0;L.forEach(ids=>{const a=analyze(ids);pts+=a.pts;rm(P.hand,ids);G.melds.push({o:p,t:a.seq.map(s=>s.id)});place(p,ids)});
+   const was=P.opened;P.opened=true;hitMeld=G.melds.length-1;sfx('lay');ev.push([nm,was?'laid down':'opened']);say(nm+(was?' lays down':' opens with '+pts));render()}}
+ if(startOpened){const acts=think(p,'extras',{start});if(acts.length){if(!await wait())return;
+  if(doExtras(p,acts,start)){sfx('lay');ev.push([nm,'added']);say(nm+' adds to the table');render()}}}
+ let id=think(p,'disc');if(!await wait())return;if(!P.hand.includes(id))id=P.hand[0];
  toDisc(p,id);sfx('disc');
  if(!P.hand.length){endRound(p,id,nm+' closes with '+tname(id));return}
  say(nm+' discards '+tname(id)+(P.hand.length<=3?' · '+P.hand.length+' left!':''));nextTurn()}

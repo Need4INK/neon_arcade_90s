@@ -9,7 +9,8 @@ of the game) and checks every single decision four ways:
 
 1. Nothing hidden in the view. Every tile in it is in that CPU's own hand, on the table, or was seen by the whole
    table: it lay in the discard row at some point this round, or it is the atu's twin (announced at the deal). The
-   pile and the other hands appear only as counts.
+   pile and the other hands appear only as counts. The scores in the view are the ones on the score table (the rounds
+   are played as matches, so the CPUs' score play is checked too).
 2. Hidden tiles don't matter. The pile and the other players' unseen tiles are shuffled among themselves; the view
    built afterwards must be identical and the decision, asked again while the tiles are shuffled, must be the same.
 3. Empty room. The decision functions (and the rule helpers they use, `__remi.brain`) are copied into an empty page
@@ -32,7 +33,8 @@ window.__fair={n:0,leak:[],diff:[],log:[],seen:new Set(),round:-1,keep:1};
 window.tw=id=>id>=104?209-id:id<52?id+52:id-52;const rnd=__mk(99);
 function idsOf(v){const a=[...v.hand,...v.disc,...v.melds.flatMap(m=>m.t),...Object.keys(v.h).map(Number),...v.no.flat()];if(v.must>=0)a.push(v.must);return a}
 window.__leaks=function(v,G){const p=v.p,ok=new Set([...G.pl[p].hand,...G.melds.flatMap(m=>m.t),...__fair.seen,tw(G.atu)]),bad=idsOf(v).filter(id=>!ok.has(id));
- if(typeof v.pile!=='number'||v.pl.some(q=>Object.keys(q).join()!=='n,opened,board'))bad.push('shape');return bad};
+ if(typeof v.pile!=='number'||v.pl.some(q=>Object.keys(q).join()!=='n,opened,board'))bad.push('shape');
+ if(JSON.stringify(v.sc)!==JSON.stringify(G.pl.map(P=>P.score))||!Number.isInteger(v.z))bad.push('scores');return bad};
 __ai.log={push(e){const [k,s,vj,oj]=e,v=JSON.parse(vj),G=__remi.G,F=__fair,p=v.p;
  if(F.round!==G.round){F.round=G.round;F.seen=new Set()}G.disc.forEach(id=>F.seen.add(id));F.n++;
  const bad=__leaks(v,G);if(bad.length)F.leak.push([k,p,bad]);
@@ -54,7 +56,7 @@ f = open_game(page, 'rem', 1200); f.evaluate(T.REMI_GO); f.evaluate("__seed(5)")
 f.evaluate("window.__norender=true"); f.evaluate(AUDIT)
 fails = 0; logs = []; kinds = {}
 for lv, name in enumerate(['Easy', 'Normal', 'Hard']):
-    f.evaluate(f"__remiRounds([{lv},{lv},{lv},{lv}],[false,false,false,false],{ROUNDS},{50 + lv})")
+    f.evaluate(f"__remiRounds([{lv},{lv},{lv},{lv}],[false,false,false,false],{ROUNDS},{50 + lv},null,{{match:1}})")
     r = f.evaluate("(()=>{const F=__fair,o={n:F.n,leak:F.leak.slice(0,3),nl:F.leak.length,diff:F.diff.slice(0,3),nd:F.diff.length,log:F.log};F.n=0;F.leak=[];F.diff=[];F.log=[];return o})()")
     logs += r['log']; fails += r['nl'] + r['nd']
     takes = sum(1 for e in r['log'] if e[0] == 'start' and 'take' in e[3])
