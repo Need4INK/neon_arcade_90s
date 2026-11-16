@@ -226,7 +226,7 @@ Each of the three CPUs plays the same level with its own style, so the table fee
 3. **Remi:** the three CPUs get distinct personalities (section 6b).
 6. **Records:** the improved AIs keep the "Won vs CPU" records; no reset.
 7. **Remi personalities in the Rules** (Nov 16): not mentioned; players just feel the difference.
+4. **CPU "voice"** (Nov 16): factual, as now. No flavour lines in the message line; the human feel comes from the play and the pace.
 
 **Still open:**
-4. **CPU "voice":** short flavour lines in the message line, or keep it factual as now? (Recommended: factual.)
 5. **Hints in Water Sort:** add one, off by default like Sudoku's?
