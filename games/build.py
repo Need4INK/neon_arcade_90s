@@ -32,12 +32,25 @@ CORE_CSS = '<style>\n' + part('core.css') + '</style>\n'
 STAGE_JS = '<script>\n' + part('stage.js').replace('__NACALC__', NACALC) + '</script>\n'
 # core.js goes into all five games: its whole-line // comments stay in the source only (keeps the page small)
 CORE_JS = '<script>\n' + ''.join(l for l in part('core.js').splitlines(True) if not l.lstrip().startswith('//')) + '</script>\n'
+# The same for each game's own script (user, Nov 16: the CPU brains brought the page close to its size limit; about
+# 17 KB less to load). A line inside a `template string` left open across lines, or after a line ending in a backslash,
+# is kept: there it would be text, not a comment (no game has either today).
+def no_comments(g):
+    a, b, keep, inside, cont = g.index('<script>') + 8, g.rindex('</script>'), [], False, False
+    for l in g[a:b].splitlines(True):
+        if not inside and not cont and l.lstrip().startswith('//'):
+            continue
+        if l.count('`') % 2:
+            inside = not inside
+        cont = l.rstrip('\r\n').endswith('\\')
+        keep.append(l)
+    return g[:a] + ''.join(keep) + g[b:]
 for name in ('kb', 'oth', 'ws', 'sdk', 'rem'):
     g = globals()[name]
     # the shared styles come first so a game's own rules can differ from them; the stage runs before the page is drawn;
     # the shared script sits right in front of the game's own (the page is built by then)
     assert g.count('<style>') == 1 and g.count('<script>') == 1 and g.count('class="mnu"') == 1, name
-    globals()[name] = g.replace('<script>', CORE_JS + '<script>', 1).replace('<style>', CORE_CSS + STAGE_JS + '<style>', 1)
+    globals()[name] = no_comments(g).replace('<script>', CORE_JS + '<script>', 1).replace('<style>', CORE_CSS + STAGE_JS + '<style>', 1)
 
 # Fonts: if games/fonts/ holds PressStart2P-Regular and VT323-Regular (.woff2, .woff or .ttf), they are packed
 # into the page so the games never depend on Google Fonts (works offline even if the fonts were never saved).

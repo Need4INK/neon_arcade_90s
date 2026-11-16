@@ -5,7 +5,9 @@
 
 You draw and discard; the CPUs play normally at Fast speed. About every 5 steps it checks that all 106 tiles are
 accounted for (pile + discards + hands + table, each once) and that every formation on the table is valid
-(the game's own `analyze`); that nobody takes a discard before opening (house rule; board players excepted); and that
+(the game's own `analyze`); that every CPU take from the discard row follows your rules (opened first, house rule,
+board players excepted; never the first tile; with 3 tiles only the last discard; the taken tile laid in a new
+formation that turn); and that
 every CPU opening has 45+ points with at least one run and one set, or is a set of 1s alone (house rule). Then that
 reopening after a draw keeps the drawn tile, and that an empty pile is refilled from the discards (house rule), and
 that the round counter above the rack equals your real round score when a CPU closes and on the round results.
@@ -28,10 +30,20 @@ STEP = """(()=>{const R=__remi,G=R.G,btn=t=>[...document.querySelectorAll('#acts
  return G.phase})()"""
 
 
-# CPUs take the last discard with G.disc.pop(): wrap it (re-wrapped every step, as each round makes a new row)
-# and record whether the taker had opened (or plays on the board) at that moment
-HOOK = """(()=>{window.__takes=window.__takes||[];const G=__remi.G,d=G.disc;if(d.__w)return;d.__w=1;
- d.pop=function(){const P=G.pl[G.cur];__takes.push([G.cur,P.opened||P.board]);return Array.prototype.pop.call(this)}})()"""
+# CPUs take from the discard row with G.disc.splice(i) (the tile at i and every tile after it) and end their turn
+# with G.disc.push(tile): both are wrapped (again every step, as each round makes a new row). A take must follow the
+# same rules as yours: opened (or on the board), never the row's first tile, with 3 tiles (or on the board) only the
+# last discard, with 1-2 tiles none; and by the time the CPU discards, the tile it took must lie in a new formation of
+# its own (board players keep it in hand)
+HOOK = """(()=>{window.__takes=window.__takes||[];window.__tbad=window.__tbad||[];const G=__remi.G,d=G.disc;if(d.__w)return;d.__w=1;let pend=null;
+ d.splice=function(i,...r){if(!r.length&&G.cur>0){const P=G.pl[G.cur],n=this.length,st=P.hand.length;
+   pend=P.board?null:{p:G.cur,id:this[i],m:G.melds.length};
+   const ok=(P.opened||P.board)&&i>=1&&i<n&&st>=3&&(i===n-1||(st>=4&&!P.board));
+   __takes.push(n-i);if(!ok)__tbad.push('CPU '+G.cur+' took '+(n-i)+' tiles holding '+st+', opened: '+P.opened)}
+  return Array.prototype.splice.call(this,i,...r)};
+ d.push=function(...a){if(pend&&pend.p===G.cur){const k=G.melds.findIndex(m=>m.t.includes(pend.id));
+   if(!(k>=pend.m&&G.melds[k].o===pend.p))__tbad.push('CPU '+pend.p+' did not lay the tile it took in a new formation');pend=null}
+  return Array.prototype.push.apply(this,a)}})()"""
 
 
 # Every CPU opening: once a CPU has opened and its turn is over, its formations (all laid that turn: adding comes later)
@@ -49,7 +61,7 @@ def fresh(lvl):
     open_game(page, 'rem', 700); f = fr(); f.evaluate(f"__remi.lvl={lvl};__remi.spd=2"); f.evaluate(HOOK); f.evaluate(OPENS); return f
 
 
-viol = checks = takes = opens = 0
+viol = checks = takes = deep = opens = 0
 rounds = {}
 for lvl, name in [(0, 'Easy'), (1, 'Norm'), (2, 'Hard')]:
     f = fresh(lvl); rounds[name] = 0
@@ -64,12 +76,11 @@ for lvl, name in [(0, 'Easy'), (1, 'Norm'), (2, 'Hard')]:
             n, u, bad = f.evaluate(CHK); checks += 1
             if n != 106 or u != 106 or bad: viol += 1; print('VIOLATION', name, n, u, bad)
         page.wait_for_timeout(40)
-    tk = f.evaluate("__takes"); takes += len(tk)
+    tk = f.evaluate("__takes"); takes += len(tk); deep += sum(1 for x in tk if x > 1)
     op = f.evaluate("__op"); opens += op['n']
     for x in op['bad']: viol += 1; print('VIOLATION opening:', name, x)
-    for m, ok in tk:
-        if not ok: viol += 1; print('VIOLATION take before opening:', name, 'CPU', m)
-print('rounds:', rounds, '| checks:', checks, '| CPU takes:', takes, '| CPU openings:', opens, '| violations:', viol)
+    for x in f.evaluate("__tbad"): viol += 1; print('VIOLATION take:', name, x)
+print('rounds:', rounds, '| checks:', checks, '| CPU takes:', takes, f'({deep} of 2+ tiles)', '| CPU openings:', opens, '| violations:', viol)
 
 # Reload after a draw: the drawn tile stays in hand and Draw is off
 f = fresh(1)
