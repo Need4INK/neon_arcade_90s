@@ -35,7 +35,7 @@ Some steps change different files, so two chats can work at once: one **Opus** c
 | 1 | Othello | Opus 5.5 · high | done (Nov 16, PR #80) |
 | 2 | Knucklebones | Opus 5.5 · medium | done (Nov 16, PR #81) |
 | 3 | Remi A: memory and discard-taking | Fable 5.2 · high | done (Nov 16, PR #82) |
-| 4a | Remi B1: the three personalities | Fable 5.2 · xhigh | to do |
+| 4a | Remi B1: the three personalities | Fable 5.2 · xhigh | done (Nov 16, PR #83) |
 | 4b | Remi B2: playing like a person | Fable 5.2 · xhigh | to do |
 | 5 | Remi C: Hard imagines hidden hands | Fable 5.2 · xhigh | to do |
 | 6 | Adjusting to the player | Opus 5.5 · high | to do |
