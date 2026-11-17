@@ -47,6 +47,7 @@ VS = '--vs' in argv        # Remi: the new CPU against the one from before the A
 BASE = '--base' in argv    # Remi: the old CPU's levels against each other (the "before" numbers)
 STYLES = '--styles' in argv  # Remi: the three personalities (same strength, different play)
 PERSON = '--person' in argv  # Remi: playing like a person (misses, memory, pauses, score play, fishing, holding back)
+IMAGINE = '--imagine' in argv  # Remi: Hard's timing and imagined hands (step 5), each part on and off
 args = [a for a in argv if not a.startswith('--')]
 WHICH = args[0] if args else 'all'
 N = int(args[1]) if len(args) > 1 else None
@@ -251,9 +252,9 @@ def remi_copy():
 # the same deals, so the levels are compared on equal cards. Timers fire at once (the game's own waits, not its moves).
 REMI_GO = RNG + r"""
 const st=window.setTimeout,tq=[],mc=new MessageChannel();mc.port1.onmessage=()=>{const f=tq.shift();if(f)f()};
-window.setTimeout=(fn,t,...a)=>{if(window.__slowT)return st(fn,Math.min(t||0,1),...a);tq.push(()=>fn(...a));mc.port2.postMessage(0);return 0};
+window.setTimeout=(fn,t,...a)=>{if(window.__realT)return st(fn,t,...a);if(window.__slowT)return st(fn,Math.min(t||0,1),...a);tq.push(()=>fn(...a));mc.port2.postMessage(0);return 0};
 window.__sleep=ms=>new Promise(r=>st(r,ms));
-window.__bot0=true;__remi.spd=2;if(window.__ai)__ai.adapt=false;
+window.__bot0=true;__remi.spd=2;if(window.__ai){__ai.adapt=false;__ai.main=true}   // main: Hard's imagined hands are worked out in the page, not in its Worker (timers are faked here)
 window.__long=[];try{new PerformanceObserver(l=>l.getEntries().forEach(e=>__long.push(e.duration))).observe({type:'longtask',buffered:false})}catch(e){}
 window.__remiRounds=async function(seats,old,n,seed,sty,opt){const R=__remi,rounds=[],closes=[0,0,0,0],x2=[0,0,0,0],shut=[0,0,0,0],wins=[0,0,0,0],M=opt&&opt.match;let draws=0,stuck=0,turns=0;window.__lv=seats;window.__old=old;window.__tk=[];window.__sty=sty;window.__op=[];window.__bd=[];window.__kn=opt&&opt.kn||null;
  if(R.G.phase!=='over')R.endRound(-1,-1,'');   // the game opened with the page: stop its CPU turn before dealing again
@@ -441,12 +442,137 @@ def run_person(f, n):
     return out_
 
 
+# ---- Hard's timing and imagined hands (blueprint 5, Remi step 3 and "How Hard thinks"). Every part has a knob that is
+# off at 0; step4b(seat) switches all of them off for a seat (and puts back what a style had at Hard then), which gives
+# the Hard CPU of step 4b: checked on 900 rounds against the build of step 4b, same scores to the point.
+def step4b(seat):
+    return {'img': 0, 'bev': 0, 'atu': 0, 'cheap': 0, 'fin': 1 if seat == 3 else 0, **STEP4B_STYLE.get(seat, {})}
+
+
+STEP4B_STYLE = {1: {'draw': 23}}   # Cautious asked more of a take at Hard then (the level's 3 + 20)
+SPEEDS = ['Slow', 'Normal', 'Fast']
+
+
+def remi_seats(f, on, off, n, label, match=False):
+    """Hard at the game's table. on(seat) / off(seat): the knobs a seat plays with (None = as built). Seats 0 and 2 play
+    `on`, 1 and 3 `off`, then the other way round on the same deals."""
+    half = max(1, n // 2); diff = [0.0] * half; wins = [0, 0]
+    for flip in (0, 1):
+        kn = [(on if (q % 2 == 0) != bool(flip) else off)(q) for q in range(4)]
+        r = f.evaluate(f"__remiRounds([2,2,2,2],[false,false,false,false],{half},{SEED},null,{json.dumps({'kn': kn, 'match': match})})")
+        for i, pen in enumerate(r['rounds']):
+            for q in range(4):
+                diff[i] += (pen[q] if (q % 2 == 0) != bool(flip) else -pen[q]) / 4
+        for q in range(4):
+            wins[(q % 2 == 0) == bool(flip)] += r['wins'][q]
+    m = sum(diff) / half; se = (sum((d - m) ** 2 for d in diff) / max(1, half - 1) / half) ** .5
+    res = {'rounds': 2 * half, 'gap': round(m, 1), 'gap_se': round(se, 1)}
+    txt = f"  hard · {label:<44} {2 * half} rounds: {m:+.1f} ± {se:.1f} points a round"
+    if match:
+        res['matches'] = sum(wins); res['won'] = round(wins[0] / max(1, sum(wins)), 3)
+        txt += f" · wins {wins[0]} of {sum(wins)} matches ({wins[0] / max(1, sum(wins)):.1%}; even = 50%)"
+    print(txt, flush=True)
+    return res
+
+
+# Every Hard decision of some rounds, asked again without imagining: where the answer differs, the imagined hands decided
+IMAGINE_JS = r"""(()=>{const o={disc:0,dImg:0,dCh:0,start:0,sImg:0,sCh:0,tables:0,plays:0,board:0};
+ for(const [k,s,vj,oj] of __ai.log){const v=JSON.parse(vj);if(k!=='disc'&&k!=='start')continue;
+  const q=v.q={w:1},a=JSON.stringify(__ai.pick({k,v,s})),im=q.im;if(k==='start'&&oj.includes('board'))o.board++;
+  if(k==='disc'){if(v.hand.length>1)o.disc++}else if(v.pl[v.p].opened&&v.hand.length>=3)o.start++;
+  if(!im)continue;o.tables+=im.n;o.plays+=im.ro;k==='disc'?o.dImg++:o.sImg++;if(im.b)k==='disc'?o.dCh++:o.sCh++}
+ return o})()"""
+
+
+def run_imagine(f, n):
+    o = {}; none = lambda q: None; off = lambda **kw: (lambda q: kw)
+    o['all'] = remi_seats(f, none, step4b, n, 'all of step 5, against Hard of step 4b')
+    for k, sp in enumerate(SPEEDS):
+        f.evaluate(f"__remi.spd={k}")
+        o['imagine_' + sp] = remi_seats(f, none, off(img=0), n if k == 2 else n // 2, f'imagined hands at {sp} speed, against without')
+    o['discards'] = remi_seats(f, off(ims=0), off(img=0), n, 'imagining the discard only, against without')
+    o['takes'] = remi_seats(f, none, off(ims=0), n, 'imagining take or draw too, against without')
+    o['fin'] = remi_seats(f, none, lambda q: {'fin': 1 if q == 3 else 0}, n, 'closing with a 1 or joly (all), against Sly only')
+    o['cheap'] = remi_seats(f, none, off(cheap=0), n, 'holding on to costly tiles, against not')
+    o['board'] = remi_seats(f, none, off(bev=0), n, 'board game by expected points, against 5 doubles')
+    o['atu'] = remi_seats(f, none, off(atu=0), 2 * n, 'weighing the atu, matches', True)
+    f.evaluate("__ai.log=[]"); f.evaluate(f"__remiRounds([2,2,2,2],[false,false,false,false],{min(200, n)},{SEED + 3},null,{{match:1}})")
+    h = o['shows'] = f.evaluate(IMAGINE_JS); f.evaluate("__ai.log=null")
+    p = lambda a, c: f"{a} of {c} ({a / max(1, c):.1%})"
+    print(f"  hard · in {min(200, n)} rounds at Fast speed: discards weighed on imagined tables {p(h['dImg'], h['disc'])}, changed by them {p(h['dCh'], h['disc'])}"
+          f" · take-or-draw weighed {p(h['sImg'], h['start'])}, changed {p(h['sCh'], h['start'])}"
+          f" · {h['tables'] / max(1, h['dImg'] + h['sImg']):.0f} tables and {h['plays'] / max(1, h['dImg'] + h['sImg']):.0f} play-outs a choice · board games {h['board']}", flush=True)
+    return o
+
+
+# Hard at the real pace through the page: the CPUs' own pauses, the Worker, the table drawn
+REMI_PACE = r"""window.__pace=async function(lv,spd,rounds,seed){const R=__remi,w=__sleep;window.__realT=true;window.__norender=false;__ai.main=false;__ai.tm=[];
+ window.__lv=[lv,lv,lv,lv];window.__old=[false,false,false,false];window.__kn=null;window.__sty=null;R.spd=spd;let turns=0;const t0=performance.now();__long.length=0;
+ for(let i=0;i<rounds;i++){if(R.G.phase!=='over')R.endRound(-1,-1,'');__seed(seed*100000+i);R.G.pl.forEach(P=>P.score=0);R.G.over=false;R.G.starter=i%4;R.G.round=i;R.dealRound();
+  while(R.G.phase!=='over'&&performance.now()-t0<600000)await w(100);turns+=R.G.tn}
+ const o={tm:__ai.tm,long:__long.slice(),turns,ms:performance.now()-t0};__ai.tm=null;__ai.main=true;window.__realT=false;window.__norender=true;R.spd=2;return o}"""
+
+
+def remi_slow(page, f):
+    """Speed at 4x CPU slow-down (blueprint 7). Easy / Normal: main-thread tasks over 50 ms in drawn rounds. Hard: whole
+    rounds at the real pace at each speed, its imagined choices worked out in the Worker: how long an answer takes
+    against the pause that move has anyway. Then every decision timed on its own on the main thread (CDP's slow-down
+    doesn't reach a Worker, so this is the honest 4x number for the thinking itself, and what a page without a
+    Worker would do)."""
+    res = RESULTS['remi']; names = ['easy', 'normal', 'hard']
+    f.evaluate("window.__norender=false;window.__slowT=true;__long=[]"); cdp = throttle(page, f, 4)
+    for lv in [0, 1]:
+        f.evaluate(f"__long=[];__remiRounds([{lv},{lv},{lv},{lv}],[false,false,false,false],3,{SEED + 7})")
+        lg = f.evaluate("__long")
+        res.setdefault('long_tasks_4x', {})[names[lv]] = {'over_50ms': len(lg), 'max_ms': round(max(lg), 1) if lg else 0}
+        print(f"  4x slow, {names[lv]}: {len(lg)} main-thread tasks over 50 ms in 3 rounds, longest {round(max(lg)) if lg else 0} ms", flush=True)
+    f.evaluate("window.__slowT=false"); f.evaluate(REMI_PACE)
+    q = lambda a, p: sorted(a)[min(len(a) - 1, int(p * len(a)))] if a else 0
+    for spd, rounds in ((0, 2), (1, 2), (2, 4)):
+        r = f.evaluate(f"__pace(2,{spd},{rounds},{SEED + 7})")
+        im = [x for x in r['tm'] if x[3]]; pt = [x[1] for x in im] or [0]; pa = [x[2] for x in im] or [0]
+        d = res.setdefault('pace_4x', {})[SPEEDS[spd]] = {
+            'rounds': rounds, 'turns': r['turns'], 's_per_turn': round(r['ms'] / 1000 / max(1, r['turns']), 2), 'imagined': len(im),
+            'answer_ms': {'mean': round(sum(pt) / len(pt)), 'p95': round(q(pt, .95)), 'max': round(max(pt))},
+            'pause_ms': {'mean': round(sum(pa) / len(pa)), 'min': round(min(pa))}, 'later_than_pause': sum(1 for x in im if x[1] > x[2]),
+            'no_answer_in_time': sum(x[4] for x in r['tm']), 'tables': round(sum(x[3][0] for x in im) / max(1, len(im))),
+            'long_tasks': len(r['long']), 'long_max_ms': round(max(r['long'] or [0]))}
+        print(f"  4x slow, hard at {SPEEDS[spd]} speed, real pace, Worker: {r['turns']} turns, {d['s_per_turn']} s a turn · {len(im)} imagined choices"
+              f" ({d['tables']} tables each): answer after {d['answer_ms']['mean']} ms, 95% within {d['answer_ms']['p95']}, longest {d['answer_ms']['max']}"
+              f" · their pauses {d['pause_ms']['mean']} ms, shortest {d['pause_ms']['min']} · answers later than the pause: {d['later_than_pause']}"
+              f" · no answer in time: {d['no_answer_in_time']} · main-thread tasks over 50 ms: {d['long_tasks']}"
+              + (f" (longest {d['long_max_ms']} ms)" if d['long_tasks'] else ''), flush=True)
+    cdp.send('Emulation.setCPUThrottlingRate', {'rate': 1})
+    # every decision of a few rounds, asked again at 4x slow-down and timed on its own (Hard: at each speed's number of tables)
+    f.evaluate("window.__norender=true")
+    for lv in [0, 1, 2]:
+        f.evaluate("__ai.log=[]"); f.evaluate(f"__remiRounds([{lv},{lv},{lv},{lv}],[false,false,false,false],12,{SEED + 9})")
+        for spd in ([0, 1, 2] if lv == 2 else [2]):
+            cdp = throttle(page, f, 4)
+            ts = f.evaluate("sp=>__ai.log.map(([k,s,v])=>{v=JSON.parse(v);v.sp=sp;const q=v.q={w:1},t=performance.now();__ai.pick({k,v,s});return [k,performance.now()-t,q.im?1:0]})", spd)
+            cdp.send('Emulation.setCPUThrottlingRate', {'rate': 1})
+            st = stats([t for k, t, i in ts]); st['over_50ms'] = sum(1 for k, t, i in ts if t > 50)
+            st['slowest'] = max(ts, key=lambda x: x[1])[0]
+            key = names[lv] + ('' if lv < 2 else '_' + SPEEDS[spd])
+            txt = f"  4x slow, {names[lv]}: {st['n']} decisions, mean {st['mean_ms']} ms, 95% within {st['p95_ms']} ms, max {st['max_ms']} ms ({st['slowest']}), over 50 ms: {st['over_50ms']}"
+            if lv == 2:
+                im = [t for k, t, i in ts if i]; rest = [t for k, t, i in ts if not i]; floor = [1000, 600, 250][spd] * .748
+                st.update(imagined=stats(im), imagined_over_pause=sum(1 for t in im if t > floor), pause_floor_ms=round(floor),
+                          other_max_ms=round(max(rest), 1), other_over_50ms=sum(1 for t in rest if t > 50))
+                txt = (f"  4x slow, hard at {SPEEDS[spd]} speed, on the main thread: {len(im)} imagined choices mean {st['imagined']['mean_ms']} ms, 95% within"
+                       f" {st['imagined']['p95_ms']} ms, max {st['imagined']['max_ms']} ms; shortest pause they can have {round(floor)} ms, longer than that: {st['imagined_over_pause']}"
+                       f" · the other {len(rest)} decisions: max {st['other_max_ms']} ms, over 50 ms: {st['other_over_50ms']}")
+            res.setdefault('time_4x', {})[key] = st
+            print(txt, flush=True)
+    f.evaluate("__ai.log=null")
+
+
 def run_remi(page_unused):
     n = N or 200
-    mode = 'styles' if STYLES else 'person' if PERSON else 'vs' if VS else 'base' if BASE else 'levels'
+    mode = 'styles' if STYLES else 'person' if PERSON else 'imagine' if IMAGINE else 'vs' if VS else 'base' if BASE else 'levels'
     pairs = {'levels': [('normal', 'easy'), ('hard', 'normal'), ('hard', 'easy')],
              'vs': [('easy', 'base:easy'), ('normal', 'base:normal'), ('hard', 'base:hard')],
-             'base': [('base:normal', 'base:easy'), ('base:hard', 'base:normal'), ('base:hard', 'base:easy')], 'styles': [], 'person': []}[mode]
+             'base': [('base:normal', 'base:easy'), ('base:hard', 'base:normal'), ('base:hard', 'base:easy')], 'styles': [], 'person': [], 'imagine': []}[mode]
     print(f'Remi (4 CPUs, two kinds per table, seed {SEED}; "base" = the CPU from before the AI build; gap ± standard error)', flush=True)
     d = remi_copy(); port = start_server(8957, root=d)
     pw, b, page = open_page(port, 'iphone12')
@@ -462,28 +588,10 @@ def run_remi(page_unused):
             RESULTS['remi']['styles'] = run_styles(f, n)
         if PERSON:
             RESULTS['remi']['person'] = run_person(f, n)
+        if IMAGINE:
+            RESULTS['remi']['imagine'] = run_imagine(f, n)
         if SLOW:
-            f.evaluate("window.__norender=false;window.__slowT=true;__long=[]"); cdp = throttle(page, f, 4)
-            for lv in [0, 1, 2]:
-                f.evaluate(f"__long=[];__remiRounds([{lv},{lv},{lv},{lv}],[false,false,false,false],3,{SEED + 7})")
-                lg = f.evaluate("__long")
-                RESULTS['remi'].setdefault('long_tasks_4x', {})[['easy', 'normal', 'hard'][lv]] = {
-                    'over_50ms': len(lg), 'max_ms': round(max(lg), 1) if lg else 0}
-                print(f"  4x slow, {['easy', 'normal', 'hard'][lv]}: {len(lg)} main-thread tasks over 50 ms in 3 rounds"
-                      f", longest {round(max(lg)) if lg else 0} ms", flush=True)
-            cdp.send('Emulation.setCPUThrottlingRate', {'rate': 1})
-            # every decision of a few rounds, asked again at 4x slow-down and timed on its own
-            f.evaluate("window.__norender=true;window.__slowT=false")
-            for lv in [0, 1, 2]:
-                f.evaluate("__ai.log=[]"); f.evaluate(f"__remiRounds([{lv},{lv},{lv},{lv}],[false,false,false,false],12,{SEED + 9})")
-                cdp = throttle(page, f, 4)
-                ts = f.evaluate("(()=>{const L=__ai.log;__ai.log=null;return L.map(([k,s,v])=>{v=JSON.parse(v);const t=performance.now();__ai.pick({k,v,s});return [k,performance.now()-t]})})()")
-                cdp.send('Emulation.setCPUThrottlingRate', {'rate': 1})
-                st = stats([t for k, t in ts]); st['over_50ms'] = sum(1 for k, t in ts if t > 50)
-                st['slowest'] = max(ts, key=lambda x: x[1])[0]
-                RESULTS['remi'].setdefault('time_4x', {})[['easy', 'normal', 'hard'][lv]] = st
-                print(f"  4x slow, {['easy', 'normal', 'hard'][lv]}: {st['n']} decisions, mean {st['mean_ms']} ms, 95% within {st['p95_ms']} ms,"
-                      f" max {st['max_ms']} ms ({st['slowest']}), over 50 ms: {st['over_50ms']}", flush=True)
+            remi_slow(page, f)
         RESULTS['remi_errors'] = page.errors[:5]
         print('  console errors:', page.errors[:5])
     finally:

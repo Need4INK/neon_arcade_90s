@@ -17,6 +17,9 @@ of the game) and checks every single decision four ways:
    with no game in it: no G, no table, no saved data, and Math.random switched off. Fed only the recorded views and
    seeds, they must give the same answers as in the game.
 4. The source of those functions never names the game state (G, T), the page or Math.random.
+5. Hard's Worker (step 5): a sample of Hard's discards and takes, asked again in the Worker the game uses, must get
+   the same answers as in the page. The imagined tables (rbWorld) are dealt from the view alone, so checks 1-3 cover them:
+   a view without hidden tiles can't deal the real ones except by chance.
 It also shows that check 1 would notice a leak, by planting a pile tile in a view. Ends with exit code 1 on any failure.
 """
 import json, os, re, sys
@@ -34,7 +37,9 @@ window.tw=id=>id>=104?209-id:id<52?id+52:id-52;const rnd=__mk(99);
 function idsOf(v){const a=[...v.hand,...v.disc,...v.melds.flatMap(m=>m.t),...Object.keys(v.h).map(Number),...v.no.flat()];if(v.must>=0)a.push(v.must);return a}
 window.__leaks=function(v,G){const p=v.p,ok=new Set([...G.pl[p].hand,...G.melds.flatMap(m=>m.t),...__fair.seen,tw(G.atu)]),bad=idsOf(v).filter(id=>!ok.has(id));
  if(typeof v.pile!=='number'||v.pl.some(q=>Object.keys(q).join()!=='n,opened,board'))bad.push('shape');
- if(JSON.stringify(v.sc)!==JSON.stringify(G.pl.map(P=>P.score))||!Number.isInteger(v.z))bad.push('scores');return bad};
+ if(JSON.stringify(v.sc)!==JSON.stringify(G.pl.map(P=>P.score))||!Number.isInteger(v.z))bad.push('scores');
+ // step 5: the atu's holder and the double game (announced at the deal), each player's points on the table, the speed setting
+ if(v.atu[0]!==G.atuBy||v.atu[1]!==(G.dbl?2:1)||JSON.stringify(v.lp)!==JSON.stringify([0,1,2,3].map(q=>G.own.reduce((a,o,id)=>a+(o===q?__remi.brain.val(id):0),0)))||![0,1,2].includes(v.sp))bad.push('table');return bad};
 __ai.log={push(e){const [k,s,vj,oj]=e,v=JSON.parse(vj),G=__remi.G,F=__fair,p=v.p;
  if(F.round!==G.round){F.round=G.round;F.seen=new Set()}G.disc.forEach(id=>F.seen.add(id));F.n++;
  const bad=__leaks(v,G);if(bad.length)F.leak.push([k,p,bad]);
@@ -53,7 +58,8 @@ port = start_server(8958, root=T.remi_copy())
 pw, b, page = open_page(port, 'iphone12')
 page.evaluate("localStorage.setItem('remi-rules-seen','1');localStorage.removeItem('remi_game2')")
 f = open_game(page, 'rem', 1200); f.evaluate(T.REMI_GO); f.evaluate("__seed(5)"); f.evaluate("__remi.newGame()")
-f.evaluate("window.__norender=true"); f.evaluate(AUDIT)
+# the game that opened with the page is ended first: its CPUs must not decide between the audit starting and the first round
+f.evaluate("window.__norender=true"); f.evaluate("if(__remi.G.phase!=='over')__remi.endRound(-1,-1,'')"); f.evaluate(AUDIT)
 fails = 0; logs = []; kinds = {}
 for lv, name in enumerate(['Easy', 'Normal', 'Hard']):
     f.evaluate(f"__remiRounds([{lv},{lv},{lv},{lv}],[false,false,false,false],{ROUNDS},{50 + lv},null,{{match:1}})")
@@ -88,6 +94,13 @@ for i in range(0, len(logs), 400):
     bad += room.evaluate("L=>replay(L)", logs[i:i + 400])
 print(f"empty room: {len(logs)} decisions replayed {kinds} | game objects in the room: {globals_ or 'none'} | different answers: {len(bad)} {bad[:3] or ''}")
 fails += len(bad) + len(globals_)
+# 5. Hard's Worker (step 5: its imagined hands are worked out off the main screen) answers exactly like the page
+f.evaluate("__ai.main=false")
+hard = [e for e in logs if e[0] in ('disc', 'start') and '"level":"hard"' in e[2]][::7][:150]
+wk = f.evaluate("async L=>{const W=__remi.brainW();let bad=0,im=0,wk=0;for(const [k,s,v,o] of L){const r=await W.run({k,v:JSON.parse(v),s});if(r.im)im++;if(r.wk)wk++;if(JSON.stringify(r.o)!==o)bad++}return {bad,im,wk}}", hard)
+f.evaluate("__ai.main=true")
+print(f"Worker: {len(hard)} of Hard's discards and takes asked again in its Worker ({wk['wk']} answered there, {wk['im']} on imagined tables) | different answers: {wk['bad']}")
+fails += wk['bad'] + (wk['wk'] != len(hard)) + (wk['im'] == 0)
 print('console errors:', page.errors[:5]); fails += len(page.errors)
 print('FAIR' if not fails else 'NOT FAIR: %d problems' % fails)
 b.close(); pw.stop()
