@@ -40,7 +40,7 @@ Some steps change different files, so two chats can work at once: one **Opus** c
 | 5 | Remi C: Hard imagines hidden hands | Fable 5.2 · xhigh | done (Nov 17, PR #85) |
 | 6 | Adjusting to the player | Opus 5.5 · high | done (Nov 17, PR #86) |
 | 7 | Puzzle helpers | Opus 5.5 · medium | done (Nov 17, PR #87) |
-| 8 | Final review and tuning | Opus 5.5 · xhigh | to do |
+| 8 | Final review and tuning | Opus 5.5 · xhigh | done (Nov 17, PR #88) |
 
 Every prompt below assumes the chat follows the project instructions: connect and clone the repo, work locally, and deploy only on "deploy". On "deploy", it first updates from `main` and rebuilds, because another chat may have deployed meanwhile (see "Running steps in parallel"). After a successful deploy, it ends with: "Step N done. Next: step M, open a new chat with <model> · <effort> and paste its prompt" (or "All steps done"). It also keeps a task list beside the chat (one line per part of the step, ticked off as it goes), so you can see how far along it is without interrupting.
 
