@@ -37,7 +37,7 @@ Some steps change different files, so two chats can work at once: one **Opus** c
 | 3 | Remi A: memory and discard-taking | Fable 5.2 · high | done (Nov 16, PR #82) |
 | 4a | Remi B1: the three personalities | Fable 5.2 · xhigh | done (Nov 16, PR #83) |
 | 4b | Remi B2: playing like a person | Fable 5.2 · xhigh | done (Nov 16, PR #84) |
-| 5 | Remi C: Hard imagines hidden hands | Fable 5.2 · xhigh | to do |
+| 5 | Remi C: Hard imagines hidden hands | Fable 5.2 · xhigh | done (Nov 17, PR #85) |
 | 6 | Adjusting to the player | Opus 5.5 · high | to do |
 | 7 | Puzzle helpers | Opus 5.5 · medium | to do |
 | 8 | Final review and tuning | Fable 5.2 · high | to do |
