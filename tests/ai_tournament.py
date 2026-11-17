@@ -25,6 +25,8 @@ closed and how they took from the discard row. Target: Hard averages more points
                                                      # the game's table (who wins the matches, how each one plays)
     python3 tests/ai_tournament.py remi 2000 --person  # playing like a person (blueprint 3a): what the habits cost,
                                                      # how often each shows, score play in matches, the pauses
+    python3 tests/ai_tournament.py all --adapt       # adjusting to the player (blueprint 6a): each level at its sharpest
+                                                     # (+1) and gentlest (-1) against the plain levels; the levels must not overlap
 In the game seat 0 is you, and CPU 1 / 2 / 3 play Cautious / Bold / Sly; here seat 0 is a CPU of the plain level
 (no style). Target (blueprint 6b): each style wins a third of the three styles' matches, give or take 5 points.
 The styles' tables are played as matches (scores run on to the target, as in the game), because the CPUs play the
@@ -47,6 +49,7 @@ VS = '--vs' in argv        # Remi: the new CPU against the one from before the A
 BASE = '--base' in argv    # Remi: the old CPU's levels against each other (the "before" numbers)
 STYLES = '--styles' in argv  # Remi: the three personalities (same strength, different play)
 PERSON = '--person' in argv  # Remi: playing like a person (misses, memory, pauses, score play, fishing, holding back)
+ADAPT = '--adapt' in argv    # adjusting to the player: levels at the ends of their range (blueprint 6a)
 IMAGINE = '--imagine' in argv  # Remi: Hard's timing and imagined hands (step 5), each part on and off
 args = [a for a in argv if not a.startswith('--')]
 WHICH = args[0] if args else 'all'
@@ -147,6 +150,31 @@ def table(game, f, fn, n, extra=''):
     return res
 
 
+# Adjusting to the player (blueprint 6a): the saved adjustment (<game>-adapt, -1 gentlest .. +1 sharpest) is set before
+# each pairing; "easy+1" = Easy at its sharpest. Must hold: the higher level still wins (levels never overlap).
+ADAPT_PAIRS = [('easy', 'random', {'easy': -1}), ('easy', 'random', {'easy': 1}), ('normal', 'easy', {'easy': -1}),
+               ('normal', 'easy', {'easy': 1}), ('normal', 'easy', {'easy': 1, 'normal': -1}), ('normal', 'easy', {'normal': 1}),
+               ('hard', 'normal', {'normal': -1}), ('hard', 'normal', {'normal': 1})]
+
+
+def lab(lv, st):
+    return lv + ('%+d' % st[lv] if lv in st else '')
+
+
+def adapt_table(f, key, fn, n, extra=''):
+    res = {}
+    f.evaluate("__ai.adapt=true")
+    for a, b, st in ADAPT_PAIRS:
+        f.evaluate(f"localStorage.setItem('{key}-adapt',{json.dumps(json.dumps(st))})")
+        r = f.evaluate(f"__{fn}('{a}','{b}',{n}{extra})")
+        wr = rate(r); la, lb = lab(a, st), lab(b, st); res[f'{la}-{lb}'] = dict(r, rate=round(wr, 3))
+        se = (wr * (1 - wr) / n) ** .5
+        mark = '' if b == 'random' else ('ok' if wr - 2 * se > .5 else 'ok?' if wr > .5 else 'OVERLAP')
+        print(f"  {la:>9} vs {lb:<9} {n:4d} games  W/L/T {r['w']}/{r['l']}/{r['t']}  win {wr*100:5.1f}% ± {se*100:.1f}  {mark}", flush=True)
+    f.evaluate(f"localStorage.removeItem('{key}-adapt')")
+    return res
+
+
 def timing(f, label):
     t = f.evaluate("__times")
     out_ = {k: stats(v) for k, v in t.items()}
@@ -167,6 +195,8 @@ def run_kb(page):
     n = N or 1000
     print(f'Knucklebones (3 columns, seed {SEED})', flush=True)
     f = open_game(page, 'kb'); f.evaluate(KB); f.evaluate(f"__seed({SEED})")
+    if ADAPT:
+        RESULTS['kb'] = {'games': n, 'adapt': adapt_table(f, 'kb', 'kbMatch', n, ',3')}; return
     RESULTS['kb'] = {'games': n, 'pairs': table('kb', f, 'kbMatch', n, ',3'), 'time': timing(f, 'desktop')}
     if SLOW:
         f.evaluate(f"__times={{}};__seed({SEED+1})"); cdp = throttle(page, f, 4)
@@ -180,6 +210,8 @@ def run_oth(page):
     n = N or 100
     print(f'Othello (seed {SEED})', flush=True)
     to_cover(page); f = open_game(page, 'oth'); f.evaluate(OTH); f.evaluate(f"__seed({SEED})")
+    if ADAPT:
+        RESULTS['oth'] = {'games': n, 'adapt': adapt_table(f, 'oth', 'othMatch', n)}; return
     RESULTS['oth'] = {'games': n, 'pairs': table('oth', f, 'othMatch', n), 'time': timing(f, 'desktop')}
     if SLOW:
         f.evaluate(f"__times={{}};__seed({SEED+1})"); cdp = throttle(page, f, 4)
@@ -567,12 +599,28 @@ def remi_slow(page, f):
     f.evaluate("__ai.log=null")
 
 
+def run_adapt(f, n):
+    """Adjusting to the player (blueprint 6a) at Remi: remi-adapt set before each pairing (the game's styles at their seats
+    as usual; a match result is never noted here). The higher level must still score more (levels never overlap)."""
+    res = {}
+    f.evaluate("__ai.adapt=true;window.naAdaptNote=function(){}")
+    pairs = [('normal', 'easy', {'easy': -1}), ('normal', 'easy', {'easy': 1}), ('normal', 'easy', {'easy': 1, 'normal': -1}),
+             ('normal', 'easy', {'normal': 1}), ('hard', 'normal', {'normal': -1}), ('hard', 'normal', {'normal': 1}),
+             ('easy', 'base:easy', {'easy': -1})]
+    for a, b, st in pairs:
+        f.evaluate(f"localStorage.setItem('remi-adapt',{json.dumps(json.dumps(st))})")
+        print(f"  adjusted {st}:", flush=True)
+        res[f'{lab(a, st)}-{lab(b, st)}'] = remi_pair(f, a, b, n)
+    f.evaluate("localStorage.removeItem('remi-adapt');__ai.adapt=false")
+    return res
+
+
 def run_remi(page_unused):
     n = N or 200
-    mode = 'styles' if STYLES else 'person' if PERSON else 'imagine' if IMAGINE else 'vs' if VS else 'base' if BASE else 'levels'
+    mode = 'adapt' if ADAPT else 'styles' if STYLES else 'person' if PERSON else 'imagine' if IMAGINE else 'vs' if VS else 'base' if BASE else 'levels'
     pairs = {'levels': [('normal', 'easy'), ('hard', 'normal'), ('hard', 'easy')],
              'vs': [('easy', 'base:easy'), ('normal', 'base:normal'), ('hard', 'base:hard')],
-             'base': [('base:normal', 'base:easy'), ('base:hard', 'base:normal'), ('base:hard', 'base:easy')], 'styles': [], 'person': [], 'imagine': []}[mode]
+             'base': [('base:normal', 'base:easy'), ('base:hard', 'base:normal'), ('base:hard', 'base:easy')], 'styles': [], 'person': [], 'imagine': [], 'adapt': []}[mode]
     print(f'Remi (4 CPUs, two kinds per table, seed {SEED}; "base" = the CPU from before the AI build; gap ± standard error)', flush=True)
     d = remi_copy(); port = start_server(8957, root=d)
     pw, b, page = open_page(port, 'iphone12')
@@ -584,6 +632,8 @@ def run_remi(page_unused):
         for a, bb in pairs:
             res[f'{a}-{bb}'] = remi_pair(f, a, bb, n)
         RESULTS['remi'] = {'mode': mode, 'pairs': res}
+        if ADAPT:
+            RESULTS['remi']['adapt'] = run_adapt(f, n)
         if STYLES:
             RESULTS['remi']['styles'] = run_styles(f, n)
         if PERSON:

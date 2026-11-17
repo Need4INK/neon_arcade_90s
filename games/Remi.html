@@ -310,6 +310,9 @@ function save(){try{localStorage.setItem('remi_game2',JSON.stringify(G))}catch(e
 // Saved match record per CPU level: [won, played]
 let REC={};try{const o=JSON.parse(localStorage.getItem('remi_rec')),n=v=>Number.isFinite(v)&&v>=0?Math.floor(v):0;if(o&&typeof o==='object')[0,1,2].forEach(i=>{if(Array.isArray(o[i]))REC[i]=[n(o[i][0]),n(o[i][1])]})}catch(e){}
 function addRec(win){const r=REC[lvl]||(REC[lvl]=[0,0]);r[1]++;if(win)r[0]++;try{localStorage.setItem('remi_rec',JSON.stringify(REC))}catch(e){}}
+// adjusting to the player (blueprint 6a, kit's naAdaptNote): after each match, by your place at the table:
+// 1st +1, 2nd +1/3, 3rd -1/3, 4th -1 (a tie shares the places), so an even player stays at 0
+function noteAdapt(){const me=G.pl[0].score;let r=0;G.pl.forEach((P,q)=>{if(q)r+=P.score>me?1:P.score===me?.5:0});naAdaptNote('remi',NA_LV[lvl],1-2*r/3)}
 function recText(){return 'Matches won: '+['Easy','Normal','Hard'].map((n,i)=>{const r=REC[i]||[0,0];return n+' '+r[0]+'/'+r[1]}).join(' · ')}
 
 // ---- sound
@@ -473,7 +476,11 @@ function swapIdsFor(m,hand,S){const a=analyze(m.t);if(!a)return null;
 //  nobody is close · cheap -2: holds on to costly tiles (they count more once laid, and a 1 can close for double)
 naLevel.remi={easy:{deep:4,blind:.25,draw:3,pool:3,dtemp:6,mem:0,safe:0,read:0,look:0,guard:0,swap:0,span:4,fade:.3,fog:0,slip:.3,shut:0,fish:0,score:.4},
  normal:{deep:10,draw:3,pool:1,dtemp:0,mem:1,safe:5,read:.25,look:0,guard:0,swap:0,span:5,fade:.06,fog:.2,slip:.1,shut:3,fish:.3,score:1},
- hard:{deep:20,draw:3,pool:1,dtemp:0,mem:1,safe:5,read:1,look:4,guard:.6,swap:1,span:12,fade:.01,fog:.03,slip:.015,shut:3,fish:.5,score:1,fin:1,cheap:-2,img:160,imk:4,imw:3,ims:1,imt:30,far:10,bev:100,atu:1,riv:.3,left:.6,sure:2,gain:1,drop:1.5,tb:6,age:0}};
+ hard:{deep:20,draw:3,pool:1,dtemp:0,mem:1,safe:5,read:1,look:4,guard:.6,swap:1,span:12,fade:.01,fog:.03,slip:.015,shut:3,fish:.5,score:1,fin:1,cheap:-2,img:160,imk:4,imw:3,ims:1,imt:30,far:10,bev:100,atu:1,riv:.3,left:.6,sure:2,gain:1,drop:1.5,tb:6,age:0},
+// Adjusting to the player (blueprint 6a, kit's naKnobs; tests/ai_tournament.py remi --adapt): Easy at its sharpest goes
+// half way to Normal (the kit's 90% made it as good as Normal here); soft = the gentlest values: Easy about like the CPU
+// from before the AI build, Normal a little looser (looks less far back, forgets more), still above the sharpest Easy.
+ span:{easy:.5},soft:{easy:{deep:2,blind:.35,slip:.4,span:3,dtemp:8,pool:4},normal:{deep:8,span:4.5,fade:.09,slip:.13,blind:.08,read:.15}}};
 // Personalities (blueprint 6b): each CPU plays its level in its own style, a few weights on top of the level's knobs
 // (added to them; deep is multiplied; a level can have its own value). CPU 1 Cautious, CPU 2 Bold, CPU 3 Sly. Tuned with
 // tests/ai_tournament.py remi --styles so that the three win the same share of matches; the plain level (no style) is your seat there.
@@ -912,7 +919,7 @@ function endRound(closer,closeTile,why){token++;G.phase='over';ev=[];
   if(G.atuBy===i)s+=50;
   if(i===closer){if(!(P.board&&G.bw))s+=50;if(dbl(closeTile))s*=2}
   if(G.dbl)s*=2;P.score+=s;return s});
- G.res={closer,x:closer>=0&&dbl(closeTile),why,pen,bw:closer>=0&&G.pl[closer].board?G.bw:null};const top=Math.max(...G.pl.map(P=>P.score));G.tie=G.pl.some(P=>P.score>=LIMIT)&&G.pl.filter(P=>P.score===top).length>1;G.over=G.pl.some(P=>P.score>=LIMIT)&&!G.tie;if(G.over)addRec(leader()===0);G.starter=(G.starter+1)%4;save();
+ G.res={closer,x:closer>=0&&dbl(closeTile),why,pen,bw:closer>=0&&G.pl[closer].board?G.bw:null};const top=Math.max(...G.pl.map(P=>P.score));G.tie=G.pl.some(P=>P.score>=LIMIT)&&G.pl.filter(P=>P.score===top).length>1;G.over=G.pl.some(P=>P.score>=LIMIT)&&!G.tie;if(G.over){addRec(leader()===0);noteAdapt()}G.starter=(G.starter+1)%4;save();
  const lead=leader();sfx(G.over?(lead===0?'win':'lose'):(closer===0?'win':'disc'));say(why);waveRes=true;render()}
 function leader(){return G.pl.reduce((b,P,i)=>P.score>G.pl[b].score?i:b,0)}
 

@@ -273,7 +273,7 @@ function wave(col){[].forEach.call(document.querySelectorAll('#board .sq'),funct
 function next(note){
  if(!moves(bd,turn).length){
   if(!moves(bd,-turn).length){over=true;var k=count(bd),a=k[0],z=k[1];
-   if(mode==='cpu'){if(a>z)S.w++;else if(a<z)S.l++;else S.t++;addRec(S.diff,a>z?0:a<z?1:2)}else{if(a>z)S.p1++;else if(a<z)S.p2++;else S.pt++}
+   if(mode==='cpu'){if(a>z)S.w++;else if(a<z)S.l++;else S.t++;addRec(S.diff,a>z?0:a<z?1:2);naAdaptNote('oth',S.diff,a>z?1:a<z?-1:0)}else{if(a>z)S.p1++;else if(a<z)S.p2++;else S.pt++}
    sfx(a===z?'tie':(mode==='2p'||a>z)?'win':'loss');
    render(a===z?'Tie at '+a+'.':mode==='2p'?'P'+(a>z?1:2)+' wins '+Math.max(a,z)+'–'+Math.min(a,z)+'!':a>z?'You win '+a+'–'+z+'!':'You lose '+a+'–'+z+'.');wave(a>z?'rgba(25,243,255,.5)':a<z?'rgba(255,43,214,.5)':'rgba(255,233,77,.45)');return}
   sfx('pass');note=sn(turn)+' must pass · ';turn=-turn}
