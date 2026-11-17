@@ -8,8 +8,10 @@ import sys, json, random, copy
 import os; sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
 from harness import start_server, open_page, open_game, game_frame, close_panel
 G=sys.argv[1]; port=start_server(int(sys.argv[2])); random.seed(5)
-KEYS={'kb':['kb-stats','kb-rec','kb-game'],'oth':['oth-stats','oth-rec','oth-game'],'ws':['ws_level','ws_best','ws_solved','ws_game','ws_sym'],
-      'sdk':['sdk-best','sdk-game','sdk-solved'],'rem':['remi_set','remi_game2','remi_rec']}[G]
+KEYS={'kb':['kb-stats','kb-rec','kb-game','kb-adapt'],'oth':['oth-stats','oth-rec','oth-game','oth-adapt'],'ws':['ws_level','ws_best','ws_solved','ws_game','ws_sym'],
+      'sdk':['sdk-best','sdk-game','sdk-solved'],'rem':['remi_set','remi_game2','remi_rec','remi-adapt']}[G]
+# saved only after a whole game against the CPU (blueprint 6a), so a real one is put in to be damaged field by field
+SEED_SAVE={'kb':{'kb-adapt':'{"easy":0.36,"normal":-0.2}'},'oth':{'oth-adapt':'{"easy":0.36,"normal":-0.2}'},'rem':{'remi-adapt':'{"easy":-0.488,"normal":0.2}'}}.get(G,{})
 POKE="""(()=>{const bs=[...document.querySelectorAll('main button, #app button, body button')].filter(b=>!b.closest('#bar')&&!b.closest('#panel')&&!b.disabled&&b.getClientRects().length&&getComputedStyle(b).pointerEvents!=='none');
  if(!bs.length)return 0;const b=bs[Math.floor(Math.random()*bs.length)];b.click();return bs.length})()"""
 BAD="""(()=>{const t=document.body.innerText;const m=t.match(/undefined|NaN|\\[object|Infinity/);return m?m[0]+' in: '+t.slice(Math.max(0,m.index-30),m.index+30).replace(/\\n/g,' '):''})()"""
@@ -32,6 +34,7 @@ def poke(f,n,wait=120):
 # 1) make a real save by playing a little
 f,_=fresh({}); poke(f,30,200); page.wait_for_timeout(1500)
 base=page.evaluate("(ks)=>{const o={};ks.forEach(k=>{const v=localStorage.getItem(k);if(v!=null)o[k]=v});return o}",KEYS)
+for k,v in SEED_SAVE.items(): base.setdefault(k,v)
 print(G,'saved keys:',{k:len(v) for k,v in base.items()},flush=True)
 cases=[]
 for k in KEYS:

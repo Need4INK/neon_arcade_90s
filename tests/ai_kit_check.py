@@ -51,6 +51,15 @@ JS = r"""async()=>{const R={},A=window.__ai;
  const bad=['{','null','[1,2]','{"easy":"x","normal":5}','{"easy":NaN}','{"easy":-7,"normal":null}','"easy"'];
  R.adaptDamaged=bad.every(s=>{localStorage.setItem(G+'-adapt',s);const k=naKnobs(G,'easy'),kk=naKnobs(G,'normal');return k.adapt===0&&kk.adapt===0&&k.temp===1.2});
  localStorage.setItem(G+'-adapt','{"easy":0.5}');R.adaptRead=naAdapt(G,'easy')===.5&&naKnobs(G,0).level==='easy';
+ // a result in between (Remi: your place at the table) moves it part of the way; out of range counts as +-1
+ localStorage.removeItem(G+'-adapt');naAdaptNote(G,'easy',1/3);naAdaptNote(G,'normal',-1/3);naAdaptNote(G,'easy',7);naAdaptNote(G,'normal','x');
+ R.adaptPart=naAdapt(G,'easy')===.254&&naAdapt(G,'normal')===-.054;
+ // a game's own range: span (how far towards the next level) and soft (its gentlest values; only those knobs move)
+ naLevel[G]={easy:{temp:2,kill:1},span:{easy:.5},soft:{easy:{kill:.5}}};
+ localStorage.setItem(G+'-adapt','{"easy":1}');let kq=naKnobs(G,'easy');R.adaptSpan=Math.abs(kq.temp-(2+(.3-2)*.5))<1e-9&&Math.abs(kq.blind-(.3+(.05-.3)*.5))<1e-9&&kq.kill===1;
+ localStorage.setItem(G+'-adapt','{"easy":-0.5}');kq=naKnobs(G,'easy');R.adaptSoft=kq.temp===2&&kq.blind===.3&&kq.kill===.75;
+ localStorage.setItem(G+'-adapt','{"normal":-1}');kq=naKnobs(G,'normal');R.adaptMirror=kq.temp>.3&&kq.blind>.05;
+ delete naLevel[G];
  localStorage.removeItem(G+'-adapt');
  Math.random=mr;R.noMathRandom=used===0;
  return R}"""

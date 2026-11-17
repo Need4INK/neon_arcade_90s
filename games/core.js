@@ -102,19 +102,22 @@ function naChoose(moves,k,r){r=r||naR;k=k||{};if(moves.length<2)return moves[0];
 // means everywhere; a game's own knobs go under its key and win over the shared ones.
 var NA_LV=['easy','normal','hard'],naLevel={all:{easy:{temp:1.2,blind:.3},normal:{temp:.3,blind:.05},hard:{temp:0,blind:0}},kb:{},oth:{},remi:{}};
 // naKnobs(game,level): that level's knobs, nudged by naAdapt. Sharper (x>0) moves a knob towards the next level's value
-// (Easy up to 90% of the way, Normal a third); gentler (x<0) moves it away by the same share. Hard never moves.
-// Knobs that must be whole numbers (a search depth) are rounded by the game.
+// (Easy up to 90% of the way, Normal a third, or the game's naLevel[game].span[level]); gentler (x<0) moves it away by the same share, unless the game sets the
+// gentlest values itself (naLevel[game].soft[level]): then only those knobs move, towards them (a beginner stays a
+// beginner, never worse than random). Hard never moves. Knobs that must be whole numbers are rounded by the game.
 function naKnobs(game,level){var lv=typeof level==='number'?NA_LV[level]:level,i=NA_LV.indexOf(lv),g=naLevel[game]||{},o={},nx={},k;
  [naLevel.all[lv],g[lv]].forEach(function(s){for(k in s)o[k]=s[k]});[naLevel.all[NA_LV[i+1]],g[NA_LV[i+1]]].forEach(function(s){for(k in s)nx[k]=s[k]});
- var x=naAI.adapt?naAdapt(game,lv):0,span=lv==='easy'?.9:lv==='normal'?1/3:0;o.level=lv;o.adapt=x;
- if(x&&span)for(k in o)if(typeof o[k]==='number'&&typeof nx[k]==='number'&&k!=='adapt')o[k]+=(nx[k]-o[k])*x*span;return o}
+ var x=naAI.adapt?naAdapt(game,lv):0,span=lv==='hard'?0:g.span&&g.span[lv]!=null?g.span[lv]:lv==='easy'?.9:1/3,sf=x<0&&g.soft&&g.soft[lv];o.level=lv;o.adapt=x;
+ if(sf){for(k in sf)if(typeof o[k]==='number'&&typeof sf[k]==='number')o[k]+=(sf[k]-o[k])*-x}
+ else if(x&&span)for(k in o)if(typeof o[k]==='number'&&typeof nx[k]==='number'&&k!=='adapt')o[k]+=(nx[k]-o[k])*x*span;return o}
 // Adjusting to the player (blueprint 6a): one number per game and level, -1 (you keep losing: gentler) to 1 (you keep
 // winning: sharper), about your last 5 results. Saved as <game>-adapt (kb-adapt, oth-adapt, remi-adapt); damaged = 0.
 function naAdaptAll(game){var o={};try{o=JSON.parse(localStorage.getItem(game+'-adapt'))||{}}catch(e){}var r={};
  if(o&&typeof o==='object')['easy','normal'].forEach(function(l){var v=o[l];if(typeof v==='number'&&isFinite(v)&&v>=-1&&v<=1)r[l]=v});return r}
 function naAdapt(game,level){return level==='hard'?0:naAdaptAll(game)[level]||0}
-// after each game vs the CPU: won = 1 you won, -1 you lost, 0 a tie (never during a game)
-function naAdaptNote(game,level,won){if(level==='hard'||!naAI.adapt)return;var a=naAdaptAll(game),v=(a[level]||0)*.8+.2*(won>0?1:won<0?-1:0);
+// after each game vs the CPU: won = 1 you won, -1 you lost, 0 a tie, or in between (Remi: your place at the table);
+// never during a game
+function naAdaptNote(game,level,won){if(level==='hard'||!naAI.adapt)return;var a=naAdaptAll(game),v=(a[level]||0)*.8+.2*Math.max(-1,Math.min(1,+won||0));
  a[level]=Math.max(-1,Math.min(1,Math.round(v*1000)/1000));try{localStorage.setItem(game+'-adapt',JSON.stringify(a))}catch(e){}}
 // Test hooks: __ai.seed(n), adapt (false = no adjusting), fast (no thinking pauses), main (no Worker), knobs, choose;
 // a game sets __ai.pick(state,level) and __ai.level once its CPU uses the kit (tests/ai_tournament.py calls pick).

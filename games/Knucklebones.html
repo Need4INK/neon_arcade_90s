@@ -153,7 +153,7 @@ var SFX={
   tie:function(){tone(440,.14,'square',.15,0);tone(440,.2,'square',.15,.18)}};
 naSfx=SFX;
 function sfx(n,delay){if(naQuiet())return;var go=function(){try{SFX[n]()}catch(e){}};delay?setTimeout(go,delay):go()}
-function record(a,b){S.best=Math.max(S.best,a);if(a>b)S.w++;else if(a<b)S.l++;else S.t++;addRec(S.diff,a>b?0:a<b?1:2)}
+function record(a,b){S.best=Math.max(S.best,a);if(a>b)S.w++;else if(a<b)S.l++;else S.t++;addRec(S.diff,a>b?0:a<b?1:2);naAdaptNote('kb',S.diff,a>b?1:a<b?-1:0)}
 // Saved record vs the CPU per difficulty (wins, losses, ties)
 var REC={};try{REC=cleanRec(JSON.parse(localStorage.getItem('kb-rec')))}catch(e){}
 function cleanRec(o){var r={};if(o&&typeof o==='object')['easy','normal','hard'].forEach(function(d){var a=o[d];if(Array.isArray(a))r[d]=[0,1,2].map(function(i){var v=a[i];return typeof v==='number'&&isFinite(v)&&v>=0?Math.floor(v):0})});return r}
@@ -186,7 +186,10 @@ function place(me,opp,col,v){me[col].push(v);var b=opp[col].length;opp[col]=opp[
 // weighs knocking your dice off and being hit back), temp / blind = the mistake model, depth = Normal's look-ahead
 // (dice), obv = a lead (in the same steps as temp) Normal never overlooks, ms / nodes = Hard's budget. Easy's temp
 // is above Normal's so that adjusting to the player (naKnobs) sharpens in the right direction.
-naLevel.kb={easy:{ev:'e',temp:4,blind:.4,kill:.7,risk:.1},normal:{depth:2,temp:2,blind:.05,obv:10},hard:{ms:400,nodes:3000}};
+// soft: Easy at its gentlest (adjusting to a player who keeps losing, blueprint 6a): more loosely, fewer attacks, no
+// worry about being hit back, still above a random player (about 53% against one, plain Easy 57%).
+naLevel.kb={easy:{ev:'e',temp:4,blind:.4,kill:.7,risk:.1},normal:{depth:2,temp:2,blind:.05,obv:10},hard:{ms:400,nodes:3000},
+ soft:{easy:{temp:5.5,kill:.5,risk:0}}};
 // Knucklebones CPU engine (blueprint 5 Knucklebones). Self-contained (runs in a Worker via naWorker, or here).
 // d: {me, opp: columns of dice (CPU's, player's), die: the CPU's roll, k: level knobs, seed, ms: time budget}
 // Returns {col, v: score, v2: next best, n: open columns, depth, nodes}
