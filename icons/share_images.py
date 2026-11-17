@@ -20,7 +20,8 @@ def bg(w,h):
     im.alpha_composite(g.filter(ImageFilter.GaussianBlur(120)));return im
 # ---- preview card 1200x630
 W,H=1200,630;im=bg(W,H)
-ic=Image.open(R+'icon.png').convert('RGBA').resize((590,590),Image.LANCZOS)
+big=R+'icons/neon_arcade_icon.png'  # 1024px master from icon_template.py, sharper than the 512px icon.png
+ic=Image.open(big if os.path.exists(big) else R+'icon.png').convert('RGBA').resize((590,590),Image.LANCZOS)
 m=Image.new('L',(590,590),0);ImageDraw.Draw(m).rounded_rectangle([0,0,589,589],48,fill=255)
 scan(im)
 glow(im,lambda d,c:d.rounded_rectangle([18,18,612,612],52,outline=c,width=5),MAG,14,2)

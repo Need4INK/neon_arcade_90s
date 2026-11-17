@@ -4,14 +4,14 @@ A phone-first pack of neon arcade games (Knucklebones, Othello, Water Sort, Sudo
 
 ## Layout
 - `index.html`: the packed game pack (cover page + all five games). Built, don't hand-edit.
-- `icon.png` (512px), `icon-maskable.png`, `sw.js`, `manifest.json`: home-screen icon (iPhone and default), Android icon (any launcher shape), offline support, app manifest (`start_url`/`scope` `./`, needed for Chrome to treat the site as an installable app).
-- `favicon.png` (48px), `favicon-192.png`: browser-tab / favourites icon for desktop, made from `icon.png` by `icons/favicon.py`.
+- `apple-touch-icon.png` (180px, iPhone), `icon.png` (512px) and `icon-192.png`, `icon-maskable.png`, `sw.js`, `manifest.json`: home-screen icon (iPhone and default), Android icon (any launcher shape), offline support, app manifest (`start_url`/`scope` `./`, needed for Chrome to treat the site as an installable app).
+- `favicon.png` (48px): browser-tab icon. All icons are full-bleed squares (no rounded corners; each platform cuts its own), made by `icons/icon_template.py`.
 - `games/`: editable sources.
   - `Knucklebones.html`, `Othello.html`, `Water_Sort.html`, `Sudoku.html`, `Remi.html`: each holds only what is its own (play area, rules text, sounds, game logic). They no longer work opened on their own.
   - Shared by all five, put into each game by the build: `core.css` (page, the 390 × 797 template, bar, Rules/Settings panel and rows, action buttons, touch and hover), `stage.js` (scales and turns the template to fit the screen), `core.js` (sound, the panel, switches, "Tap again", Exit, Sound/Scanlines shared between games).
   - `build.py`: the cover page and the packer.
 - `.github/workflows/checks.yml`: on every pull request GitHub rebuilds the page and runs `build_check`, `layout_compare`, `exit_check`, `core_check`, `resume_check`, `install_check`.
-- `icons/icon_template.py`: generates the 1024×1024 neon app icons (presets per game).
+- `icons/icon_template.py`: draws the neon-sign app icon and writes every icon size the site uses.
 - `icons/share_images.py`: makes `icons/qr.svg` (embedded in the share pop-up), the QR poster `icons/neon_arcade_qr.png` and the link-preview picture `og.jpg`.
 - Design notes with the reasons behind every decision live in the claude.ai project (`claude/design-notes.md`); a copy is kept in this repo's `claude/` folder (design notes, QA report pass 9, project instructions), so they stay with the code.
 

@@ -2,3 +2,4 @@ __pycache__/
 *.pyc
 .DS_Store
 tests/out/
+icons/neon_arcade_icon.png
