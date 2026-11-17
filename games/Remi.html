@@ -4,9 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Remi</title>
-<meta name="description" content="Remi: the Romanian rummy tile game against 3 CPU players, neon arcade style.">
-<meta name="theme-color" content="#07030f">
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 <style>
 :root{--tw:32px;--mw:21px;--pw:30px}
 #game{flex:1 1 auto;min-height:0;justify-content:center;display:flex;flex-direction:column;gap:6px;padding:2px 0 4px}
@@ -282,8 +279,8 @@ button.b:disabled{opacity:.35}
 (function(){
 const $=id=>document.getElementById(id);
 // Skins change only the look. Medias: black tiles (shown white in Neon), jolys drawn red (104) and black (105)
-const SKINS={neon:{COL:['#ff3b5c','#ffe94d','#19f3ff','#eaf6ff'],CNAME:['red','yellow','blue','white'],OWN:['#39ff7a','#ff3b5c','#ffe94d','#19f3ff'],wc:'#ffe94d',bg:'#07030f'},
- medias:{COL:['#bf1e2b','#e3a600','#1f6fc4','#161616'],CNAME:['red','yellow','blue','black'],OWN:['#88b79a','#d0675f','#e0b85a','#6fa4d8'],wc:'#e7ca88',bg:'#101813'}};
+const SKINS={neon:{COL:['#ff3b5c','#ffe94d','#19f3ff','#eaf6ff'],CNAME:['red','yellow','blue','white'],OWN:['#39ff7a','#ff3b5c','#ffe94d','#19f3ff'],wc:'#ffe94d'},
+ medias:{COL:['#bf1e2b','#e3a600','#1f6fc4','#161616'],CNAME:['red','yellow','blue','black'],OWN:['#88b79a','#d0675f','#e0b85a','#6fa4d8'],wc:'#e7ca88'}};
 let skin='neon',lay='port',COL,CNAME,OWN;
 const NAMES=['You','CPU 1','CPU 2','CPU 3'],TARGETS=[500,750,1000];
 const OPEN=45,DEL=[1000,600,250];
@@ -301,8 +298,7 @@ let LIMIT=1000,G=null,T=null,lvl=1,spd=1,swp=true,sym=false,boardArm=false,board
 try{const s=JSON.parse(localStorage.getItem('remi_set')||'{}');if([0,1,2].includes(s.lvl))lvl=s.lvl;if([0,1,2].includes(s.spd))spd=s.spd;if(s.sortBy==='col'||s.sortBy==='num')sortBy=s.sortBy;if(TARGETS.includes(s.limit))LIMIT=s.limit;if(s.swp===false)swp=false;if(s.sym)sym=true;}catch(e){}
 document.body.classList.toggle('sym',sym);
 function applySkin(){const k=SKINS[skin];COL=k.COL;CNAME=k.CNAME;OWN=k.OWN;document.documentElement.classList.toggle('sk-m',skin==='medias');
- document.documentElement.classList.toggle('lnd',skin==='medias'&&lay==='land');try{if(window.naSt)naSt()}catch(e){}
- const tc=document.querySelector('meta[name=theme-color]');if(tc)tc.content=k.bg}
+ document.documentElement.classList.toggle('lnd',skin==='medias'&&lay==='land');try{if(window.naSt)naSt()}catch(e){}}
 applySkin();
 function saveSet(){try{localStorage.setItem('remi_set',JSON.stringify({lvl,spd,sortBy,limit:LIMIT,swp,sym}))}catch(e){}}
 function save(){try{localStorage.setItem('remi_game2',JSON.stringify(G))}catch(e){}}

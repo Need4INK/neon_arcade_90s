@@ -45,48 +45,36 @@ def no_comments(g):
         cont = l.rstrip('\r\n').endswith('\\')
         keep.append(l)
     return g[:a] + ''.join(keep) + g[b:]
+# each game copies the fonts the cover declares (see FONTS below)
+FONT_COPY = '<script>try{var nf=parent.document.getElementById("nafonts");if(nf){var st=document.createElement("style");st.textContent=nf.textContent;document.head.appendChild(st)}}catch(e){}</script>'
 for name in ('kb', 'oth', 'ws', 'sdk', 'rem'):
     g = globals()[name]
     # the shared styles come first so a game's own rules can differ from them; the stage runs before the page is drawn;
     # the shared script sits right in front of the game's own (the page is built by then)
     assert g.count('<style>') == 1 and g.count('<script>') == 1 and g.count('class="mnu"') == 1, name
-    globals()[name] = no_comments(g).replace('<script>', CORE_JS + '<script>', 1).replace('<style>', CORE_CSS + STAGE_JS + '<style>', 1)
+    globals()[name] = no_comments(g).replace('<script>', CORE_JS + '<script>', 1).replace('<style>', FONT_COPY + CORE_CSS + STAGE_JS + '<style>', 1)
 
-# Fonts: if games/fonts/ holds PressStart2P-Regular and VT323-Regular (.woff2, .woff or .ttf), they are packed
-# into the page so the games never depend on Google Fonts (works offline even if the fonts were never saved).
-# The cover declares them once; each game copies that declaration from the cover when it loads.
+# Fonts: games/fonts/ holds PressStart2P-Regular and VT323-Regular; they are packed into the page so the games
+# never load anything from outside. The cover declares them once; each game copies that declaration from the cover.
 import base64, io
-GLINK = '<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">'
 FDIR = os.path.join(HERE, 'fonts')
 def font_face(name, family):
-    for ext in ('woff2', 'woff', 'ttf'):
-        f = os.path.join(FDIR, name + '.' + ext)
-        if not os.path.exists(f):
-            continue
-        data, mime, fmt = open(f, 'rb').read(), ext, {'woff2': 'woff2', 'woff': 'woff', 'ttf': 'truetype'}[ext]
-        try:  # keep only the characters the games use, saved as compressed woff
-            from fontTools import subset
-            from fontTools.ttLib import TTFont
-            ft = TTFont(io.BytesIO(data), recalcTimestamp=False)  # same bytes on every build
-            o = subset.Options(); o.flavor = 'woff'; o.ignore_missing_unicodes = True; o.name_IDs = ['*']  # keeps the OFL licence text in the font
-            sub = subset.Subsetter(o)
-            sub.populate(unicodes=list(range(0x20, 0x7f)) + list(range(0xa0, 0x180)) + list(range(0x2010, 0x2050)) + [0x2190, 0x2192, 0x2605, 0x25ae, 0x2713, 0xd7])
-            sub.subset(ft); buf = io.BytesIO(); ft.flavor = 'woff'; ft.save(buf)
-            data, mime, fmt = buf.getvalue(), 'woff', 'woff'
-        except Exception:
-            pass
-        return "@font-face{font-family:'%s';font-style:normal;font-weight:400;font-display:swap;src:url(data:font/%s;base64,%s) format('%s')}" % (
-            family, mime, base64.b64encode(data).decode(), fmt)
-    return None
-FONTS = [font_face('PressStart2P-Regular', 'Press Start 2P'), font_face('VT323-Regular', 'VT323')]
-PACK_FONTS = all(FONTS)
-if PACK_FONTS:
-    COPY = '<script>try{var nf=parent.document.getElementById("nafonts");if(nf){var st=document.createElement("style");st.textContent=nf.textContent;document.head.appendChild(st)}}catch(e){}</script>'
-    for name in ('kb', 'oth', 'ws', 'sdk', 'rem'):
-        assert globals()[name].count(GLINK) == 1, name
-        globals()[name] = globals()[name].replace(GLINK, COPY)
-else:
-    print('Note: games/fonts/ not found or incomplete, using Google Fonts')
+    f = os.path.join(FDIR, name + '.ttf')
+    data, mime, fmt = open(f, 'rb').read(), 'ttf', 'truetype'
+    try:  # keep only the characters the games use, saved as compressed woff
+        from fontTools import subset
+        from fontTools.ttLib import TTFont
+        ft = TTFont(io.BytesIO(data), recalcTimestamp=False)  # same bytes on every build
+        o = subset.Options(); o.flavor = 'woff'; o.ignore_missing_unicodes = True; o.name_IDs = ['*']  # keeps the OFL licence text in the font
+        sub = subset.Subsetter(o)
+        sub.populate(unicodes=list(range(0x20, 0x7f)) + list(range(0xa0, 0x180)) + list(range(0x2010, 0x2050)) + [0x2190, 0x2192, 0x2605, 0x25ae, 0x2713, 0xd7])
+        sub.subset(ft); buf = io.BytesIO(); ft.flavor = 'woff'; ft.save(buf)
+        data, mime, fmt = buf.getvalue(), 'woff', 'woff'
+    except Exception:
+        pass
+    return "@font-face{font-family:'%s';font-style:normal;font-weight:400;font-display:swap;src:url(data:font/%s;base64,%s) format('%s')}" % (
+        family, mime, base64.b64encode(data).decode(), fmt)
+FONTS = '<style id="nafonts">' + font_face('PressStart2P-Regular', 'Press Start 2P') + font_face('VT323-Regular', 'VT323') + '</style>'
 
 games = json.dumps({'kb': kb, 'oth': oth, 'ws': ws, 'sdk': sdk, 'rem': rem}).replace('</', '<\\/')
 
@@ -117,7 +105,7 @@ page = r'''<!DOCTYPE html>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+__FONTS__
 <style>
 :root{--bg:#07030f;--panel:#10072a;--line:#2e1d66;--ink:#eaf6ff;--mut:#9a8bd6;--mag:#ff2bd6;--cy:#19f3ff;--yel:#ffe94d;--die:#0b0720;--or:#ff9e2c;--rd:#e8566a;
 --px:"Press Start 2P","Courier New",monospace;--vt:"VT323","Courier New",monospace;color-scheme:dark}
@@ -355,11 +343,10 @@ window.addEventListener('popstate',function(e){var g=e.state&&e.state.g;
 document.querySelectorAll('.card').forEach(function(b){b.onclick=function(){openGame(b.dataset.g,true)}});
 // Always start on the cover: drop any old #game from the URL and any game left in the history entry.
 try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
-// Offline: sw.js keeps a copy of this page and its fonts on the phone (needs https, e.g. GitHub Pages).
+// Offline: sw.js keeps a copy of this page on the phone (needs https, e.g. GitHub Pages).
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){
  try{navigator.serviceWorker.register('sw.js').then(function(){return navigator.serviceWorker.ready}).then(function(r){
-  var fonts=[].slice.call(document.querySelectorAll('link[rel=stylesheet]')).map(function(l){return l.href});
-  if(r.active)r.active.postMessage({cache:[location.href.split('#')[0]].concat(fonts)})}).catch(function(){})}catch(e){}}
+  if(r.active)r.active.postMessage({cache:[location.href.split('#')[0]]})}).catch(function(){})}catch(e){}}
 </script>
 </body>
 </html>
@@ -367,8 +354,6 @@ if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostnam
 page = page.replace('__GAMES__', games).replace('__NACALC__', NACALC)
 QR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'icons', 'qr.svg')
 page = page.replace('__QR__', open(QR, encoding='utf-8').read() if os.path.exists(QR) else '')
-if PACK_FONTS:
-    assert page.count(GLINK) == 1
-    page = page.replace(GLINK, '<style id="nafonts">' + ''.join(FONTS) + '</style>')
+page = page.replace('__FONTS__', FONTS)
 open(out, 'w', encoding='utf-8').write(page)
 print(len(page))

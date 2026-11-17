@@ -1,4 +1,4 @@
-# Neon Arcade – Claude project instructions (copy, 15 Nov 2026)
+# Neon Arcade – Claude project instructions (copy, 17 Nov 2026)
 
 Neon Arcade: phone-first pack of neon arcade games (Knucklebones, Othello, Water Sort, Sudoku, Remi) on GitHub Pages (https://need4ink.github.io/neon_arcade_90s/), with a cover page to pick a game. Details behind every rule are in claude/design-notes.md: read only the sections a task needs.
 
