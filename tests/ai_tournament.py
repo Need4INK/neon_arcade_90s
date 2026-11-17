@@ -275,7 +275,7 @@ def remi_copy():
     subprocess.run([sys.executable, os.path.join(g, 'build.py')] + [os.path.join(g, x) for x in
                     ['Knucklebones.html', 'Othello.html', 'Water_Sort.html', 'Sudoku.html']] +
                    [os.path.join(d, 'Remi.html'), os.path.join(d, 'index.html')], check=True, capture_output=True)
-    for x in ['sw.js', 'manifest.json', 'favicon.png', 'icon.png']:
+    for x in ['sw.js', 'manifest.json', 'favicon.png', 'icon-192.png', 'apple-touch-icon.png', 'icon.png']:
         shutil.copy(os.path.join(ROOT, x), d)
     return d
 

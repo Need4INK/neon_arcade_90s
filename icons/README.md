@@ -1,19 +1,28 @@
 # App icons
 
-`icon_template.py` makes the 1024×1024 neon icons (iOS-safe, nothing important near the corners).
+`icon_template.py` draws the Neon Arcade icon: a neon sign on a brick wall ("NEON" pink, "ARCADE" yellow, an arcade
+joystick on top, a cyan triangle behind the words, confetti). Needs Python 3 + Pillow; no fonts (the letters are
+drawn as tubes). Same output on every run.
 
 ```
 pip install pillow
-python3 icon_template.py              # all presets
-python3 icon_template.py othello      # one preset
+python3 icons/icon_template.py
 ```
 
-The site's `../icon.png` is the `neon_arcade` preset shrunk to 512×512 (iPhone needs 180px, Android 512px); to remake `og.jpg` or the favicons at full sharpness, start from the 1024px `neon_arcade_icon.png` this script writes.
+It writes every icon the site uses. All are full-bleed squares with no rounded corners: iPhone, Android and desktop
+cut their own shapes.
 
-Presets: `neon_arcade`, `othello`, `knucklebones`, `water_sort`, `sudoku`, `remi`. `neon_arcade_maskable` makes the Android icon `../icon-maskable.png` (512px): the same picture with the text inside the central safe circle (80% wide) that every launcher shape keeps. For a new icon, copy a preset at the top of the script and change the text, size and height.
+| File | Size | Used by |
+|---|---|---|
+| `../apple-touch-icon.png` | 180 | iPhone / iPad home screen (`<link rel="apple-touch-icon">`) |
+| `../icon.png` | 512 | manifest `any`: Android, installed desktop app (Chrome / Edge) |
+| `../icon-192.png` | 192 | manifest `any`, `<link rel="icon" sizes="192x192">` |
+| `../icon-maskable.png` | 512 | manifest `maskable`: Android launchers; the sign is drawn smaller so the words and joystick stay inside the central 80% safe circle |
+| `../favicon.png` | 48 | browser tab |
+| `neon_arcade_icon.png` | 1024 | full-size master, not part of the site (git-ignored); `share_images.py` uses it for `og.jpg` |
 
-Font: Poppins Bold Italic (free, [Google Fonts](https://fonts.google.com/specimen/Poppins)). Put `Poppins-BoldItalic.ttf` next to the script.
+`tests/icon_preview.py` shows `icon.png` with iPhone corners and `icon-maskable.png` cut to the Android shapes.
 
-`share_images.py` (Pillow + OpenCV) makes `qr.svg` (the QR in the cover's share pop-up), the printable poster `neon_arcade_qr.png` and the link-preview picture `../og.jpg`. Re-run it if the site address changes; it checks that the QR reads back.
-
-`favicon.py` makes the browser-tab / favourites icon (`../favicon.png` 48px and `../favicon-192.png`) from `../icon.png`, with rounded corners. `games/build.py` links both. Re-run it after changing `icon.png`.
+`share_images.py` (Pillow + OpenCV) makes `qr.svg` (the QR in the cover's share pop-up), the printable poster
+`neon_arcade_qr.png` and the link-preview picture `../og.jpg`. Re-run it after changing the icon (run
+`icon_template.py` first) or the site address; it checks that the QR reads back.

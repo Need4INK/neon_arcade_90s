@@ -76,7 +76,7 @@ Details behind the project instructions (Nov 2026). One doc for everything: add 
 ## Sharing
 - Tap the cover title (or Enter/Space): "Scan to play", QR on white (max 200px), "Save it to your home screen:", "iPhone: Share › Add to Home Screen", "Android: Menu › Install app", Copy link (cyan, "Copied!") and Close (yellow). Closes on Close, outside tap, Escape. Not signposted (user, Nov 13: no install hint).
 - Copy link: clipboard API, then the older copy command; if both fail "Copy failed" and a selectable address line appears.
-- `icons/share_images.py` makes `icons/qr.svg`, the poster `icons/neon_arcade_qr.png` (1080×1350) and `og.jpg` (1200×630, < 300 KB for WhatsApp); checks the QR reads back. Use the 1024px `neon_arcade_icon.png` from `icon_template.py` for full sharpness. Cover has og:* and twitter:card tags.
+- `icons/share_images.py` makes `icons/qr.svg`, the poster `icons/neon_arcade_qr.png` (1080×1350) and `og.jpg` (1200×630, < 300 KB for WhatsApp); checks the QR reads back. Uses the 1024px `icons/neon_arcade_icon.png` from `icon_template.py` when present (run that first). Cover has og:* and twitter:card tags.
 
 ## All games: shared rules
 - Naming: the other side vs the CPU is "CPU" everywhere. British spelling. Levels "Easy / Normal / Hard" in every game (Remi said "Norm" until PR #71; its speed is "Slow / Normal / Fast").
@@ -100,10 +100,10 @@ Details behind the project instructions (Nov 2026). One doc for everything: add 
 - Contrast: all active text passes. Tap targets: many under Apple's 44px (all above 24px at scale 1; about 20px on the smallest screens); left as is (user).
 
 ## App icons
-- `icons/icon_template.py` (Pillow, Poppins Bold Italic from `/usr/share/fonts/truetype/google-fonts/`): `python3 icon_template.py [preset]`. Presets `neon_arcade`, `othello`, `knucklebones`, `water_sort`, `sudoku`, `remi`, `neon_arcade_maskable`.
-- Look: 1024², purple sky, striped sunset sun, cyan wireframe mountains, magenta grid, pink neon title with gold-to-pink fill, cyan "'90s". No detail near corners; text ≤ ~94% width; no scanlines.
-- `icon.png` = `neon_arcade` at 512px (manifest `512x512`). `icon-maskable.png` 512px, text at 76% inside the 80% safe circle (Android shapes).
-- `favicon.png` (48) and `favicon-192.png` from `icon.png` by `icons/favicon.py` (re-run after changing `icon.png`).
+- Neon sign on a dark-blue brick wall (Nov 17, user): "NEON" pink outline tube letters, "ARCADE" yellow, an arcade joystick on top (white shaft, red ball, cyan base, yellow and green buttons), a cyan rounded triangle behind the words that breaks where it passes behind them, small confetti (triangles, square, rings, zigzags, dots). No "'90s". Look matched to a neon-sign reference: saturated tubes with a softer bright centre, crisp edges, broad glow that lights the bricks. Bricks large so they still read at home-screen size.
+- `icons/icon_template.py` (Pillow only, no fonts: letters drawn as tubes from a `GLYPHS` table; drawn at 2x then scaled down for sharpness; fixed seeds): `python3 icons/icon_template.py` writes `apple-touch-icon.png` 180, `icon.png` 512, `icon-192.png`, `icon-maskable.png` 512 (sign at 1.0 instead of 1.32 so words and joystick sit inside the 80% safe circle), `favicon.png` 48, and the git-ignored 1024 master `icons/neon_arcade_icon.png`.
+- All full-bleed squares, no rounded corners (user: iOS, Android and desktop cut their own). Manifest: `icon-192` + `icon` (any), `icon-maskable` (maskable). Cover head: favicon 48, icon-192, apple-touch-icon 180.
+- The old synthwave icon (sunset, mountains, grid, per-game presets), `icons/favicon.py`, `favicon-192.png` and the games' own emoji favicons are gone. Home-screen icons already added keep the old picture until removed and added again.
 
 ## Games
 - Knucklebones: placed die = square face centred in its wide cell (`.cell.f .pips`, `min(100cqw,100cqh)`, x2 yellow / x3 orange). Die box hidden at game end. 2-player flipped end: two copies of the result + Play again side by side, left one upside down, short form "P1 wins 57–47!" (`.mid.two`, `#msg2`). Its second title is a `div.ttl2` (the others use `h1#t2`); the core styles both.
@@ -160,7 +160,7 @@ Details behind the project instructions (Nov 2026). One doc for everything: add 
 ## Offline and install
 - `sw.js` (CACHE `neon-arcade-v2`; next `neon-arcade-v3`): network-first with `cache:'no-cache'` (quick 304); after 3 s (`SLOW_MS`) shows the saved copy and saves the server's answer for next time; first visit waits. Copies keyed without `?query`; offline fallback: same address, saved start page, any page. Saves the start page on install; deletes old caches on activate. Its Google Fonts handling is unused now (left in PR #71 to avoid touching sw.js).
 - Bump CACHE only when sw.js changes (game, manifest and icon changes don't need it).
-- `manifest.json`: "Neon Arcade", `start_url`/`scope` `"./"`, standalone, portrait, `#07030f`, icons `icon.png` (any) and `icon-maskable.png`. No `id` (would resolve to `/`; without it the app ID is `/neon_arcade_90s/`). Portrait lock: the installed Android app doesn't rotate, so Remi Landscape shows turned there (iPhone ignores it).
+- `manifest.json`: "Neon Arcade", `start_url`/`scope` `"./"`, standalone, portrait, `#07030f`, icons `icon-192.png` + `icon.png` (any) and `icon-maskable.png`. No `id` (would resolve to `/`; without it the app ID is `/neon_arcade_90s/`). Portrait lock: the installed Android app doesn't rotate, so Remi Landscape shows turned there (iPhone ignores it).
 - Installs as a Chrome app on Android and Windows.
 
 ## Security (PR #37)
