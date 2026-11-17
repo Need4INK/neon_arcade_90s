@@ -12,7 +12,7 @@ How to build `claude/ai-blueprint.md`, one step per chat. Written Nov 15 2026.
 
 **Model choice:**
 - **Opus 5.5** does clear engineering: tools, Othello, Knucklebones, the player adjustment and the puzzle helpers.
-- **Fable 5.2** does the subtle work: Remi's hidden-information play, the personalities and the final review, where judgement matters most.
+- **Fable 5.2** did the subtle Remi work (steps 3–5). It now needs paid usage credits on Pro, so the final review (step 8) runs on Opus 5.5 at xhigh.
 
 ## Running steps in parallel
 Some steps change different files, so two chats can work at once: one **Opus** chat and one **Fable** chat side by side.
@@ -21,7 +21,7 @@ Some steps change different files, so two chats can work at once: one **Opus** c
   2. **Then, side by side:** Opus does steps 1 and 2, one after the other in its chat. Fable does step 3.
   3. **Then, side by side:** Fable does steps 4a, 4b, then 5. Opus does step 7.
   4. **Then step 6** (Opus), once steps 1–5 are done. It touches all three opponent games.
-  5. **Step 8 last** (Fable).
+  5. **Step 8 last** (Opus: Fable moved to pay-as-you-go credits on Pro, Nov 17).
 - **Remi steps run one after another.** 3, 4 and 5 all change the same file.
 - **Deploy one chat at a time.** Every step rebuilds `index.html`, so two deploys at once would clash. Say "deploy" in one chat, wait until it's merged, then in the other.
 - **Before pushing, update from `main`** (the chat must do this when it hears "deploy"): fetch the latest `main`, rebase onto it, rebuild `index.html`, re-run the quick checks, then push. If the plan's Progress table or the design notes changed meanwhile, merge them; never overwrite them.
@@ -40,7 +40,7 @@ Some steps change different files, so two chats can work at once: one **Opus** c
 | 5 | Remi C: Hard imagines hidden hands | Fable 5.2 · xhigh | done (Nov 17, PR #85) |
 | 6 | Adjusting to the player | Opus 5.5 · high | done (Nov 17, PR #86) |
 | 7 | Puzzle helpers | Opus 5.5 · medium | done (Nov 17, PR #87) |
-| 8 | Final review and tuning | Fable 5.2 · high | to do |
+| 8 | Final review and tuning | Opus 5.5 · xhigh | to do |
 
 Every prompt below assumes the chat follows the project instructions: connect and clone the repo, work locally, and deploy only on "deploy". On "deploy", it first updates from `main` and rebuilds, because another chat may have deployed meanwhile (see "Running steps in parallel"). After a successful deploy, it ends with: "Step N done. Next: step M, open a new chat with <model> · <effort> and paste its prompt" (or "All steps done"). It also keeps a task list beside the chat (one line per part of the step, ticked off as it goes), so you can see how far along it is without interrupting.
 
@@ -100,8 +100,17 @@ Every prompt below assumes the chat follows the project instructions: connect an
 
 **Check:** Does Sudoku's hint teach you something before filling the cell? Does Water Sort warn you when you're stuck?
 
-### Step 8 · Final review and tuning · Fable 5.2 · high
+### Step 8 · Final review and tuning · Opus 5.5 · xhigh
+Open a new chat in this project, set **Opus 5.5** and **xhigh**, and paste everything in the box. It needs nothing else from you.
+
 **Prompt:**
-> Do step 8 of `claude/ai-build-plan.md`. Review all the AI work against `claude/ai-blueprint.md` with fresh eyes. Re-run every tournament and the deep checks, and tune the level knobs where the numbers miss their targets. List anything that feels un-human or unfair. Record what was built in the design notes. Hand back a short report.
+> Do step 8 of `claude/ai-build-plan.md`, the final review of the CPU work. Do not ask me questions: decide yourself, and say what you decided in the report.
+>
+> 1. Read `claude/ai-build-plan.md` and `claude/ai-blueprint.md` from the Project. Connect the repo Need4INK/neon_arcade_90s with push access and clone it (I give permission). If the Progress table doesn't show steps 0–7 as done, stop and tell me which are missing.
+> 2. Review all the AI work against the blueprint with fresh eyes, especially the Remi CPUs (memory, discard-taking, the three personalities, playing like a person, Hard's imagined hands) and Othello and Knucklebones Easy / Normal / Hard. Check section 3 (principles), 3a (playing like a person), 6a (adjusting) and 7 (acceptance tests) point by point. Look hard for: moves that look un-human or silly, anything that peeks at hidden information, levels that overlap, thinking pauses that feel robotic or too slow on an iPhone 12 at 4× slow-down, and one personality winning clearly more than the others.
+> 3. Re-run every tournament (`tests/ai_tournament.py`) and the deep checks: `referee.py`, `remi_check.py`, `save_fuzz.py`, `puzzle_check.py`, `monkey.py`, `exit_check.py`, `core_check.py`, `resume_check.py`, `layout_compare.py`, `build_check.py`. Tune the level knobs in the code where numbers miss the blueprint's targets, then re-run the affected checks. Make only small, safe changes; don't redesign anything.
+> 4. Record what was reviewed, the final tournament numbers, what was tuned and any known limits in a new section of `claude/design-notes.md`: in the repo copy and in the Project (`project_write` with `local_path`). Mark step 8 done in the Progress table of `claude/ai-build-plan.md` the same way.
+> 5. Keep a task list while you work. When everything passes, deploy it yourself: push a branch, open the pull request through the REST API, wait for the GitHub `checks` run to pass, then merge. I authorise this deploy here, so don't wait for me to say "deploy". If any check fails and you can't fix it, or a level now beats the next one up, don't deploy: hand back what you found instead.
+> 6. End with a short report: what you tuned, the final win rates per game and level, anything still not human enough, and "All steps done" if step 7 and 8 are both done. Remind me to fully close and reopen the home-screen app.
 
 **Check:** Play 5 games per level per game and use the blueprint's believability questions (section 7).
