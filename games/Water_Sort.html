@@ -27,6 +27,11 @@
 .tube.sel::before{background:var(--yel)}
 .tube.done{border-color:var(--mag);box-shadow:0 0 10px rgba(255,43,214,.6),inset 0 0 8px rgba(255,43,214,.2)}
 .tube.done::before{background:var(--mag)}
+/* Hint: the tube to pour into glows green */
+.tube.hn{border-color:var(--grn);box-shadow:0 0 12px rgba(57,255,122,.75),inset 0 0 8px rgba(57,255,122,.2);animation:hnPulse 1s ease-in-out infinite}
+.tube.hn::before{background:var(--grn)}
+@keyframes hnPulse{50%{box-shadow:0 0 4px rgba(57,255,122,.4),inset 0 0 4px rgba(57,255,122,.1)}}
+@media (prefers-reduced-motion:reduce){.tube.hn{animation:none}}
 .tube.bad{animation:shake .3s}
 .tube.hit{animation:pop .35s}
 /* Solved: a diagonal light across the tubes, like Sudoku's solve */
@@ -79,11 +84,13 @@ body.sym .sy{display:block}
 <p><b>Pouring:</b> the top colour moves only onto the same colour or into an empty tube, and only while there is room. Each tube holds four layers.</p>
 <p><b>Goal:</b> sort the liquid so every tube holds a single colour. Full one-colour tubes glow magenta.</p>
 <p><b>Levels:</b> every puzzle is checked to be solvable. Easy, Normal and Hard get more mixed; from level 13 Hard adds a ninth colour and leaves only one empty tube.</p>
+<p><b>Stuck?</b> The message line says how many moves to Undo. <b>Hint</b> (Settings) lifts a tube and lights the one to pour into green.</p>
 <p><b>Undo</b> takes back moves one at a time. Difficulty, <b>Restart</b> and <b>Shuffle</b> (a new puzzle at the same level) are in Settings, and so is <b>Accessibility</b>: a mark on every colour, if some colours look alike to you. <b>Reset</b> goes back to level 1 and keeps your best level.</p></div>
 <div id="pSet" hidden>
 <div class="row wrap"><span class="lab">Difficulty</span><div class="seg" id="diff" role="group" aria-label="Difficulty"></div></div>
 <div class="row"><span class="lab">Restart puzzle</span><button type="button" class="tg big" id="btnRestart">Restart</button></div>
 <div class="row"><span class="lab">New puzzle</span><button type="button" class="tg big" id="btnShuffle">Shuffle</button></div>
+<div class="row"><span class="lab">Hints</span><button type="button" class="tg" id="tgHint" role="switch" aria-checked="false">Off</button></div>
 <div class="row"><span class="lab">Accessibility</span><button type="button" class="tg" id="tgSym" role="switch" aria-checked="false">Off</button></div>
 <div class="row"><span class="lab">Sound</span><button type="button" class="tg" id="tgSound" role="switch" aria-checked="false">Off</button></div>
 <div class="row"><span class="lab">Scanlines</span><button type="button" class="tg" id="tgCrt" role="switch" aria-checked="true">On</button></div>
@@ -125,14 +132,30 @@ function clone(ts){return ts.map(function(t){return t.slice()})}
 function canPour(ts,a,b){if(a===b)return false;var A=ts[a],B=ts[b];if(!A.length||B.length>=CAP)return false;return !B.length||last(B)===last(A)}
 function pour(ts,a,b){var A=ts[a],B=ts[b],c=last(A),n=0;while(A.length&&last(A)===c&&B.length<CAP){B.push(A.pop());n++}return n}
 
-// ---- generator: shuffle, keep only solvable deals, then pick by how mixed they are
-function solvable(ts){var seen=new Set(),nodes=0;
- function key(s){return s.map(function(t){return t.join(',')}).sort().join('|')}
- function dfs(s){if(solved(s))return true;if(++nodes>150000)return false;var k=key(s);if(seen.has(k))return false;seen.add(k);
-  for(var a=0;a<s.length;a++){var A=s[a];if(!A.length||isDone(A))continue;var uni=A.every(function(c){return c===A[0]});
-   for(var b=0;b<s.length;b++){if(!canPour(s,a,b))continue;if(uni&&!s[b].length)continue;var n=clone(s);pour(n,a,b);if(dfs(n))return true}}
-  return false}
- return dfs(clone(ts))}
+// ---- solver (coach brain): A* search for the fewest pours. h = for every colour, its separate runs minus one;
+// a pour joins at most two runs, so h never overestimates and w=1 finds a shortest way. w>1 is quicker, not always shortest.
+// Positions are compared with the tubes sorted, so two tubes swapped count as one position. Returns
+// {path:[[from,to],...]} when solvable, {path:null,cut:false} when proven stuck, {path:null,cut:true} when out of time.
+function hRuns(ts){var r={},n=0;ts.forEach(function(t){for(var i=0;i<t.length;i++)if(!i||t[i]!==t[i-1])r[t[i]]=(r[t[i]]||0)+1});for(var k in r)n+=r[k]-1;return n}
+function pkey(s){return s.map(function(t){return t.join('.')}).sort().join('|')}
+function search(ts0,limit,w){var H=[],seen=new Map(),nodes=0;
+ function push(x){H.push(x);var i=H.length-1;while(i){var p=(i-1)>>1;if(H[p].f<=x.f)break;H[i]=H[p];i=p}H[i]=x}
+ function pop(){var top=H[0],x=H.pop(),n=H.length;if(n){var i=0;for(;;){var l=2*i+1,r=l+1,m=i,mv=x;if(l<n&&H[l].f<mv.f){m=l;mv=H[l]}if(r<n&&H[r].f<mv.f){m=r;mv=H[r]}if(m===i)break;H[i]=H[m];i=m}H[i]=x}return top}
+ var s0=clone(ts0);push({s:s0,g:0,f:w*hRuns(s0),p:null,m:null});seen.set(pkey(s0),0);
+ while(H.length){var nd=pop();if(solved(nd.s)){var path=[];for(var q=nd;q.m;q=q.p)path.unshift(q.m);return{path:path,cut:false}}
+  if(++nodes>limit)return{path:null,cut:true};
+  var s=nd.s;
+  for(var a=0;a<s.length;a++){var A=s[a];if(!A.length||isDone(A))continue;var uni=A.every(function(c){return c===A[0]}),empty=false;
+   for(var b=0;b<s.length;b++){if(!canPour(s,a,b))continue;if(!s[b].length){if(uni||empty)continue;empty=true}
+    var t=clone(s);pour(t,a,b);var k=pkey(t),g=nd.g+1,o=seen.get(k);if(o!==undefined&&o<=g)continue;seen.set(k,g);
+    push({s:t,g:g,f:g+w*hRuns(t),p:nd,m:[a,b]})}}}
+ return{path:null,cut:false}}
+// The next pour from here, or how far back the way out is: {path} | {stuck:k} (Undo k moves; -1 = Restart) | {} (unknown)
+function analyse(ts,back,limit){var r=search(ts,limit,1);if(!r.path&&r.cut)r=search(ts,limit,2);if(r.path)return{path:r.path};if(r.cut)return{};
+ for(var k=1;k<=back.length;k++){var b=search(back[back.length-k],limit,2);if(b.path)return{stuck:k};if(b.cut)return{}}
+ return{stuck:-1}}
+// ---- generator: shuffle, keep only deals the solver proves solvable, then pick by how mixed they are
+function solvable(ts){return !!search(ts,150000,2).path}
 function breaks(ts){return ts.reduce(function(n,t){for(var i=1;i<t.length;i++)if(t[i]!==t[i-1])n++;return n},0)}
 function tierOf(lv){var t=TIERS[0];TIERS.forEach(function(x){if(lv>=x.from)t=x});return t}
 function deal(colors){var pool=[];for(var c=0;c<colors;c++)for(var i=0;i<CAP;i++)pool.push(c);
@@ -146,14 +169,33 @@ function generate(t){var found=[],big=t.colors>8;
 
 // ---- flow
 // Puzzles are made ahead in a background worker (one per difficulty), so Next level and Shuffle don't pause.
-var pre={},asked={},WK=null;
-try{WK=new Worker(URL.createObjectURL(new Blob(['var CAP='+CAP+',TUBES='+TUBES+',TIERS='+JSON.stringify(TIERS)+';\n'+[last,isDone,solved,clone,canPour,pour,solvable,breaks,deal,generate].map(String).join('\n')+
- '\nonmessage=function(e){var t=TIERS.filter(function(x){return x.id===e.data})[0];postMessage({id:e.data,ts:generate(t)})}'],{type:'text/javascript'})));
- WK.onmessage=function(e){asked[e.data.id]=0;pre[e.data.id]=e.data.ts};WK.onerror=function(){WK=null}}catch(e){WK=null}
+var pre={},asked={},WK=null,CW=null,SRC;
+try{SRC=URL.createObjectURL(new Blob(['var CAP='+CAP+',TUBES='+TUBES+',TIERS='+JSON.stringify(TIERS)+';\n'+[last,isDone,solved,clone,canPour,pour,hRuns,pkey,search,analyse,solvable,breaks,deal,generate].map(String).join('\n')+
+ '\nonmessage=function(e){if(e.data.an){var r=analyse(e.data.ts,e.data.back,300000);r.an=e.data.an;postMessage(r);return}var t=TIERS.filter(function(x){return x.id===e.data})[0];postMessage({id:e.data,ts:generate(t)})}'],{type:'text/javascript'}));
+ WK=new Worker(SRC);WK.onmessage=function(e){asked[e.data.id]=0;pre[e.data.id]=e.data.ts};WK.onerror=function(){WK=null};
+ // a second worker for the coach, so a hint never waits behind puzzle-making
+ CW=new Worker(SRC);CW.onmessage=function(e){got(e.data)};CW.onerror=function(){CW=null}}catch(e){WK=WK||null;CW=null}
+// ---- coach: every new position is checked in the background; the stuck alert always shows, the hint only when on
+var hintOn=false,an=null,anId=0,anKey='',wantHint=false,hintT=-1;
+try{hintOn=localStorage.getItem('ws_hint')==='1'}catch(e){}
+function check(){var k=JSON.stringify(tubes);if(k===anKey||won)return;anKey=k;an=null;anId++;
+ var req={an:anId,ts:clone(tubes),back:hist.slice(-200).map(function(h){return h.ts})};
+ if(CW)try{CW.postMessage(req);return}catch(e){CW=null}
+ setTimeout(function(){if(req.an!==anId)return;var r=analyse(req.ts,req.back,30000);r.an=req.an;got(r)},0)}
+function stuckMsg(k){return k<0?'No way out from here: Restart':'No way out from here: Undo '+k+' move'+(k>1?'s':'')}
+function got(r){if(r.an!==anId||won)return;an=r;
+ if(r.stuck){wantHint=false;hintT=-1;render(stuckMsg(r.stuck),-1,'bad');return}
+ if(wantHint){wantHint=false;showHint()}}
+function showHint(){if(!an||!an.path||!an.path.length)return;var m=an.path[0];sel=m[0];hintT=m[1];sfx('pick');
+ render('Pour into the green tube · '+an.path.length+' to go')}
+function hint(){if(won||!hintOn)return;
+ if(an&&an.stuck){render(stuckMsg(an.stuck),-1,'bad');return}
+ if(an&&an.path){showHint();return}
+ wantHint=true;render('Thinking…')}
 function want(id){if(!WK||pre[id]||asked[id])return;asked[id]=1;try{WK.postMessage(id)}catch(e){asked[id]=0}}
 function newPuzzle(){var t=tierOf(level);counted=false;start=pre[t.id]||generate(t);delete pre[t.id];restart();want(t.id);want(tierOf(level+1).id)}
-function restart(){tubes=clone(start);hist=[];sel=null;moves=0;won=false;hitIdx=-1;render(tierOf(level).name+' · tap a tube')}
-function tap(i){if(won)return;var t=tubes[i];
+function restart(){hintT=-1;wantHint=false;tubes=clone(start);hist=[];sel=null;moves=0;won=false;hitIdx=-1;render(tierOf(level).name+' · tap a tube')}
+function tap(i){if(won)return;var t=tubes[i];hintT=-1;wantHint=false;
  if(sel===null){if(t.length&&!isDone(t)){sel=i;sfx('pick');render('Now tap where to pour')}return}
  if(sel===i){sel=null;render('Tap a tube');return}
  if(canPour(tubes,sel,i)){hist.push({ts:clone(tubes),moves:moves});var n=pour(tubes,sel,i);moves++;sel=null;hitIdx=i;sfx('pour',n);
@@ -162,7 +204,7 @@ function tap(i){if(won)return;var t=tubes[i];
   render(isDone(tubes[i])?'Tube complete!':'Poured '+n+(n>1?' layers':' layer'));return}
  if(t.length&&!isDone(t)){sel=i;sfx('pick');render("Can't pour: picked this tube",-1,'bad');return}
  sfx('bad');var s=sel;sel=null;render("Can't pour there",i,'bad')}
-function undo(){if(!hist.length||won)return;var h=hist.pop();tubes=h.ts;moves=h.moves;sel=null;hitIdx=-1;sfx('undo');render('Undone')}
+function undo(){if(!hist.length||won)return;var h=hist.pop();tubes=h.ts;hintT=-1;wantHint=false;moves=h.moves;sel=null;hitIdx=-1;sfx('undo');render('Undone')}
 function next(){level++;save();newPuzzle()}
 function inGame(){return moves>0&&!won}
 
@@ -183,18 +225,18 @@ function render(m,badIdx,cls){
  $('sub').textContent=won?'· Solved in '+moves+'!':'· Moves '+moves+(best?' · Best Lv '+best:'');
  var board=$('board');board.innerHTML='';board.classList.toggle('won',won);
  tubes.forEach(function(t,i){var d=document.createElement('button');d.type='button';
-  d.className='tube'+(sel===i?' sel':'')+(isDone(t)?' done':'')+(i===badIdx?' bad':'')+(i===hitIdx?' hit':'')+(waveNow?' wv':'');
+  d.className='tube'+(sel===i?' sel':'')+(isDone(t)?' done':'')+(i===badIdx?' bad':'')+(i===hitIdx?' hit':'')+(i===hintT?' hn':'')+(waveNow?' wv':'');
   d.setAttribute('aria-label','Tube '+(i+1)+', '+t.length+' of 4 layers'+(isDone(t)?', complete':''));
   t.forEach(function(c,j){var s=document.createElement('div');s.className='liq'+(j?' cut':'');s.style.color=COLORS[c];var y=document.createElement('i');y.className='sy s'+c;s.appendChild(y);d.appendChild(s)});
   d.onclick=function(){tap(i)};board.appendChild(d)});
  hitIdx=-1;
  var a=$('acts');a.innerHTML='';
- a.appendChild(won?btn('Next level',next):btn('Undo',undo,!hist.length));
+ a.appendChild(won?btn('Next level',next):btn('Undo',undo,!hist.length));if(hintOn&&!won)a.appendChild(btn('Hint',hint));
  if(typeof panel!=='undefined'&&panel&&!panel.hidden&&panel.dataset.p==='settings')sync()
  layout();
  if(waveNow){waveNow=false;var ts=[].slice.call(board.children),xs=[],ys=[];ts.forEach(function(t){if(xs.indexOf(t.offsetLeft)<0)xs.push(t.offsetLeft);if(ys.indexOf(t.offsetTop)<0)ys.push(t.offsetTop)});
   xs.sort(function(a,b){return a-b});ys.sort(function(a,b){return a-b});ts.forEach(function(t){t.style.animationDelay=(xs.indexOf(t.offsetLeft)+ys.indexOf(t.offsetTop))*60+'ms'})}
- saveG()}
+ saveG();check()}
 // The puzzle in progress is kept when the app is closed (a solved puzzle counts once, even after Restart)
 function saveG(){try{localStorage.setItem('ws_game',JSON.stringify({level:level,start:start,tubes:tubes,hist:hist.slice(-200),moves:moves,won:won,counted:counted}))}catch(e){}}
 // Saved tubes are used only if they are a real position: 10 tubes, up to 4 layers each, 4 layers of every colour
@@ -216,12 +258,13 @@ function layout(){var g=$('game'),b=$('board');if(!g.clientWidth)return;
  b.style.setProperty('--w',w+'px');b.style.setProperty('--gap',gap+'px')}
 
 // ---- panel
-function sync(){setSw('tgSym',document.body.classList.contains('sym'));setSw('tgSound',sndOn);setSw('tgCrt',!document.body.classList.contains('nocrt'));
+function sync(){setSw('tgSym',document.body.classList.contains('sym'));setSw('tgHint',hintOn);setSw('tgSound',sndOn);setSw('tgCrt',!document.body.classList.contains('nocrt'));
  var r=$('btnReset');naDisarm(r);r.disabled=false;
  $('btnRestart').disabled=!moves&&!won;
  $('note').textContent=(inGame()?'Difficulty is locked until this puzzle is solved, restarted or shuffled. ':'')+(best?'Best level reached: '+best+'. ':'')+(solvedN?'Puzzles solved: '+solvedN+'.':'')}
 $('btnRestart').onclick=function(){if(this.disabled)return;restart();showPanel('')};
 $('btnShuffle').onclick=function(){newPuzzle();showPanel('')};
+$('tgHint').onclick=function(){hintOn=!hintOn;if(!hintOn){hintT=-1;wantHint=false}try{localStorage.setItem('ws_hint',hintOn?'1':'0')}catch(e){}render();sync()};
 $('tgSym').onclick=function(){var on=document.body.classList.toggle('sym');try{localStorage.setItem('ws_sym',on?'1':'0')}catch(e){}sync()};
 try{if(localStorage.getItem('ws_sym')==='1')document.body.classList.add('sym')}catch(e){}
 $('btnReset').onclick=function(){naArm(this,function(){level=1;save();newPuzzle();showPanel('')})};

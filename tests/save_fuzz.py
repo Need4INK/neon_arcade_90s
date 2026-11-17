@@ -8,8 +8,8 @@ import sys, json, random, copy
 import os; sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
 from harness import start_server, open_page, open_game, game_frame, close_panel
 G=sys.argv[1]; port=start_server(int(sys.argv[2])); random.seed(5)
-KEYS={'kb':['kb-stats','kb-rec','kb-game','kb-adapt'],'oth':['oth-stats','oth-rec','oth-game','oth-adapt'],'ws':['ws_level','ws_best','ws_solved','ws_game','ws_sym'],
-      'sdk':['sdk-best','sdk-game','sdk-solved'],'rem':['remi_set','remi_game2','remi_rec','remi-adapt']}[G]
+KEYS={'kb':['kb-stats','kb-rec','kb-game','kb-adapt'],'oth':['oth-stats','oth-rec','oth-game','oth-adapt'],'ws':['ws_level','ws_best','ws_solved','ws_game','ws_sym','ws_hint'],
+      'sdk':['sdk-best','sdk-game','sdk-solved','sdk-run'],'rem':['remi_set','remi_game2','remi_rec','remi-adapt']}[G]
 # saved only after a whole game against the CPU (blueprint 6a), so a real one is put in to be damaged field by field
 SEED_SAVE={'kb':{'kb-adapt':'{"easy":0.36,"normal":-0.2}'},'oth':{'oth-adapt':'{"easy":0.36,"normal":-0.2}'},'rem':{'remi-adapt':'{"easy":-0.488,"normal":0.2}'}}.get(G,{})
 POKE="""(()=>{const bs=[...document.querySelectorAll('main button, #app button, body button')].filter(b=>!b.closest('#bar')&&!b.closest('#panel')&&!b.disabled&&b.getClientRects().length&&getComputedStyle(b).pointerEvents!=='none');

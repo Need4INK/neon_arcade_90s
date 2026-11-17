@@ -28,6 +28,8 @@
 .c.x.u{color:var(--mag);text-shadow:0 0 6px var(--mag)}
 /* Accessibility setting: a bar under your own numbers (given and hinted numbers have none) */
 body.sym .c.u::after{content:"";position:absolute;left:28%;right:28%;bottom:8%;height:2px;background:currentColor;box-shadow:0 0 4px currentColor}
+.c.cu{background:rgba(57,255,122,.22)}
+.c.ct{box-shadow:inset 0 0 0 2px var(--grn),inset 0 0 10px rgba(57,255,122,.4)}
 .c.sel{background:#2b2108;box-shadow:inset 0 0 0 2px var(--yel),inset 0 0 10px rgba(255,233,77,.45)}
 .c .n{position:absolute;inset:1px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);font:400 var(--ns,11px)/1 var(--vt);color:var(--mut);text-shadow:none;pointer-events:none}
 .c .n i{font-style:normal;display:flex;align-items:center;justify-content:center}
@@ -78,7 +80,7 @@ button.b{margin:0 4px;white-space:nowrap}
 <p><b>Play:</b> tap a cell, then a number. Tap the same number again to clear it. White numbers are given and can't change. The clock starts with your first number and pauses while Rules or Settings is open.</p>
 <p><b>Notes:</b> turn on Notes to pencil small candidates into a cell. Placing a number clears it from notes in the same row, column and box.</p>
 <p><b>Clashes</b> (the same number twice in a row, column or box) glow magenta.</p>
-<p><b>Hint</b> (turn it on in Settings) fills the selected cell, or a random one, with the right number (green). <b>Undo</b> takes back moves one at a time. Best times count only puzzles solved without hints (an undone hint still counts).</p>
+<p><b>Hint</b> (turn it on in Settings) teaches in two taps: the first points to the next step (green) and says why, the second (<b>Fill</b>) puts the number in. With Hints on, a wrong number also gets a gentle nudge. <b>Undo</b> takes back moves one at a time. Best times count only puzzles solved without hints (an undone hint still counts).</p>
 <p><b>Accessibility</b> (Settings): a bar under the numbers you entered, if they look like the given ones to you.</p>
 <p><b>Levels:</b> every puzzle has exactly one solution. Easy and Normal need only simple steps; Hard needs smarter eliminations; Master has the fewest clues. Pick the difficulty in <b>Settings</b>; it locks once you start a puzzle.</p></div>
 <div id="pSet" hidden>
@@ -186,35 +188,67 @@ function load(){var s=null;try{best=clean(JSON.parse(localStorage.getItem('sdk-b
   hist=Array.isArray(s.hist)&&s.hist.every(function(h){return h&&typeof h==='object'&&okPos(giv,h.val,h.notes,h.fix,sol)})?s.hist.slice(-400):[];return true}
  if(DIFFS.indexOf(s.diff)>=0)S.diff=s.diff;return false}
 function fmt(ms){var s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor(s/60)%60;s%=60;return(h?h+':'+(m<10?'0':''):'')+m+':'+(s<10?'0':'')+s}
-function start(){gid++;var g=gid;giv=null;over=false;started=false;sel=-1;hist=[];noteMode=false;render('Building puzzle…');
+function start(){tip=null;gid++;var g=gid;giv=null;over=false;started=false;sel=-1;hist=[];noteMode=false;render('Building puzzle…');
  setTimeout(function(){if(g!==gid)return;var p=generate(S.diff);giv=p.g;sol=p.sol;val=giv.slice();notes=Array(81).fill(0);
   fix=giv.map(function(v){return v?1:0});time=0;clockOn=false;hints=0;lastT=Date.now();save();render('Pick a cell, then a number')},40)}
 // ---- moves
-function snap(){hist.push({val:val.slice(),notes:notes.slice(),fix:fix.slice()});if(hist.length>400)hist.shift()}
+function snap(){tip=null;hist.push({val:val.slice(),notes:notes.slice(),fix:fix.slice()});if(hist.length>400)hist.shift()}
 function clashes(){var x=Array(81).fill(false);for(var i=0;i<81;i++)if(val[i])for(var j=0;j<20;j++){if(val[PEERS[i][j]]===val[i]){x[i]=true;break}}return x}
 function unitDone(i){return [UNITS[ROW[i]],UNITS[9+COL[i]],UNITS[18+BOX[i]]].some(function(u){return u.every(function(c){return val[c]===sol[c]})})}
 function setVal(i,d){val[i]=d;notes[i]=0;var b=~(1<<d);PEERS[i].forEach(function(p){notes[p]&=b})}
 function enter(d){if(!giv||over)return;if(sel<0){render('Pick a cell first');return}if(fix[sel]){render(fix[sel]===1?'That number is given':'Hinted cells are locked');return}
  if(noteMode){if(val[sel]){render('Clear the number to add notes');return}snap();notes[sel]^=1<<d;started=true;sfx('note');after('Notes');return}
  snap();started=true;var pop=false;
+ var nudge='';
  if(val[sel]===d){val[sel]=0;sfx('erase')}else{setVal(sel,d);pop=true;clockOn=true;
-  if(clashes()[sel])sfx('clash');else if(unitDone(sel))sfx('unit');else sfx('place')}
- after('',pop?sel:-1)}
+  if(clashes()[sel])sfx('clash');else{if(unitDone(sel))sfx('unit');else sfx('place');
+   // mistake watch (with Hints on): a number that leaves no solution gets a gentle nudge
+   if(hintOn&&d!==sol[sel])nudge='Hmm, that '+d+' leads to a dead end'}}
+ after(nudge,pop?sel:-1)}
 function erase(){if(!giv||over||sel<0||fix[sel]||!(val[sel]||notes[sel]))return;snap();val[sel]=0;notes[sel]=0;started=true;sfx('erase');after('Erased')}
-function hint(){if(!giv||over||!hintOn)return;var t=sel;
- if(t<0||fix[t]||val[t]===sol[t]){var c=[],w=[];for(var i=0;i<81;i++)if(!fix[i]&&val[i]!==sol[i]){c.push(i);if(val[i])w.push(i)}if(!c.length)return;
-  // a wrong number is fixed first; otherwise prefer the cell with the fewest open neighbours
-  if(w.length)t=w[Math.random()*w.length|0];else{var bs=99;shuffle(c).forEach(function(i){var k=PEERS[i].filter(function(p){return !val[p]}).length;if(k<bs){bs=k;t=i}})}}
- snap();setVal(t,sol[t]);fix[t]=2;hints++;clockOn=true;sel=t;started=true;sfx('hint');after('Hint '+hints+' · that one’s locked in',t)}
-function undo(){if(!giv||over||!undoOn||!hist.length)return;var h=hist.pop();val=h.val;notes=h.notes;fix=h.fix;sfx('erase');after('Undone')}
+// ---- coach: Hint tap 1 points to the next logical step and says why (the grader's techniques); tap 2 (Fill) puts it in.
+// tip = {c: cell, d: digit, u: unit cells to light (or null), t: cell to light (or -1), m: message}
+var tip=null,UN=['row','column','box'];
+function cands(){var cd=[];for(var i=0;i<81;i++){if(val[i]){cd[i]=0;continue}var m=1022;PEERS[i].forEach(function(p){if(val[p])m&=~(1<<val[p])});cd[i]=m}return cd}
+// pointing/claiming and naked pairs (as in logic() level 2), repeated until nothing more is ruled out
+function narrow(cd){var prog=true,u,d,bit;while(prog){prog=false;
+ for(u=0;u<27;u++)for(d=1;d<=9;d++){bit=1<<d;var cs=UNITS[u].filter(function(c){return cd[c]&bit});if(cs.length<2)continue;var tg=[];
+  if(u>=18){if(cs.every(function(c){return ROW[c]===ROW[cs[0]]}))tg.push(UNITS[ROW[cs[0]]]);if(cs.every(function(c){return COL[c]===COL[cs[0]]}))tg.push(UNITS[9+COL[cs[0]]])}
+  else if(cs.every(function(c){return BOX[c]===BOX[cs[0]]}))tg.push(UNITS[18+BOX[cs[0]]]);
+  tg.forEach(function(t){t.forEach(function(c){if(cs.indexOf(c)<0&&cd[c]&bit){cd[c]&=~bit;prog=true}})})}
+ for(u=0;u<27;u++){var us=UNITS[u];for(var a=0;a<9;a++){var ma=cd[us[a]];if(BC[ma]!==2)continue;
+  for(var z=a+1;z<9;z++)if(cd[us[z]]===ma)us.forEach(function(c,ix){if(ix!==a&&ix!==z&&cd[c]&ma){cd[c]&=~ma;prog=true}})}}}}
+// singles in this candidate grid: boxes first (easiest to see), then rows and columns, then cells with one number left.
+// `only` limits the search to one cell (the one the player selected).
+function singles(cd,pre,only){var u,d,out=[];
+ [18,0,9].forEach(function(base){if(out.length)return;for(u=base;u<base+9;u++)for(d=1;d<=9;d++){var bit=1<<d,at=-1,k=0;
+  UNITS[u].forEach(function(c){if(cd[c]&bit){k++;at=c}});
+  if(k===1&&(only<0||at===only))out.push({c:at,d:d,u:UNITS[u],t:-1,m:'Look at this '+UN[base/9]+': '+pre+'only one cell can take '+(d===8?'an ':'a ')+d})}});
+ if(!out.length)for(var i=0;i<81;i++)if(!val[i]&&BC[cd[i]]===1&&(only<0||i===only))out.push({c:i,d:digit(cd[i]),u:null,t:i,m:'Look at this cell: '+pre+'only one number fits'});
+ return out.length?out[Math.random()*out.length|0]:null}
+function findTip(){var w=[];for(var i=0;i<81;i++)if(!fix[i]&&val[i]&&val[i]!==sol[i])w.push(i);
+ if(w.length){var c=w.indexOf(sel)>=0?sel:w[0];return{c:c,d:sol[c],u:null,t:c,m:'This '+val[c]+' doesn’t belong here'}}
+ var cd=cands(),me=sel>=0&&!val[sel]?sel:-1,s=(me>=0&&singles(cd,'',me))||singles(cd,'',-1);if(s)return s;
+ narrow(cd);s=(me>=0&&singles(cd,'with pairs, ',me))||singles(cd,'with pairs, ',-1);if(s)return s;
+ var bc=10,c=-1;for(i=0;i<81;i++)if(!val[i]&&BC[cd[i]]<bc){bc=BC[cd[i]];c=i}
+ return c<0?null:{c:c,d:sol[c],u:null,t:c,m:'No simple step here: try this cell'}}
+function hint(){if(!giv||over||!hintOn)return;
+ if(!tip){tip=findTip();if(!tip)return;hints++;clockOn=true;started=true;sel=tip.t;sfx('note');save();render(tip.m);return}
+ var t=tip.c;tip=null;snap();setVal(t,sol[t]);fix[t]=2;clockOn=true;sel=t;started=true;sfx('hint');after('Hint '+hints+' · that one’s locked in',t)}
+function undo(){if(!giv||over||!undoOn||!hist.length)return;tip=null;var h=hist.pop();val=h.val;notes=h.notes;fix=h.fix;sfx('erase');after('Undone')}
 function after(m,pop){var done=val.every(function(v,i){return v===sol[i]});
  if(done){over=true;noteMode=false;var k=S.diff,nb=false;addRec(k);
   if(!hints&&(!best[k]||time<best[k])){best[k]=time;nb=true}
-  save();sfx('win');render((nb?'New best! ':'Solved in ')+fmt(time)+(hints?' · '+hints+' hint'+(hints>1?'s':''):''),-1,true);return}
+  var up=suggest(k,!hints);
+  save();sfx('win');render((nb?'New best! ':'Solved in ')+fmt(time)+(hints?' · '+hints+' hint'+(hints>1?'s':''):'')+(up?' · Ready for '+DN[up]+'?':''),-1,true);return}
  var full=val.every(function(v){return v});
  save();render(full?'Board full · fix the magenta clashes':m||'',pop)}
 // Saved count of puzzles solved per difficulty
 var REC={};try{REC=clean(JSON.parse(localStorage.getItem('sdk-solved')))}catch(e){}
+// Level suggestion: 3 solves in a row at a level without hints → "Ready for Hard?" (saved as sdk-run, checked on load)
+var RUN={d:'',n:0};try{var r0=JSON.parse(localStorage.getItem('sdk-run'));if(r0&&DIFFS.indexOf(r0.d)>=0&&num(r0.n)<1000)RUN={d:r0.d,n:num(r0.n)}}catch(e){}
+function suggest(k,clean){RUN=clean?{d:k,n:RUN.d===k?RUN.n+1:1}:{d:'',n:0};try{localStorage.setItem('sdk-run',JSON.stringify(RUN))}catch(e){}
+ var nx=DIFFS[DIFFS.indexOf(k)+1];return nx&&RUN.n>=3&&RUN.n%3===0?nx:''}
 function addRec(k){REC[k]=(REC[k]||0)+1;try{localStorage.setItem('sdk-solved',JSON.stringify(REC))}catch(e){}}
 function recText(){return 'Solved: '+['easy','normal','hard','master'].map(function(d){return d[0].toUpperCase()+d.slice(1)+' '+(REC[d]||0)}).join(' · ')}
 // ---- render
@@ -231,7 +265,7 @@ function render(m,pop,won){if(m!=null)lastMsg=m;renderDiff();
   c.disabled=false;var v=val[i],cls='c';cnt[v]++;
   if(sel>=0&&i!==sel&&!over&&(ROW[i]===ROW[sel]||COL[i]===COL[sel]||BOX[i]===BOX[sel]))cls+=' pe';
   if(sv&&v===sv&&i!==sel)cls+=' sm';
-  if(v&&!fix[i])cls+=' u';if(fix[i]===2)cls+=' h';if(x[i])cls+=' x';if(i===sel&&!over)cls+=' sel';if(i===pop)cls+=' pop';
+  if(v&&!fix[i])cls+=' u';if(fix[i]===2)cls+=' h';if(x[i])cls+=' x';if(tip&&!over){if(tip.u&&tip.u.indexOf(i)>=0)cls+=' cu';if(i===tip.t)cls+=' ct'}if(i===sel&&!over)cls+=' sel';if(i===pop)cls+=' pop';
   c.className=cls;
   var key=v?'v'+v:notes[i]?'n'+notes[i]+'.'+sv:'';
   if(key!==ck[i]){ck[i]=key;c.textContent='';
@@ -246,7 +280,7 @@ function render(m,pop,won){if(m!=null)lastMsg=m;renderDiff();
  showTime();
  var A=function(id){return document.getElementById(id)};
  ['aUndo','aNotes','aErase','aHint'].forEach(function(id){A(id).hidden=over});A('aAgain').hidden=!over;
- if(!over){A('aUndo').hidden=!undoOn;A('aHint').hidden=!hintOn;
+ if(!over){A('aUndo').hidden=!undoOn;A('aHint').hidden=!hintOn;A('aHint').textContent=tip?'Fill':'Hint';
   A('aUndo').disabled=!giv||!hist.length;A('aNotes').disabled=A('aErase').disabled=A('aHint').disabled=!giv;
   A('aNotes').setAttribute('aria-pressed',noteMode?'true':'false')}
  var msg=document.getElementById('msg');msg.textContent=lastMsg||(noteMode?'Notes on':'');msg.style.fontSize='';
@@ -283,7 +317,7 @@ function sync(){var lock=inGame();
 document.getElementById('tgSym').onclick=function(){var on=document.body.classList.toggle('sym');try{localStorage.setItem('sdk-sym',on?'1':'0')}catch(e){}sync()};
 try{if(localStorage.getItem('sdk-sym')==='1')document.body.classList.add('sym')}catch(e){}
 document.getElementById('tgUndo').onclick=function(){undoOn=!undoOn;save();render();sync()};
-document.getElementById('tgHint').onclick=function(){hintOn=!hintOn;save();render();sync()};
+document.getElementById('tgHint').onclick=function(){hintOn=!hintOn;tip=null;save();render();sync()};
 document.getElementById('btnCancel').onclick=function(){naArm(this,function(){start();showPanel('')})};
 naSync=sync;naFirstRules('sdk-rules-seen');
 // ---- sizing: the board takes whatever square fits between the header and the number pad
