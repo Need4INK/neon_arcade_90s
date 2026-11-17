@@ -154,16 +154,15 @@ def noise(seed, amount):
 
 def wall():
     rnd = random.Random(7)
-    im = Image.new("RGB", (S, S), (8, 6, 22)); d = ImageDraw.Draw(im)
+    im = Image.new("RGB", (S, S), (12, 9, 30)); d = ImageDraw.Draw(im)
     bh, bw = 66, 176
     for r in range(S // bh + 2):
         off = (bw // 2) * (r % 2)
         for c in range(-1, S // bw + 2):
             x0, y0, v = c * bw - off, r * bh, rnd.randint(-5, 5)
-            d.rounded_rectangle([x0 + 4, y0 + 4, x0 + bw - 4, y0 + bh - 4], 7, fill=(24 + v, 20 + v, 58 + v))
+            d.rounded_rectangle([x0 + 4, y0 + 4, x0 + bw - 4, y0 + bh - 4], 7, fill=(30 + v, 25 + v, 70 + v))
     im = ImageChops.subtract(ImageChops.add(im, noise(1, 40)), noise(2, 40))
-    vg = Image.new("L", (S, S), 0); ImageDraw.Draw(vg).ellipse([-120, -120, S + 120, S + 120], fill=255)
-    im = Image.composite(im, Image.new("RGB", (S, S), (4, 2, 10)), vg.filter(ImageFilter.GaussianBlur(200)))
+    # no darkening towards the edges: on a dark home screen or dock a dark rim makes the icon look smaller
     w = Image.new("L", (S, S), 0); ImageDraw.Draw(w).ellipse([180, 170, 840, 830], fill=80)
     return ImageChops.add(im, Image.composite(Image.new("RGB", (S, S), PURP), Image.new("RGB", (S, S), 0), w.filter(ImageFilter.GaussianBlur(190))))
 
