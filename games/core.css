@@ -54,6 +54,11 @@ body.flip main>.bar{position:absolute;left:0;right:0;bottom:30px;margin:0;paddin
 .seg button:disabled,.tg:disabled{opacity:.45;cursor:default}
 .tg.dng{color:var(--mag);border-color:var(--mag);text-shadow:0 0 6px var(--mag)}
 .tg.dng.arm{background:var(--mag);color:#07030f;text-shadow:none;box-shadow:0 0 12px var(--mag)}
+/* On/Off switches = sliders: knob left and dim when off, right and green when on; the On/Off word sits beside the knob */
+.tg[role="switch"]{position:relative;border-radius:99px;border-color:var(--line);color:var(--mut);text-shadow:none;padding:10px 2px 10px 26px}
+.tg[role="switch"]::after{content:"";position:absolute;top:50%;left:3px;width:21px;height:21px;margin-top:-10.5px;border-radius:50%;background:var(--mut);transition:left .15s}
+.tg[role="switch"][aria-checked="true"]{background:transparent;border-color:var(--grn);color:var(--grn);text-shadow:0 0 6px var(--grn);box-shadow:0 0 10px var(--grn);padding:10px 26px 10px 2px}
+.tg[role="switch"][aria-checked="true"]::after{left:calc(100% - 24px);background:var(--grn);box-shadow:0 0 8px var(--grn)}
 .seg button:focus-visible,.tg:focus-visible,.bar button:focus-visible,button.b:focus-visible{outline:3px solid var(--yel);outline-offset:2px}
 .note{color:var(--yel);margin:6px 0 0}
 

@@ -116,10 +116,10 @@ def save(name, root, only=None):
                 click('#bSet'); snap(g + ' flip settings', f); click('#bSet')
                 f.evaluate("mode='cpu';document.body.classList.remove('flip');start()")
             if g == 'rem':
-                click('#bSet'); f.evaluate("document.querySelectorAll('#sSkin button')[1].click()"); snap('rem medias settings', f)
+                f.evaluate("for(let i=0;i<5;i++)document.querySelector('main>h1').click()"); click('#bSet'); snap('rem medias settings', f)
                 click('#bSet'); snap('rem medias', f)
                 click('#bRules'); snap('rem medias rules', f); click('#bRules')
-                click('#bSet'); f.evaluate("document.querySelectorAll('#sLay button')[1].click()"); page.wait_for_timeout(400); snap('rem land', f)
+                click('#bSet'); f.evaluate("document.getElementById('tgLay').click()"); page.wait_for_timeout(400); snap('rem land', f)
                 click('#bSet'); snap('rem land settings', f)
                 click('#bRules'); snap('rem land rules', f); click('#bRules')
                 f.evaluate(STRESS['rem'].replace('HN', '26')); byText('Sort'); snap('rem land stress26', f)

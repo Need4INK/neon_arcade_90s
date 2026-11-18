@@ -111,8 +111,8 @@ for g in ['kb', 'rem']:
 
 print('## Remi forgets Medias on every way out')
 for way in ['exit', 'back']:
-    f = open_game(page, 'rem', 1000); f.click('#bSet'); f.evaluate("document.querySelectorAll('#sSkin button')[1].click()"); page.wait_for_timeout(200)
-    f.evaluate("document.querySelectorAll('#sLay button')[1].click()"); page.wait_for_timeout(300)
+    f = open_game(page, 'rem', 1000); f.evaluate("for(let i=0;i<5;i++)document.querySelector('main>h1').click()"); page.wait_for_timeout(200)
+    f.click('#bSet'); f.evaluate("document.getElementById('tgLay').click()"); page.wait_for_timeout(300)
     ok('Medias Landscape on', f.evaluate("document.documentElement.classList.contains('lnd')"))
     if way == 'exit':
         f.click('#bar .mnu')
@@ -125,7 +125,8 @@ for way in ['exit', 'back']:
 print('## Remi Medias is hidden: 5 quick taps on the title')
 f = open_game(page, 'rem', 1000); sk = "document.documentElement.classList.contains('sk-m')"
 f.click('#bSet'); page.wait_for_timeout(100)
-ok('Skin row hidden in Neon', f.evaluate("getComputedStyle(document.querySelector('#sSkin').closest('.row')).display==='none'"))
+ok('no Skin row', not f.evaluate("[...document.querySelectorAll('.lab')].some(l=>/Skin/.test(l.textContent))"))
+ok('Landscape view row hidden in Neon', f.evaluate("getComputedStyle(document.getElementById('tgLay').closest('.row')).display==='none'"))
 ok('Skin paragraph hidden in Neon', not f.evaluate("[...document.querySelectorAll('p')].some(p=>p.offsetParent!==null&&/Skin/.test(p.textContent))"))
 close_panel(f)
 for _ in range(4): f.click('main>h1')
@@ -138,7 +139,8 @@ for _ in range(5): f.click('main>h1')
 page.wait_for_timeout(200)
 ok('5 quick taps: Medias', f.evaluate(sk))
 f.click('#bSet'); page.wait_for_timeout(100)
-ok('Skin row shown in Medias', f.evaluate("getComputedStyle(document.querySelector('#sSkin').closest('.row')).display!=='none'"))
+ok('Landscape view row shown in Medias', f.evaluate("getComputedStyle(document.getElementById('tgLay').closest('.row')).display!=='none'"))
+ok('no Skin paragraph in Medias', not f.evaluate("[...document.querySelectorAll('p')].some(p=>/Skin/.test(p.textContent))"))
 close_panel(f)
 for _ in range(5): f.click('main>h1')
 page.wait_for_timeout(200)
