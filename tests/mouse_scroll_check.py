@@ -74,9 +74,9 @@ def run(tag):
 
 
 run('Neon upright')
-f.click('#bSet'); f.evaluate("document.querySelectorAll('#sSkin button')[1].click()"); page.wait_for_timeout(250); f.click('#bSet')
+f.evaluate("for(let i=0;i<5;i++)document.querySelector('main>h1').click()"); page.wait_for_timeout(250)
 run('Medias upright')
-f.click('#bSet'); f.evaluate("document.querySelectorAll('#sLay button')[1].click()"); page.wait_for_timeout(400)
+f.click('#bSet'); f.evaluate("document.getElementById('tgLay').click()"); page.wait_for_timeout(400)
 run('Medias Landscape')
 want = ['Neon upright #sir', 'Medias upright #sir', 'Medias Landscape #sir', 'Medias Landscape #rack', 'Medias Landscape #table']
 ok('every area that should overflow was tested', all(w in seen for w in want), seen)
