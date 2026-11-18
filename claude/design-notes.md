@@ -264,4 +264,5 @@ Goals, principles and acceptance targets: `claude/ai-blueprint.md`. Tuning from 
 - PR #89–#90 (Nov 17): neon-sign app icon.
 - Nov 18: Remi ripple only on the tiles from your latest action.
 - PR #93 (Nov 18): On/Off switches become sliders (all games); Remi Medias: Skin row removed, Layout becomes a Landscape view switch.
+- PR #94 (Nov 19): Settings rows with 3+ choices become a level meter (option C).
 - Clean-up (Nov 17): Google Fonts leftovers removed (game links, build fallback, sw.js font caching; CACHE v3), unused meta tags in the games and Remi's theme-colour code removed; finished docs (QA report, AI build plan) deleted, blueprint trimmed, these notes condensed.
