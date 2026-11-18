@@ -51,6 +51,7 @@ button.b:active,button.b[aria-pressed="true"]{background:var(--yel);color:#07030
 /* differs from the shared core */
 main{align-items:center}
 button.b{margin:0 4px;white-space:nowrap}
+.acts button.b:not(#aAgain){width:74px;padding-left:0;padding-right:0}
 .seg button{width:calc(2*var(--sw) + var(--sg))}
 #diff.mtr button{width:62px}
 </style>
@@ -285,7 +286,7 @@ function inGame(){return !!giv&&!over&&started}
 function renderDiff(){var el=document.getElementById('diff');el.innerHTML='';var lock=inGame();
  DIFFS.forEach(function(d){var b=document.createElement('button');b.type='button';b.textContent=DN[d];
   b.setAttribute('aria-pressed',S.diff===d?'true':'false');b.disabled=lock;if(lock)b.title='Locked until this puzzle ends';
-  b.onclick=function(){if(inGame()||(S.diff===d&&giv&&!over))return;S.diff=d;start();showPanel('')};el.appendChild(b)})}
+  b.onclick=function(){if(inGame()||(S.diff===d&&giv&&!over))return;S.diff=d;start()};el.appendChild(b)})}
 // ---- timer: starts with the first number placed, then runs while the puzzle is on screen (pauses when the app is hidden, you go back to the cover, or Rules/Settings is open)
 var lastT=Date.now(),shown=-1;
 function active(){if(!giv||over||!clockOn||document.hidden)return false;var pn=document.getElementById('panel');if(pn&&!pn.hidden)return false;try{if(window.frameElement&&window.frameElement.hidden)return false}catch(e){}return true}
