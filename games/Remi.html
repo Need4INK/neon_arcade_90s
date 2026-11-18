@@ -57,7 +57,7 @@ body.sym #rack .tl.dbl::before{bottom:7px}
 #rack .tl.sel{transform:translateY(-3px);background:color-mix(in srgb,currentColor 38%,#0b0720);box-shadow:0 0 0 2px #07030f,0 0 0 4px #fff,0 0 10px #fff;z-index:1}
 #rack .tl.dbl::before{content:"";position:absolute;left:5px;right:5px;bottom:3px;height:2px;background:var(--yel);box-shadow:0 0 4px var(--yel)}
 #rack .tl.new{animation:pop .5s}
-/* Tiles that just came into your hand (drawn, taken, joly back, doubles swap): a green ring (your colour; no tile is green) spreading out from it, until you discard; a plain green outline with reduced motion (a picked tile shows its white ring instead) */
+/* Tiles that just came into your hand (drawn, taken, joly back, doubles swap): a green ring (your colour; no tile is green) spreading out from it; only the tiles from your latest action ripple, and your next action (lay, add, discard, Undo, the next draw or take) clears them; a plain green outline with reduced motion (a picked tile shows its white ring instead) */
 #rack .tl.drw:not(.sel){z-index:1;animation:drw 1.1s ease-out infinite}
 #rack .tl.drw.new:not(.sel){animation:pop .5s,drw 1.1s ease-out infinite}
 @media (prefers-reduced-motion:reduce){#rack .tl.drw:not(.sel){outline:2px solid var(--dc)}}
@@ -892,14 +892,14 @@ function hSwap(){if(G.phase!=='dbl')return;const id=[...sel][0];
  const k=dkind(id),ps=shuffle([1,2,3]).filter(p=>dblTiles(G.pl[p].hand,k).length);
  if(!ps.length)return bad('No CPU has a '+k+' double · tap Play');
  const p=ps[0],y=pickR(dblTiles(G.pl[p].hand,k));swapD(0,p,id,y);
- G.atuBy=G.pl.findIndex(P=>P.hand.includes(twin(G.atu)));noteAtu();sel.clear();newIds=[y];fresh.push(y);sfx('draw');say('Gave '+tname(id)+' to '+NAMES[p]+', got '+tname(y));save();render()}
+ G.atuBy=G.pl.findIndex(P=>P.hand.includes(twin(G.atu)));noteAtu();sel.clear();newIds=[y];fresh=[y];sfx('draw');say('Gave '+tname(id)+' to '+NAMES[p]+', got '+tname(y));save();render()}
 function nextTurn(){G.cur=(G.cur+1)%4;G.tn++;startTurn()}
 function startTurn(){sel.clear();const P=G.pl[G.cur];
  if(G.tn>0&&!refill()){endRound(-1,-1,'The pile ran out');return}
  if(G.cur===0&&G.phase==='play'&&G.drew!=null&&G.tn>0){const id=G.drew;T={must:[],take:null,startOpened:P.opened,start:P.hand.length-1,staged:0,runs:0,sets:0,ones:false,snap:null};T.snap=snap();newIds=[id];fresh=[id];
   say(drewMsg(false));render();return}
  delete G.drew;
- if(G.cur===0){if(G.tn>3)fresh=[];G.phase=G.tn===0?'play':'draw';T={must:[],take:null,startOpened:P.opened,start:P.hand.length,staged:0,runs:0,sets:0,ones:false,snap:null};
+ if(G.cur===0){G.phase=G.tn===0?'play':'draw';T={must:[],take:null,startOpened:P.opened,start:P.hand.length,staged:0,runs:0,sets:0,ones:false,snap:null};
   if(G.phase==='play')T.snap=snap();save();
   if(G.tn===0)say('You start: discard one tile');
   else if(T.start<=2)say('Draw, then add to formations');
@@ -932,19 +932,19 @@ function boardReady(){return G.pl[0].board&&boardOuts(G.pl[0].hand).length>0}
 function drewMsg(re){const P=G.pl[0];if(boardReady())return 'Board ready: discard your spare tile';if(P.board)return 'Board · '+boardProg(P.hand);
  return (re?'Discards reshuffled · ':'')+(T.start<=2?(re?'add or discard':'Add to formations or discard'):(re?'lay down or discard':'Lay down or discard'))}
 function hDraw(){if(G.phase!=='draw')return;const re=!G.pile.length;notePass(0,T.start,T.startOpened);if(!refill()){endRound(-1,-1,'The pile ran out');return}
- const id=G.pile.pop();G.pl[0].hand.push(id);newIds=[id];fresh.push(id);G.phase='play';G.drew=id;T.snap=snap();save();sfx('draw');say(drewMsg(re));render()}
+ const id=G.pile.pop();G.pl[0].hand.push(id);newIds=[id];fresh=[id];G.phase='play';G.drew=id;T.snap=snap();save();sfx('draw');say(drewMsg(re));render()}
 function hBoard(){if(!canBoard(0)||!(G.phase==='draw'||G.phase==='play')||T.runs||T.sets)return;
  if(!boardArm){boardArm=true;clearTimeout(boardT);boardT=setTimeout(()=>{boardArm=false;render()},3000);render();return}
  clearTimeout(boardT);boardArm=false;G.pl[0].board=true;T.must=[];sfx('lay');say('Board game: keep all your tiles in hand');if(G.phase==='draw')save();render()}
 function hTake(i){if(G.phase!=='draw')return;const n=G.disc.length,P=G.pl[0];
  if(i===0)return bad('First discard is out of play');
  if(P.board){if(i<n-1)return bad('Board game: only the last');if(!canOpen())return bad('Not in round 1: draw');
-  T.snap=snap();const got=takeRow(0,i);newIds=got;fresh.push(...got);sel.clear();G.phase='play';sfx('draw');say(boardReady()?'Board ready: discard your spare tile':'You take '+tname(got[0]));render();return}
+  T.snap=snap();const got=takeRow(0,i);newIds=got;fresh=got.slice();sel.clear();G.phase='play';sfx('draw');say(boardReady()?'Board ready: discard your spare tile':'You take '+tname(got[0]));render();return}
  if(T.start<=2)return bad('1–2 tiles: you must draw');
  if(!P.opened)return bad('Open first: until then, draw');
  if(i<n-1&&T.start<4)return bad('3 tiles: only the last');
  if(!canUse(i))return bad('No new formation with it: draw again');
- T.snap=snap();const got=takeRow(0,i);T.must.push(got[0]);T.take=got[0];newIds=got;fresh.push(...got);sel.clear();sel.add(got[0]);
+ T.snap=snap();const got=takeRow(0,i);T.must.push(got[0]);T.take=got[0];newIds=got;fresh=got.slice();sel.clear();sel.add(got[0]);
  G.phase='play';sfx('draw');say('Lay '+tname(got[0])+' in a new formation'+(got.length>1?' (+'+(got.length-1)+')':''));render()}
 function hLay(){if(G.phase!=='play')return;const P=G.pl[0],ids=[...sel],h=P.hand;
  if(P.board)return bad('Board game: no laying down');
@@ -952,17 +952,17 @@ function hLay(){if(G.phase!=='play')return;const P=G.pl[0],ids=[...sel],h=P.hand
  if(!P.opened&&!canOpen())return bad(G.tn===0?'First turn: just discard':'No opening in round 1');
  const a=analyze(ids);if(!a)return bad(ids.length<3?'A formation needs 3+ tiles':'Not a valid run or set');
  if(h.length-ids.length<1)return bad('Keep one tile to discard');
- rm(h,ids);G.melds.push({o:0,t:a.seq.map(s=>s.id)});place(0,ids);hitMeld=G.melds.length-1;sel.clear();sfx('lay');
+ rm(h,ids);G.melds.push({o:0,t:a.seq.map(s=>s.id)});place(0,ids);hitMeld=G.melds.length-1;sel.clear();fresh=[];sfx('lay');
  if(!P.opened){T.staged+=a.pts;if(a.type==='run')T.runs++;else{T.sets++;if(face(a.seq[0].n)===1)T.ones=true}say(openMsg())}else say('Laid down');render()}
 function hAdd(mi){if(G.phase==='over'||G.phase==='dbl')return;if(G.phase!=='play'||!sel.size){say(G.phase==='play'?'Select tiles, tap a formation':'');render();return}
  const P=G.pl[0];if(P.board)return bad('Board game: no adding');if(!P.opened)return bad(T.runs||T.sets?'Add from your next turn':'Open first: 45, a run and a set');
  const ids=[...sel],m=G.melds[mi],h=P.hand;
  if(T.take!=null&&ids.includes(T.take))return bad('Lay '+tname(T.take)+' in a new formation');
  const j=trySwap(m,ids,G);
- if(j>=0){rm(h,ids);h.push(j);place(0,ids);T.must.push(j);newIds=[j];fresh.push(j);sel.clear();hitMeld=mi;sfx('lay');say('Joly is yours: use it this turn, or Undo');render();return}
+ if(j>=0){rm(h,ids);h.push(j);place(0,ids);T.must.push(j);newIds=[j];fresh=[j];sel.clear();hitMeld=mi;sfx('lay');say('Joly is yours: use it this turn, or Undo');render();return}
  if(ids.some(isJ)&&m.o!==0)return bad('Joly only on your formations');
  const a=analyze(m.t.concat(ids));
- if(a){if(h.length-ids.length<1)return bad('Keep one tile to discard');m.t=a.seq.map(s=>s.id);rm(h,ids);place(0,ids);sel.clear();hitMeld=mi;sfx('lay');say('Added');render();return}
+ if(a){if(h.length-ids.length<1)return bad('Keep one tile to discard');m.t=a.seq.map(s=>s.id);rm(h,ids);place(0,ids);sel.clear();fresh=[];hitMeld=mi;sfx('lay');say('Added');render();return}
  bad("Doesn't fit that formation")}
 function hDiscard(){if(G.phase!=='play')return;const P=G.pl[0];
  if(sel.size!==1)return bad('Select one tile to discard');
@@ -971,12 +971,12 @@ function hDiscard(){if(G.phase!=='play')return;const P=G.pl[0];
  const must=T.must.filter(id=>P.hand.includes(id));if(must.length)return bad((must[0]===T.take?'Lay ':'Use ')+tname(must[0])+' first, or Undo');
  if(!P.opened&&(T.runs||T.sets)&&!okOpen())return bad(openMsg());
  if(okOpen())P.opened=true;
- const id=[...sel][0];toDisc(0,id);sel.clear();sfx('disc');
+ const id=[...sel][0];toDisc(0,id);sel.clear();fresh=[];sfx('disc');
  if(!P.hand.length){endRound(0,id,'You close with '+tname(id)+'!');return}
  say('You discard '+tname(id)+(P.hand.length<=3?' · '+P.hand.length+' left!':''));nextTurn()}
 function hUndo(){if(G.phase!=='play'||!T.snap)return;const s=JSON.parse(T.snap);
  G.pl[0].hand=s.hand;G.melds=s.melds;G.disc=s.disc;G.own=s.own;G.jl=s.jl;G.mem=s.mem;G.phase=s.phase;Object.assign(T,s.T);if(s.phase==='draw')T.snap=null;
- sel.clear();sfx('undo');say(s.phase==='draw'?'Discard put back':'Turn undone');render()}
+ sel.clear();fresh=[];sfx('undo');say(s.phase==='draw'?'Discard put back':'Turn undone');render()}
 function hSort(){sortBy=sortBy==='col'?'num':'col';saveSet();render()}
 function tapTile(id){if(G.phase==='dbl'){const on=sel.has(id);sel.clear();if(!on)sel.add(id);sfx('pick');render();return}
  if(G.phase!=='play'){say(G.phase==='draw'?'Draw a tile first':'Wait for your turn');render();return}
@@ -1047,7 +1047,7 @@ function render(){
   cn.innerHTML='<b>'+xx+'</b><i>-'+yy+'</i>';cn.setAttribute('aria-label',ph==='over'?'This round: '+xx+' points, minus '+yy:'This round: '+xx+' points laid, minus '+yy+' if someone else closes now')}
  const rk=$('rack'),rsl=rk.scrollLeft;rk.innerHTML='';
  const dbs=ph==='dbl'?dblTiles(me.hand):[];
- sorted(me.hand).forEach(id=>{const e=tileEl(id,true);if(sel.has(id))e.classList.add('sel');if(dbs.includes(id))e.classList.add('dbl');if(newIds.includes(id))e.classList.add('new');if(fresh.includes(id)&&(G.phase==='dbl'||G.cur===0&&G.phase==='play'))e.classList.add('drw');e.onclick=()=>tapTile(id);rk.appendChild(e)});
+ sorted(me.hand).forEach(id=>{const e=tileEl(id,true);if(sel.has(id))e.classList.add('sel');if(dbs.includes(id))e.classList.add('dbl');if(newIds.includes(id))e.classList.add('new');if(fresh.includes(id)&&G.phase!=='over')e.classList.add('drw');e.onclick=()=>tapTile(id);rk.appendChild(e)});
  {const n=me.hand.length,wide=n>18&&document.documentElement.classList.contains('lnd');rk.classList.toggle('wide',wide);rk.style.setProperty('--per',Math.max(9,Math.ceil(n/2)));
   if(wide){rk.scrollLeft=rsl;const e=rk.querySelector('.new');if(e){const l=e.offsetLeft-8,r=e.offsetLeft+e.offsetWidth+8;if(l<rk.scrollLeft)rk.scrollLeft=l;else if(r>rk.scrollLeft+rk.clientWidth)rk.scrollLeft=r-rk.clientWidth}}}
  newIds=[];

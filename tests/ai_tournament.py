@@ -239,7 +239,7 @@ REMI_PATCH = [
     # every seat plays with its own level (set at the start of its turn; turns never overlap); "base" seats use the old CPU
     ("async function cpuTurn(tk){\n const p=G.cur", "async function cpuTurn(tk){if(window.__lv)lvl=__lv[G.cur];if(window.__old&&__old[G.cur])return base_cpuTurn(tk);\n const p=G.cur"),
     # seat 0 is played by the CPU code (no doubles swap screen for it either)
-    ("if(G.cur===0){if(G.tn>3)fresh=[]", "if(G.cur===0&&!window.__bot0){if(G.tn>3)fresh=[]"),
+    ("if(G.cur===0){G.phase=", "if(G.cur===0&&!window.__bot0){G.phase="),
     ("if(G.d3||(swp&&dblTiles(G.pl[0].hand).length))", "if(!window.__bot0&&(G.d3||(swp&&dblTiles(G.pl[0].hand).length)))"),
     ("window.__remi={", "window.__remi={dealRound,newGame,endRound,get lvl(){return lvl},set limit(v){LIMIT=v},"),
     # the tournament doesn't draw the table (same game, about 10x faster), and counts what is taken from the discards
