@@ -54,9 +54,7 @@
 .msg{flex:1;max-width:240px;font-size:22px;line-height:1.05}
 .msg .t{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
 .ctl{display:flex;justify-content:center;align-items:center;gap:8px;margin:0 0 8px;flex:none}
-.diff{display:flex;gap:8px}
-.diff button{font:400 9px/1 var(--px);color:var(--cy);background:transparent;border:2px solid var(--cy);border-radius:4px;padding:8.5px 8px;cursor:pointer;text-shadow:0 0 6px var(--cy)}
-.diff button[aria-pressed="true"]{background:var(--cy);color:#07030f;text-shadow:none;box-shadow:0 0 12px var(--cy)}
+.diff.mtr button{padding:6.5px 0}
 .diff button:disabled,.diff button.lk{opacity:.45;cursor:default}
 .msg2{transform:rotate(180deg)}
 .mid.two .msg{text-align:center;max-width:none}.mid.two .msg .t{white-space:nowrap}
@@ -93,7 +91,7 @@ body:not(.flip) .side.you{margin-bottom:8px}
 <main>
 <h1 class="ttl ttl1">Knucklebones</h1>
 <noscript>Knucklebones needs JavaScript to run.</noscript>
-<div class="ctl"><div class="diff" id="diff" role="group" aria-label="Difficulty"></div></div>
+<div class="ctl"><div class="diff" id="diff" data-mtr role="group" aria-label="Difficulty"></div></div>
 <div class="side opp"><div class="hd"><span><em class="nm" id="on">CPU</em> <small id="obd"></small></span><b id="cs">0</b></div><div class="cols" id="cg"></div></div>
 <div class="mid"><div class="die" id="die">–</div><div class="msg msg2" id="msg2" aria-hidden="true" hidden></div><div class="msg" id="msg" role="status" aria-live="polite"></div></div>
 <div class="side you"><div class="hd"><span><em class="nm" id="yn">You</em> <small id="best"></small></span><b id="ps">0</b></div><div class="cols" id="pg"></div></div>

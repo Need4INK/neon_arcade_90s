@@ -7,9 +7,7 @@
 <style>
 :root{--cell:#0b0720}
 .ctl{display:flex;justify-content:center;gap:8px;margin:0 0 8px}
-.diff{display:flex;gap:8px}
-.diff button{font:400 9px/1 var(--px);color:var(--cy);background:transparent;border:2px solid var(--cy);border-radius:4px;padding:8.5px 8px;cursor:pointer;text-shadow:0 0 6px var(--cy)}
-.diff button[aria-pressed="true"]{background:var(--cy);color:#07030f;text-shadow:none;box-shadow:0 0 12px var(--cy)}
+.diff.mtr button{padding:6.5px 0}
 .diff button:disabled,.diff button.lk{opacity:.45;cursor:default}
 .hd{display:flex;justify-content:space-between;align-items:center;background:var(--panel);border:2px solid var(--line);border-radius:6px;padding:8px 10px;font:400 10px/1 var(--px)}
 .hd.opp{border-color:var(--mag);box-shadow:0 0 8px rgba(255,43,214,.55),inset 0 0 14px rgba(255,43,214,.18)}
@@ -64,7 +62,7 @@ button.b{margin:4px 4px 0}
 <div id="app">
 <main>
 <h1 id="t1">Othello</h1>
-<div class="ctl"><div class="diff" id="diff" role="group" aria-label="Difficulty"></div></div>
+<div class="ctl"><div class="diff" id="diff" data-mtr role="group" aria-label="Difficulty"></div></div>
 <div class="mid" id="msg2"><div class="msg" id="msg2t"></div></div>
 <div class="hd opp" id="hdO"><span id="on">CPU <small id="os"></small></span><b id="cs">2</b></div>
 <div id="board" role="group" aria-label="Othello board"></div>
