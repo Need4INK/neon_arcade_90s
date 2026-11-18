@@ -35,8 +35,8 @@ var panel=naEl('panel'),bar=naEl('bar'),pR=naEl('pRules'),pS=naEl('pSet'),bR=naE
 function showPanel(n){var cur=panel.hidden?'':panel.dataset.p,nx=n&&n!==cur?n:'';panel.hidden=!nx;if(naShade)naShade.hidden=!nx;panel.dataset.p=nx;pR.hidden=nx!=='rules';pS.hidden=nx!=='settings';
  bR.setAttribute('aria-expanded',nx==='rules'?'true':'false');bS.setAttribute('aria-expanded',nx==='settings'?'true':'false');if(nx==='settings'&&naSync)naSync()}
 function setSw(id,on){var b=naEl(id);b.setAttribute('aria-checked',on?'true':'false');b.textContent=on?'On':'Off'}
-// Settings rows with 3 or more choices are drawn as a level meter (.mtr): --i = picked choice, --n = choices; kept up to date as games rebuild or re-press them
-function naMtr(){document.querySelectorAll('#pSet .seg').forEach(function(s){var b=s.children,n=b.length,i=-1,k;for(k=0;k<n;k++)if(b[k].getAttribute('aria-pressed')==='true')i=k;s.classList.toggle('mtr',n>2);s.style.setProperty('--n',n);s.style.setProperty('--i',i)})}
+// Settings rows with 3 or more choices (and rows marked data-mtr, like the on-screen difficulty) are drawn as a level meter (.mtr): --i = picked choice, --n = choices; kept up to date as games rebuild or re-press them
+function naMtr(){document.querySelectorAll('#pSet .seg,[data-mtr]').forEach(function(s){var b=s.children,n=b.length,i=-1,k;for(k=0;k<n;k++)if(b[k].getAttribute('aria-pressed')==='true')i=k;s.classList.toggle('mtr',n>2);s.style.setProperty('--n',n);s.style.setProperty('--i',i)})}
 // Rules open by themselves the first time a game is opened
 function naFirstRules(key){try{if(!localStorage.getItem(key)){showPanel('rules');localStorage.setItem(key,'1')}}catch(e){}}
 bR.onclick=function(){showPanel('rules')};bS.onclick=function(){showPanel('settings')};
@@ -46,7 +46,7 @@ naEl('tgCrt').onclick=function(){var off=document.body.classList.toggle('nocrt')
 // a tap outside the open panel closes it and does nothing else; so does Escape
 document.addEventListener('click',function(e){if(!panel.hidden&&!panel.contains(e.target)&&!bar.contains(e.target)){e.stopPropagation();e.preventDefault();showPanel('')}},true);
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!panel.hidden)showPanel('')});
-naMtr();new MutationObserver(naMtr).observe(pS,{subtree:true,childList:true,attributes:true,attributeFilter:['aria-pressed']});
+naMtr();(function(){var mo=new MutationObserver(naMtr),o={subtree:true,childList:true,attributes:true,attributeFilter:['aria-pressed']};mo.observe(pS,o);document.querySelectorAll('[data-mtr]').forEach(function(e){mo.observe(e,o)})})();
 // Exit: close any open panel, then show the cover (the game stays loaded)
 (function(){var x=document.querySelector('#bar .mnu');if(x)x.onclick=function(){try{document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}))}catch(e){}try{parent.kbShowCover()}catch(e){}}})();
 // the panel opens right above the bar, wherever the game's layout puts the bar

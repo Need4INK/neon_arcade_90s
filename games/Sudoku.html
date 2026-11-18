@@ -52,6 +52,7 @@ button.b:active,button.b[aria-pressed="true"]{background:var(--yel);color:#07030
 main{align-items:center}
 button.b{margin:0 4px;white-space:nowrap}
 .seg button{width:calc(2*var(--sw) + var(--sg))}
+#diff.mtr button{width:62px}
 </style>
 </head>
 <body>
@@ -77,7 +78,7 @@ button.b{margin:0 4px;white-space:nowrap}
 <p><b>Accessibility</b> (Settings): a bar under the numbers you entered, if they look like the given ones to you.</p>
 <p><b>Levels:</b> every puzzle has exactly one solution. Easy and Normal need only simple steps; Hard needs smarter eliminations; Master has the fewest clues. Pick the difficulty in <b>Settings</b>; it locks once you start a puzzle.</p></div>
 <div id="pSet" hidden>
-<div class="row wrap"><span class="lab">Difficulty</span><div class="seg" id="diff" role="group" aria-label="Difficulty"></div></div>
+<div class="row"><span class="lab">Difficulty</span><div class="seg" id="diff" role="group" aria-label="Difficulty"></div></div>
 <div class="row"><span class="lab">Allow undo</span><button type="button" class="tg" id="tgUndo" role="switch" aria-checked="true">On</button></div>
 <div class="row"><span class="lab">Hints</span><button type="button" class="tg" id="tgHint" role="switch" aria-checked="false">Off</button></div>
 <div class="row"><span class="lab">Accessibility</span><button type="button" class="tg" id="tgSym" role="switch" aria-checked="false">Off</button></div>

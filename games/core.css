@@ -45,25 +45,25 @@ body.flip main>.bar{position:absolute;left:0;right:0;bottom:30px;margin:0;paddin
 .row.wrap{flex-wrap:wrap}
 .lab{font:400 10px/1.4 var(--px);color:var(--ink);white-space:nowrap}
 .row>.seg,.row>.tg{margin-left:auto}
-/* Settings buttons: 64px, double 134px */
+/* Settings buttons: 64px, double 134px, all pill-shaped */
 .seg{display:flex;gap:var(--sg);flex:none}
-.seg button,.tg{flex:none;width:var(--sw);font:400 9px/1 var(--px);text-align:center;white-space:nowrap;color:var(--cy);background:transparent;border:2px solid var(--cy);border-radius:4px;padding:10px 0;cursor:pointer;text-shadow:0 0 6px var(--cy)}
+.seg button,.tg{flex:none;width:var(--sw);font:400 9px/1 var(--px);text-align:center;white-space:nowrap;color:var(--cy);background:transparent;border:2px solid var(--cy);border-radius:99px;padding:10px 0;cursor:pointer;text-shadow:0 0 6px var(--cy)}
 .tg{overflow:hidden;padding:10px 2px}
 .seg button.big,.tg.big{width:calc(2*var(--sw) + var(--sg))}
 .seg button[aria-pressed="true"],.tg[aria-checked="true"]{background:var(--cy);color:#07030f;text-shadow:none;box-shadow:0 0 12px var(--cy)}
 .seg button:disabled,.tg:disabled{opacity:.45;cursor:default}
 .tg.dng{color:var(--mag);border-color:var(--mag);text-shadow:0 0 6px var(--mag)}
 .tg.dng.arm{background:var(--mag);color:#07030f;text-shadow:none;box-shadow:0 0 12px var(--mag)}
-/* Settings rows with 3+ choices = level meter (.mtr, set by naMtr in core.js): a pill track filled up to the picked choice, which is a solid green pill */
+/* Choice rows with 3+ choices (Settings, and any [data-mtr] row) = level meter (.mtr, set by naMtr in core.js): a pill track filled up to the picked choice, which is a solid green pill */
 /* On/Off switches = sliders: knob left and dim when off, right and green when on; the On/Off word sits beside the knob */
 .tg[role="switch"]{position:relative;border-radius:99px;border-color:var(--line);color:var(--mut);text-shadow:none;padding:10px 2px 10px 26px}
 .tg[role="switch"]::after{content:"";position:absolute;top:50%;left:3px;width:21px;height:21px;margin-top:-10.5px;border-radius:50%;background:var(--mut);transition:left .15s}
 .tg[role="switch"][aria-checked="true"]{background:transparent;border-color:var(--grn);color:var(--grn);text-shadow:0 0 6px var(--grn);box-shadow:0 0 10px var(--grn);padding:10px 26px 10px 2px}
-.seg.mtr{position:relative;gap:0;border:2px solid var(--line);border-radius:99px;padding:2px}
-.seg.mtr::before{content:"";position:absolute;top:2px;bottom:2px;left:2px;width:calc((var(--i) + 1)*(100% - 4px)/var(--n));border-radius:99px;background:color-mix(in srgb,var(--grn) 22%,transparent);transition:width .15s}
-.seg.mtr button{position:relative;border:none;border-radius:99px;padding:8px 0;background:transparent;color:var(--grn);text-shadow:none}
-.seg.mtr button[aria-pressed="true"]{background:var(--grn);color:#07030f;box-shadow:0 0 10px var(--grn)}
-.seg.mtr button[aria-pressed="true"]~button{color:var(--mut)}
+.mtr{position:relative;display:flex;flex:none;gap:0;border:2px solid var(--line);border-radius:99px;padding:2px}
+.mtr::before{content:"";position:absolute;top:2px;bottom:2px;left:2px;width:calc((var(--i) + 1)*(100% - 4px)/var(--n));border-radius:99px;background:color-mix(in srgb,var(--grn) 22%,transparent);transition:width .15s}
+.mtr button{position:relative;flex:none;width:var(--sw);font:400 9px/1 var(--px);text-align:center;white-space:nowrap;cursor:pointer;border:none;border-radius:99px;padding:8px 0;background:transparent;color:var(--grn);text-shadow:none}
+.mtr button[aria-pressed="true"]{background:var(--grn);color:#07030f;box-shadow:0 0 10px var(--grn)}
+.mtr button[aria-pressed="true"]~button{color:var(--mut)}
 .tg[role="switch"][aria-checked="true"]::after{left:calc(100% - 24px);background:var(--grn);box-shadow:0 0 8px var(--grn)}
 .seg button:focus-visible,.tg:focus-visible,.bar button:focus-visible,button.b:focus-visible{outline:3px solid var(--yel);outline-offset:2px}
 .note{color:var(--yel);margin:6px 0 0}
