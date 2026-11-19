@@ -35,8 +35,8 @@ var panel=naEl('panel'),bar=naEl('bar'),pR=naEl('pRules'),pS=naEl('pSet'),bR=naE
 function showPanel(n){var cur=panel.hidden?'':panel.dataset.p,nx=n&&n!==cur?n:'';panel.hidden=!nx;if(naShade)naShade.hidden=!nx;panel.dataset.p=nx;pR.hidden=nx!=='rules';pS.hidden=nx!=='settings';
  bR.setAttribute('aria-expanded',nx==='rules'?'true':'false');bS.setAttribute('aria-expanded',nx==='settings'?'true':'false');if(nx==='settings'&&naSync)naSync()}
 function setSw(id,on){var b=naEl(id);b.setAttribute('aria-checked',on?'true':'false');b.textContent=on?'On':'Off'}
-// Settings rows with 3 or more choices (and rows marked data-mtr, like the on-screen difficulty) are drawn as a level meter (.mtr): --i = picked choice, --n = choices; kept up to date as games rebuild or re-press them
-function naMtr(){document.querySelectorAll('#pSet .seg,[data-mtr]').forEach(function(s){var b=s.children,n=b.length,i=-1,k;for(k=0;k<n;k++)if(b[k].getAttribute('aria-pressed')==='true')i=k;s.classList.toggle('mtr',n>2);s.style.setProperty('--n',n);s.style.setProperty('--i',i)})}
+// Settings rows with 3 or more choices (and any row marked data-mtr, like the on-screen difficulty or a 2-choice Mode row) are drawn as a level meter (.mtr): --i = picked choice, --n = choices; kept up to date as games rebuild or re-press them
+function naMtr(){document.querySelectorAll('#pSet .seg,[data-mtr]').forEach(function(s){var b=s.children,n=b.length,i=-1,k;for(k=0;k<n;k++)if(b[k].getAttribute('aria-pressed')==='true')i=k;s.classList.toggle('mtr',n>2||s.hasAttribute('data-mtr'));s.style.setProperty('--n',n);s.style.setProperty('--i',i)})}
 // Rules open by themselves the first time a game is opened
 function naFirstRules(key){try{if(!localStorage.getItem(key)){showPanel('rules');localStorage.setItem(key,'1')}}catch(e){}}
 bR.onclick=function(){showPanel('rules')};bS.onclick=function(){showPanel('settings')};
